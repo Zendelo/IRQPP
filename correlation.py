@@ -3,12 +3,14 @@ import argparse
 
 import pandas as pd
 
-parser = argparse.ArgumentParser(description='Correlation Evaluation script', epilog='You must specify exactly 2 files')
+parser = argparse.ArgumentParser(description='Correlation Evaluation script',
+                                 usage='specify 2 files to evaluate correlation',
+                                 epilog='The files must have 2 columns, first for index and second for the values')
 
-parser.add_argument('-f', '--first', metavar='<file_path>', help='first evaluation file')
-parser.add_argument('-s', '--second', metavar='<file_path>', help='second evaluation file')
+parser.add_argument('first', metavar='first_file_path', help='first evaluation file')
+parser.add_argument('second', metavar='second_file_path', help='second evaluation file')
 parser.add_argument('-t', '--test', default='pearson', type=str,
-                    help='test type', metavar=['pearson', 'spearman', 'kendall'])
+                    help='default test type is pearson', choices=['pearson', 'spearman', 'kendall'], )
 
 
 def print_cor(df, type):
