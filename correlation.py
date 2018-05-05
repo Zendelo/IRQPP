@@ -1,27 +1,29 @@
+#!/usr/bin/python
 import pandas as pd
+import sys, argparse
+
+parser = argparse.ArgumentParser(description='PyTorch Seq2Seq Training')
+
+parser.add_argument('-f', '--first', help='first evaluation file')
+parser.add_argument('-s', '--second', help='second evaluation file')
+parser.add_argument('-t', '--test', default='pearson', type=str,
+                    help='test type', metavar=['pearson', 'spearman', 'kendall'])
 
 
 def print_cor(df, type):
-    print('The {} Correlation is: {:0.4f}'.format(type, df['clarity'].corr(df['ap.1000'], method=type)))
+    print('The {} correlation is: {:0.4f}'.format(type, df['x'].corr(df['y'], method=type)))
 
 
-def main():
-    params = [5,10,25,50,100,250,500,1000]
-    # clarity_file_path = 'clarity-Fiana.res'
-    # clarity_file_path = 'clarity-Anna.res'
-    ap_file_path = 'QLmap1000'
+def main(args):
+    first_file = args.first
+    second_file = args.second
 
-    for i in params:
-        print('\n ********* For {} documents *********'.format(i))
-        clarity_file_path = 'clarity-Fiana-{}-docs.res'.format(i)
-        clarity_df = pd.read_table(clarity_file_path, delim_whitespace=True, index_col='qid')
-        ap_df = pd.read_table(ap_file_path, delim_whitespace=True, index_col='qid')
-        merged_df = pd.merge(clarity_df, ap_df, left_index=True, right_index=True)
-        print_cor(merged_df, 'pearson')
-        print_cor(merged_df, 'spearman')
-        print_cor(merged_df, 'kendall')
-        print('************** end of {} ************** \n'.format(i))
+    first_df = pd.read_table(first_file, delim_whitespace=True, header=None, index_col=0, names=['x'])
+    second_df = pd.read_table(second_file, delim_whitespace=True, header=None, index_col=0, names=['y'])
+    merged_df = pd.merge(first_df, second_df, left_index=True, right_index=True)
+    print_cor(merged_df, args.test)
 
 
 if __name__ == '__main__':
-    main()
+    args = parser.parse_args()
+    main(args)
