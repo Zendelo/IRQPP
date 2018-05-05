@@ -1,11 +1,12 @@
 #!/usr/bin/python
+import argparse
+
 import pandas as pd
-import sys, argparse
 
-parser = argparse.ArgumentParser(description='PyTorch Seq2Seq Training')
+parser = argparse.ArgumentParser(description='Correlation Evaluation script', epilog='You must specify exactly 2 files')
 
-parser.add_argument('-f', '--first', help='first evaluation file')
-parser.add_argument('-s', '--second', help='second evaluation file')
+parser.add_argument('-f', '--first', metavar='<file_path>', help='first evaluation file')
+parser.add_argument('-s', '--second', metavar='<file_path>', help='second evaluation file')
 parser.add_argument('-t', '--test', default='pearson', type=str,
                     help='test type', metavar=['pearson', 'spearman', 'kendall'])
 
