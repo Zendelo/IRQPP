@@ -17,11 +17,11 @@ parser.add_argument('--testing', metavar='running_parameter', default='-document
                     help='path to predictor parameters file')
 parser.add_argument('--queries', default='data/ROBUST/queries.xml', help='path to queries xml file')
 parser.add_argument('--labeled', default='baseline/QLmap1000', help='path to labeled list file')
-parser.add_argument('-t', '--test', default='pearson', type=str,
-                    help='default test type is pearson', choices=['pearson', 'spearman', 'kendall'], )
+parser.add_argument('-m', '--measure', default='pearson', type=str,
+                    help='default correlation measure type is pearson', choices=['pearson', 'spearman', 'kendall'], )
 
 
-def testing(predictor_exe, parameters_xml, test_param, queries, labeled):
+def testing(predictor_exe, parameters_xml, test_param, queries, labeled, correlation_measure):
     run('mkdir -v tmp-testing', shell=True)
     print('The temporary files will be saved in the directory tmp-testing')
 
@@ -31,7 +31,7 @@ def testing(predictor_exe, parameters_xml, test_param, queries, labeled):
         output = 'tmp-testing/predictions-{}'.format(i)
         run('{} {} {}{} {} > {}'.format(predictor_exe, parameters_xml, test_param, i,
                                         queries, output), shell=True)
-        print('the {} correlation is: {}'.format(test_param, calc_cor(output, labeled, test_param)))
+        print('the {} correlation is: {}'.format(correlation_measure, calc_cor(output, labeled, correlation_measure)))
 
     print("\n Removing files \n")
 
@@ -51,7 +51,8 @@ def main(args):
     test_parameter = args.testing
     labeled_file = args.labeled
     queries = args.queries
-    testing(predictor_exe, parameters_xml, test_parameter, queries, labeled_file)
+    correlation_measure = args.measure
+    testing(predictor_exe, parameters_xml, test_parameter, queries, labeled_file, correlation_measure)
 
 
 if __name__ == '__main__':
