@@ -16,39 +16,42 @@ parser.add_argument('--parameters', metavar='parameters_file_path', default='cla
 parser.add_argument('--testing', metavar='running_parameter', default='-documents=', choices=['-documents'],
                     help='path to predictor parameters file')
 parser.add_argument('--queries', default='data/ROBUST/queries.xml', help='path to queries xml file')
+parser.add_argument('--labeled', default='baseline/QLmap1000', help='path to labeled list file')
 parser.add_argument('-t', '--test', default='pearson', type=str,
                     help='default test type is pearson', choices=['pearson', 'spearman', 'kendall'], )
 
 
-def testing(predictor_exe, parameters_xml, test_param, queries):
+def testing(predictor_exe, parameters_xml, test_param, queries, labeled):
     run('mkdir -v tmp-testing', shell=True)
     print('The temporary files will be saved in the directory tmp-testing')
 
     for i in [5, 10, 25, 50, 100, 250, 500, 1000]:
         print('\n ******** Running for: {} documents ******** \n'.format(i))
-        #print('{0} {1} {2}{3} {4}> tmp-testing/testing-{3}'.format(predictor_exe, parameters_xml, test_param, i, queries))
-        #exit()
 
-        run('{0} {1} {2}{3} {4} > tmp-testing/testing-{3}'.format(predictor_exe, parameters_xml, test_param, i, queries), shell=True)
-        run('python correlation.py baseline/QLmap1000 tmp-testing/testing-{}'.format(i), shell=True)
+        output = 'tmp-testing/predictions-{}'.format(i)
+        run('{} {} {}{} {} > {}'.format(predictor_exe, parameters_xml, test_param, i,
+                                        queries, output), shell=True)
+        print('the {} correlation is: {}'.format(test_param, calc_cor(output, labeled, test_param)))
 
     print("\n Removing files \n")
 
-    run('rm -rfv tmp-testing', shell=True, check=True)
-
-    # SetupFiles-indri-5.6/clarity.m-1/Clarity-Fiana clarity/clarityParam.xml -documents=2 data/ROBUST/queries.xml
+    run('rm -rfv tmp-testing', shell=True)
 
 
-def print_cor(df, type):
-    print('The {} correlation is: {:0.4f}'.format(type, df['x'].corr(df['y'], method=type)))
+def calc_cor(first_file, second_file, test):
+    first_df = pd.read_table(first_file, delim_whitespace=True, header=None, index_col=0, names=['x'])
+    second_df = pd.read_table(second_file, delim_whitespace=True, header=None, index_col=0, names=['y'])
+    merged_df = pd.merge(first_df, second_df, left_index=True, right_index=True)
+    return merged_df['x'].corr(merged_df['y'], method=test)
 
 
 def main(args):
     predictor_exe = args.predictor
     parameters_xml = args.parameters
     test_parameter = args.testing
+    labeled_file = args.labeled
     queries = args.queries
-    testing(predictor_exe, parameters_xml, test_parameter, queries)
+    testing(predictor_exe, parameters_xml, test_parameter, queries, labeled_file)
 
 
 if __name__ == '__main__':
