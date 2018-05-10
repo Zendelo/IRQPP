@@ -32,9 +32,7 @@ def pre_testing(predictor_exe, parameters_xml, test_param, queries):
      and save the output files to the dir tmp-testing"""
 
     run('mkdir -v tmp-testing', shell=True)
-    pred = 'clarityFiana' if 'Fiana' in predictor_exe else 'Anna'
-    print(pred)
-    exit()
+    pred = 'Fiana' if 'Fiana' in predictor_exe else 'Anna'
     run('mkdir -v tmp-testing/clarity-{}'.format(pred), shell=True)
     print('The temporary files will be saved in the directory tmp-testing')
     for i in PARAMS:
@@ -64,8 +62,8 @@ def main(args):
 
     pre_testing(predictor_exe, parameters_xml, test_parameter, queries)
 
-    print("\n Removing files \n")
-    run('rm -rfv tmp-testing', shell=True)
+    # print("\n Removing files \n")
+    # run('rm -rfv tmp-testing', shell=True)
 
 
 if __name__ == '__main__':
