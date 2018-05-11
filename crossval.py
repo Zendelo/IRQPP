@@ -14,7 +14,7 @@ parser = argparse.ArgumentParser(description='Cross Validation script',
                                  usage='Use CV to optimize correlation',
                                  epilog='Prints the average correlation')
 
-parser.add_argument('-p', '--predictions', metavar='predictions_dir', default='~/tmp-testing/clarity-Fiana',
+parser.add_argument('-p', '--predictions', metavar='predictions_dir', default='tmp-testing/clarity-Fiana',
                     help='path to prediction results files directory')
 parser.add_argument('--parameters', metavar='parameters_file_path', default='clarity/clarityParam.xml',
                     help='path to predictor parameters file')
@@ -86,21 +86,22 @@ class CrossValidation:
         self.file_name = file_to_load
         self.corrs_df = pd.DataFrame()
         assert ap_file is not None, 'Specify AP results file'
-        assert (not load and predictions_dir is not None) or (load and file_to_load is not None), 'Specify file to load'
-        self.full_set = self._build_full_set(predictions_dir, 'ap')
+        assert predictions_dir is not None, 'Specify predictions dir'
+        self.full_set = self._build_full_set(predictions_dir, ap_file)
         if load:
+            assert file_to_load is not None, 'Specify file to load'
             self.__load_k_folds()
         else:
-            self.index = self.full_set
+            self.index = self.full_set.index
             self.file_name = self._generate_k_folds()
             self.__load_k_folds()
 
     def _build_full_set(self, dir, ap_file):
         """Assuming the predictions files are named : predictions-[0-9]"""
-        all_files = glob.glob(dir + "/predictions*")
+        all_files = glob.glob(dir + "/*predictions*")
         list_ = []
         for file_ in all_files:
-            fname = file_.split('-')[1]
+            fname = file_.split('-')[-1]
             df = DataReader(file_, 'result').data_df
             df = df.rename(index=int, columns={"qid": "qid", "score": 'score_{}'.format(fname)})
             list_.append(df)
@@ -119,7 +120,6 @@ class CrossValidation:
         results = defaultdict(dict)
         for train, test in rkf.split(self.index):
             train_index, test_index = self.index[train], self.index[test]
-
             results[count] = {'train': train_index, 'test': test_index}
             count += 1
         pd.DataFrame(results).to_json('{}_folds_{}_repetitions.json'.format(self.k, self.rep))
@@ -146,9 +146,7 @@ class CrossValidation:
         test_results = []
         for set_id in sets:
             max_train_param = max(self.corrs_df[set_id]['train'].items(), key=operator.itemgetter(1))[0]
-            print(max_train_param)
             test_result = self.corrs_df[set_id]['test'][max_train_param]
-            print(test_result)
             test_results.append(test_result)
         print('The average result for clarity is: {0:0.4f}'.format(np.average(test_results)))
 
@@ -173,7 +171,7 @@ def main(args):
         y = CrossValidation(k=splits, rep=repeats, predictions_dir=predictions_dir, load=False,
                             test=correlation_measure, ap_file=labeled_file)
     else:
-        y = CrossValidation(k=splits, rep=repeats, file_to_load=load_file, load=True, test=correlation_measure,
+        y = CrossValidation(k=splits, rep=repeats, predictions_dir=predictions_dir, file_to_load=load_file, load=True, test=correlation_measure,
                             ap_file=labeled_file)
     y.calc_correlations()
     y.calc_test_results()
