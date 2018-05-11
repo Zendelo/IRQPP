@@ -12,27 +12,25 @@ from sklearn.model_selection import RepeatedKFold
 
 parser = argparse.ArgumentParser(description='Cross Validation script',
                                  usage='Use CV to optimize correlation',
-                                 epilog='The files must have 2 columns, first for index and second for the values')
+                                 epilog='Prints the average correlation')
 
-parser.add_argument('-p', '--predictions', metavar='predictions_dir',
-                    default='./', help='path to prediction results files directory')
+parser.add_argument('-p', '--predictions', metavar='predictions_dir', default='~/tmp-testing/clarity-Fiana',
+                    help='path to prediction results files directory')
 parser.add_argument('--parameters', metavar='parameters_file_path', default='clarity/clarityParam.xml',
                     help='path to predictor parameters file')
 parser.add_argument('--testing', metavar='running_parameter', default='-documents=', choices=['-documents'],
                     help='The parameter to optimize')
-parser.add_argument('-q', '--queries', metavar='queries.xml', default='data/ROBUST/queries.xml',
-                    help='path to queries xml file')
+
 parser.add_argument('-l', '--labeled', default='baseline/QLmap1000', help='path to labeled list file')
 parser.add_argument('-r', '--repeats', default=30, help='number of repeats')
 parser.add_argument('-k', '--splits', default=2, help='number of k-fold')
 parser.add_argument('-m', '--measure', default='pearson', type=str,
                     help='default correlation measure type is pearson', choices=['pearson', 'spearman', 'kendall'], )
-parser.add_argument("-g", "--generate", help="generate new CrossValidation sets",
-                    action="store_true")
-parser.add_argument("--load", help="load existing CrossValidation JSON file",
-                    default='2_folds_30_repetitions.json')
-parser.add_argument("-v", "--verbose", help="increase output verbosity",
-                    action="store_true")
+parser.add_argument("-g", "--generate", help="generate new CrossValidation sets", action="store_true")
+parser.add_argument("--load", help="load existing CrossValidation JSON file", default='2_folds_30_repetitions.json')
+
+
+# parser.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
 
 
 class DataReader:
@@ -81,20 +79,35 @@ class DataReader:
 
 
 class CrossValidation:
-    def __init__(self, file_to_load=None, results_file=None, k=2, rep=1, load=True):
+    def __init__(self, k, rep, file_to_load=None, predictions_dir=None, load=True, test='pearson', ap_file=None):
         self.k = k
         self.rep = rep
+        self.test = test
         self.file_name = file_to_load
-        self.full_set = pd.DataFrame()
         self.corrs_df = pd.DataFrame()
-        assert (not load and results_file is not None) or (load and file_to_load is not None), 'Specify file to load'
+        assert ap_file is not None, 'Specify AP results file'
+        assert (not load and predictions_dir is not None) or (load and file_to_load is not None), 'Specify file to load'
+        self.full_set = self._build_full_set(predictions_dir, 'ap')
         if load:
             self.__load_k_folds()
         else:
-            self.data = DataReader(results_file, 'results')
-            self.index = self.data.data_df.index
+            self.index = self.full_set
             self.file_name = self._generate_k_folds()
             self.__load_k_folds()
+
+    def _build_full_set(self, dir, ap_file):
+        """Assuming the predictions files are named : predictions-[0-9]"""
+        all_files = glob.glob(dir + "/predictions*")
+        list_ = []
+        for file_ in all_files:
+            fname = file_.split('-')[1]
+            df = DataReader(file_, 'result').data_df
+            df = df.rename(index=int, columns={"qid": "qid", "score": 'score_{}'.format(fname)})
+            list_.append(df)
+        ap_df = DataReader(ap_file, 'ap').data_df
+        list_.append(ap_df)
+        self.full_set = pd.concat(list_, axis=1)
+        return self.full_set
 
     def _generate_k_folds(self):
         """ Generates a k-folds json file
@@ -139,60 +152,29 @@ class CrossValidation:
             test_results.append(test_result)
         print('The average result for clarity is: {0:0.4f}'.format(np.average(test_results)))
 
-    def create_full_set(self, dir, ap_file):
-        all_files = glob.glob(dir + "/*docs.res")
-        list_ = []
-        for file_ in all_files:
-            fname = file_.split('-')[2]
-            df = DataReader(file_, 'result').data_df
-            df = df.rename(index=int, columns={"qid": "qid", "score": 'score_{}'.format(fname)})
-            list_.append(df)
-        ap_df = DataReader(ap_file, 'ap').data_df
-        list_.append(ap_df)
-        self.full_set = pd.concat(list_, axis=1)
-        return self.full_set
-
-    @staticmethod
-    def calc_corr_df(df, test='pearson'):
+    def calc_corr_df(self, df):
         dict_ = {}
         for col in df.columns:
             if col == 'ap':
                 continue
-            dict_[col] = df[col].corr(df['ap'], method=test)
+            dict_[col] = df[col].corr(df['ap'], method=self.test)
         return dict_
 
 
-# def calc_cor_files(first_file, second_file, test):
-#     first_df = pd.read_table(first_file, delim_whitespace=True, header=None, index_col=0, names=['x'])
-#     second_df = pd.read_table(second_file, delim_whitespace=True, header=None, index_col=0, names=['y'])
-#     return calc_cor_df(first_df, second_df, test)
-#
-#
-# def calc_cor_df(first_df, second_df, test='pearson'):
-#     merged_df = pd.merge(first_df, second_df, left_index=True, right_index=True, how='inner', validate='1:1')
-#     return merged_df['score_x'].corr(merged_df['score_y'], method=test)
-
-
 def main(args):
-    # parameters_xml = args.parameters
-    # test_parameter = args.testing
     labeled_file = args.labeled
-    # queries = args.queries
-    # correlation_measure = args.measure
-    # repeats = args.repeats
-    # splits = args.splits
+    correlation_measure = args.measure
+    repeats = args.repeats
+    splits = args.splits
     load_file = args.load
+    generate = args.generate
     predictions_dir = args.predictions
-    # raw_data = []
-    # data = input('Insert file path')
-    # while data != '':
-    #     raw_data.append(data)
-    #     data = input('Insert file path')
-    # for file in raw_data:
-    #     docs = file.split('-')[1]
-    #     data = DataReader(file, docs)
-    y = CrossValidation(file_to_load=load_file)
-    y.create_full_set(predictions_dir, labeled_file)
+    if generate:
+        y = CrossValidation(k=splits, rep=repeats, predictions_dir=predictions_dir, load=False,
+                            test=correlation_measure, ap_file=labeled_file)
+    else:
+        y = CrossValidation(k=splits, rep=repeats, file_to_load=load_file, load=True, test=correlation_measure,
+                            ap_file=labeled_file)
     y.calc_correlations()
     y.calc_test_results()
 
