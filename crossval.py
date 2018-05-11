@@ -149,6 +149,9 @@ class CrossValidation:
             test_result = self.corrs_df[set_id]['test'][max_train_param]
             test_results.append(test_result)
         print('The average result for clarity is: {0:0.4f}'.format(np.average(test_results)))
+        print('The mean result for clarity is: {0:0.4f}'.format(np.mean(test_results)))
+        print('The variance of the results for clarity is: {0:0.4f}'.format(np.var(test_results)))
+        print('The standart deviation for clarity is: {0:0.4f}'.format(np.std(test_results)))
 
     def calc_corr_df(self, df):
         dict_ = {}
