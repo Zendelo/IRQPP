@@ -16,18 +16,15 @@ parser = argparse.ArgumentParser(description='Cross Validation script',
 
 parser.add_argument('-p', '--predictions', metavar='predictions_dir', default='tmp-testing/clarity-Fiana',
                     help='path to prediction results files directory')
-parser.add_argument('--parameters', metavar='parameters_file_path', default='clarity/clarityParam.xml',
-                    help='path to predictor parameters file')
-parser.add_argument('--testing', metavar='running_parameter', default='-documents=', choices=['-documents'],
-                    help='The parameter to optimize')
 
-parser.add_argument('-l', '--labeled', default='baseline/QLmap1000', help='path to labeled list file')
+parser.add_argument('--labeled', default='baseline/QLmap1000', help='path to labeled list file')
 parser.add_argument('-r', '--repeats', default=30, help='number of repeats')
 parser.add_argument('-k', '--splits', default=2, help='number of k-fold')
 parser.add_argument('-m', '--measure', default='pearson', type=str,
                     help='default correlation measure type is pearson', choices=['pearson', 'spearman', 'kendall'], )
 parser.add_argument("-g", "--generate", help="generate new CrossValidation sets", action="store_true")
-parser.add_argument("--load", help="load existing CrossValidation JSON file", default='2_folds_30_repetitions.json')
+parser.add_argument('-l', "--load", metavar='CV_FILE_PATH', help="load existing CrossValidation JSON file",
+                    default='2_folds_30_repetitions.json')
 
 
 # parser.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
@@ -103,8 +100,7 @@ class CrossValidation:
         for file_ in all_files:
             fname = file_.split('-')[-1]
             df = DataReader(file_, 'result').data_df
-            df = df.rename(index=int, columns={"qid": "qid", "score": 'score_{}'.format(fname)},)
-            print(df)
+            df = df.rename(index=int, columns={"qid": "qid", "score": 'score_{}'.format(fname)}, )
             list_.append(df)
         ap_df = DataReader(ap_file, 'ap').data_df
         list_.append(ap_df)
@@ -144,15 +140,21 @@ class CrossValidation:
 
     def calc_test_results(self):
         sets = self.corrs_df.columns
+        full_results = defaultdict()
         test_results = []
         for set_id in sets:
             max_train_param = max(self.corrs_df[set_id]['train'].items(), key=operator.itemgetter(1))[0]
             test_result = self.corrs_df[set_id]['test'][max_train_param]
+            full_results['set {} - {}'.format(set_id, max_train_param.split('_')[1])] = {
+                'train': self.corrs_df[set_id]['train'][max_train_param],
+                'test': test_result}
             test_results.append(test_result)
+        full_results_df = pd.DataFrame(full_results)
+        full_results_df.to_json('results_vector_for_{}_folds_{}_repetitions.json'.format(self.k, self.rep))
         print('The average result for clarity is: {0:0.4f}'.format(np.average(test_results)))
         print('The mean result for clarity is: {0:0.4f}'.format(np.mean(test_results)))
         print('The variance of the results for clarity is: {0:0.4f}'.format(np.var(test_results)))
-        print('The standart deviation for clarity is: {0:0.4f}'.format(np.std(test_results)))
+        print('The standard deviation for clarity is: {0:0.4f}'.format(np.std(test_results)))
 
     def calc_corr_df(self, df):
         dict_ = {}
@@ -176,7 +178,8 @@ def main(args):
         y = CrossValidation(k=splits, rep=repeats, predictions_dir=predictions_dir, load=False,
                             test=correlation_measure, ap_file=labeled_file)
     else:
-        y = CrossValidation(k=splits, rep=repeats, predictions_dir=predictions_dir, file_to_load=load_file, load=True, test=correlation_measure,
+        y = CrossValidation(k=splits, rep=repeats, predictions_dir=predictions_dir, file_to_load=load_file, load=True,
+                            test=correlation_measure,
                             ap_file=labeled_file)
     y.calc_correlations()
     y.calc_test_results()
