@@ -103,7 +103,8 @@ class CrossValidation:
         for file_ in all_files:
             fname = file_.split('-')[-1]
             df = DataReader(file_, 'result').data_df
-            df = df.rename(index=int, columns={"qid": "qid", "score": 'score_{}'.format(fname)})
+            df = df.rename(index=int, columns={"qid": "qid", "score": 'score_{}'.format(fname)},)
+            print(df)
             list_.append(df)
         ap_df = DataReader(ap_file, 'ap').data_df
         list_.append(ap_df)
@@ -156,9 +157,10 @@ class CrossValidation:
     def calc_corr_df(self, df):
         dict_ = {}
         for col in df.columns:
-            if col == 'ap':
+            if 'score' in col:
+                dict_[col] = df[col].corr(df['ap'], method=self.test)
+            else:
                 continue
-            dict_[col] = df[col].corr(df['ap'], method=self.test)
         return dict_
 
 
