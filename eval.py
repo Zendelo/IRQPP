@@ -2,9 +2,7 @@
 import argparse
 from subprocess import run
 
-import numpy as np
 import pandas as pd
-from sklearn.model_selection import RepeatedKFold
 
 PARAMS = [5, 10, 25, 50, 100, 250, 500, 1000]
 # PARAMS = [i*i*5 for i in range(1,15)]
@@ -14,17 +12,19 @@ parser = argparse.ArgumentParser(description='Correlation Evaluation script',
                                  epilog='The files must have 2 columns, first for index and second for the values')
 
 parser.add_argument('--predictor', metavar='predictor_file_path',
-                    default='SetupFiles-indri-5.6/clarity.m-1/Clarity-Fiana', help='path to predictor executable file')
+                    default='SetupFiles-indri-5.6/clarity.m-1/Clarity-Fiana', help='path to predictor executable res')
 parser.add_argument('--parameters', metavar='parameters_file_path', default='clarity/clarityParam.xml',
-                    help='path to predictor parameters file')
+                    help='path to predictor parameters res')
 parser.add_argument('--testing', metavar='running_parameter', default='-documents=', choices=['documents', 'fbDocs'],
                     help='The parameter to optimize')
 parser.add_argument('-q', '--queries', metavar='queries.xml', default='data/ROBUST/queries.xml',
-                    help='path to queries xml file')
+                    help='path to queries xml res')
 parser.add_argument('-m', '--measure', default='pearson', type=str,
                     help='default correlation measure type is pearson', choices=['pearson', 'spearman', 'kendall'], )
-parser.add_argument("-v", "--verbose", help="increase output verbosity",
-                    action="store_true")
+
+
+# parser.add_argument("-v", "--verbose", help="increase output verbosity",
+#                     action="store_true")
 
 
 def pre_testing(predictor_exe, parameters_xml, test_param, queries):
@@ -39,7 +39,7 @@ def pre_testing(predictor_exe, parameters_xml, test_param, queries):
         print('\n ******** Running for: {} documents ******** \n'.format(i))
         output = 'tmp-testing/clarity-{}/predictions-{}'.format(pred, i)
         run('{} {} -{}={} {} > {}'.format(predictor_exe, parameters_xml, test_param, i,
-                                        queries, output), shell=True)
+                                          queries, output), shell=True)
 
 
 def calc_cor_files(first_file, second_file, test):

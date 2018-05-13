@@ -17,13 +17,13 @@ parser = argparse.ArgumentParser(description='Cross Validation script',
 parser.add_argument('-p', '--predictions', metavar='predictions_dir', default='tmp-testing/clarity-Fiana',
                     help='path to prediction results files directory')
 
-parser.add_argument('--labeled', default='baseline/QLmap1000', help='path to labeled list file')
+parser.add_argument('--labeled', default='baseline/QLmap1000', help='path to labeled list res')
 parser.add_argument('-r', '--repeats', default=30, help='number of repeats')
 parser.add_argument('-k', '--splits', default=2, help='number of k-fold')
 parser.add_argument('-m', '--measure', default='pearson', type=str,
                     help='default correlation measure type is pearson', choices=['pearson', 'spearman', 'kendall'], )
 parser.add_argument("-g", "--generate", help="generate new CrossValidation sets", action="store_true")
-parser.add_argument('-l', "--load", metavar='CV_FILE_PATH', help="load existing CrossValidation JSON file",
+parser.add_argument('-l', "--load", metavar='CV_FILE_PATH', help="load existing CrossValidation JSON res",
                     default='2_folds_30_repetitions.json')
 
 
@@ -33,8 +33,8 @@ parser.add_argument('-l', "--load", metavar='CV_FILE_PATH', help="load existing 
 class DataReader:
     def __init__(self, data: str, file_type):
         """
-        :param data: results file
-        :param file_type: 'result' for predictor results file or 'ap' for ap results file
+        :param data: results res
+        :param file_type: 'result' for predictor results res or 'ap' for ap results res
         """
         self.file_type = file_type
         self.data = data
@@ -53,21 +53,21 @@ class DataReader:
         return int(num_cols)
 
     def __read_results_data_2(self):
-        """Assuming data is a file with 2 columns, 'Qid Score'"""
+        """Assuming data is a res with 2 columns, 'Qid Score'"""
         data_df = pd.read_table(self.data, delim_whitespace=True, header=None, index_col=0,
                                 names=['qid', 'score'],
                                 dtype={'qid': int, 'score': np.float64})
         return data_df
 
     def __read_ap_data_2(self):
-        """Assuming data is a file with 2 columns, 'Qid AP'"""
+        """Assuming data is a res with 2 columns, 'Qid AP'"""
         data_df = pd.read_table(self.data, delim_whitespace=True, header=None, index_col=0,
                                 names=['qid', 'ap'],
                                 dtype={'qid': int, 'ap': np.float64})
         return data_df
 
     def __read_results_data_4(self):
-        """Assuming data is a file with 4 columns, 'Qid entropy cross_entropy Score'"""
+        """Assuming data is a res with 4 columns, 'Qid entropy cross_entropy Score'"""
         data_df = pd.read_table(self.data, delim_whitespace=True, header=None, index_col=0,
                                 names=['qid', 'entropy', 'cross_entropy', 'score'],
                                 dtype={'qid': int, 'score': np.float64, 'entropy': np.float64,
@@ -82,11 +82,11 @@ class CrossValidation:
         self.test = test
         self.file_name = file_to_load
         self.corrs_df = pd.DataFrame()
-        assert ap_file is not None, 'Specify AP results file'
+        assert ap_file is not None, 'Specify AP results res'
         assert predictions_dir is not None, 'Specify predictions dir'
         self.full_set = self._build_full_set(predictions_dir, ap_file)
         if load:
-            assert file_to_load is not None, 'Specify file to load'
+            assert file_to_load is not None, 'Specify res to load'
             self.__load_k_folds()
         else:
             self.index = self.full_set.index
@@ -108,7 +108,7 @@ class CrossValidation:
         return self.full_set
 
     def _generate_k_folds(self):
-        """ Generates a k-folds json file
+        """ Generates a k-folds json res
         :rtype: str (returns the saved JSON filename)
         """
         rkf = RepeatedKFold(n_splits=self.k, n_repeats=self.rep)
@@ -117,9 +117,13 @@ class CrossValidation:
         results = defaultdict(dict)
         for train, test in rkf.split(self.index):
             train_index, test_index = self.index[train], self.index[test]
-            results[count] = {'train': train_index, 'test': test_index}
-            count += 1
-        pd.DataFrame(results).to_json('{}_folds_{}_repetitions.json'.format(self.k, self.rep))
+            if count % 1 == 0:
+                results[int(count)]['a'] = {'train': train_index, 'test': test_index}
+            else:
+                results[int(count)]['b'] = {'train': train_index, 'test': test_index}
+            count += 0.5
+        temp = pd.DataFrame(results)
+        temp.to_json('{}_folds_{}_repetitions.json'.format(self.k, self.rep))
         return '{}_folds_{}_repetitions.json'.format(self.k, self.rep)
 
     def __load_k_folds(self):
@@ -128,30 +132,40 @@ class CrossValidation:
     def calc_correlations(self):
         sets = self.data_sets_map.columns
         corr_results = defaultdict(dict)
-        for set_number in sets:
-            train_quries = self.data_sets_map[set_number]['train']
-            test_quries = self.data_sets_map[set_number]['test']
-            train_set = self.full_set.loc[train_quries]
-            test_set = self.full_set.loc[test_quries]
-            corr_results[set_number] = {'train': self.calc_corr_df(train_set), 'test': self.calc_corr_df(test_set)}
+        for set_id in sets:
+            for subset in ['a', 'b']:
+                train_queries = self.data_sets_map[set_id][subset]['train']
+                test_queries = self.data_sets_map[set_id][subset]['test']
+                train_set = self.full_set.loc[train_queries]
+                test_set = self.full_set.loc[test_queries]
+                corr_results[set_id][subset] = {'train': self.calc_corr_df(train_set),
+                                                'test': self.calc_corr_df(test_set)}
         self.corrs_df = pd.DataFrame(corr_results)
         self.corrs_df.to_json('correlations_for_{}_folds_{}_repetitions.json'.format(self.k, self.rep))
         return 'correlations_for_{}_folds_{}_repetitions.json'.format(self.k, self.rep)
 
     def calc_test_results(self):
         sets = self.corrs_df.columns
-        full_results = defaultdict()
+        full_results = defaultdict(dict)
+        simple_results = defaultdict()
         test_results = []
         for set_id in sets:
-            max_train_param = max(self.corrs_df[set_id]['train'].items(), key=operator.itemgetter(1))[0]
-            test_result = self.corrs_df[set_id]['test'][max_train_param]
-            full_results['set {} - {}'.format(set_id, max_train_param.split('_')[1])] = {
-                'train': self.corrs_df[set_id]['train'][max_train_param],
-                'test': test_result}
+            max_train_param_a = max(self.corrs_df[set_id]['a']['train'].items(), key=operator.itemgetter(1))[0]
+            test_result_a = self.corrs_df[set_id]['a']['test'][max_train_param_a]
+            max_train_param_b = max(self.corrs_df[set_id]['b']['train'].items(), key=operator.itemgetter(1))[0]
+            test_result_b = self.corrs_df[set_id]['b']['test'][max_train_param_b]
+            test_result = np.mean([test_result_a, test_result_b])
+            full_results['set {}'.format(set_id)] = {
+                'best a': (max_train_param_a.split('_')[1], self.corrs_df[set_id]['a']['train'][max_train_param_a]),
+                'best b': (max_train_param_b.split('_')[1], self.corrs_df[set_id]['b']['train'][max_train_param_b]),
+                'average test': test_result}
+            simple_results['set {}'.format(set_id)] = test_result
             test_results.append(test_result)
+
         full_results_df = pd.DataFrame(full_results)
-        full_results_df.to_json('results_vector_for_{}_folds_{}_repetitions.json'.format(self.k, self.rep))
-        print('The average result for clarity is: {0:0.4f}'.format(np.average(test_results)))
+        full_results_df.to_json('full_results_vector_for_{}_folds_{}_repetitions.json'.format(self.k, self.rep))
+        simple_results_df = pd.Series(simple_results)
+        simple_results_df.to_json(('simple_results_vector_for_{}_folds_{}_repetitions.json'.format(self.k, self.rep)))
         print('The mean result for clarity is: {0:0.4f}'.format(np.mean(test_results)))
         print('The variance of the results for clarity is: {0:0.4f}'.format(np.var(test_results)))
         print('The standard deviation for clarity is: {0:0.4f}'.format(np.std(test_results)))
@@ -169,8 +183,8 @@ class CrossValidation:
 def main(args):
     labeled_file = args.labeled
     correlation_measure = args.measure
-    repeats = args.repeats
-    splits = args.splits
+    repeats = int(args.repeats)
+    splits = int(args.splits)
     load_file = args.load
     generate = args.generate
     predictions_dir = args.predictions
@@ -184,8 +198,6 @@ def main(args):
     y.calc_correlations()
     y.calc_test_results()
 
-
-# tmp-testing/clarity-Fiana/predictions-25
 
 if __name__ == '__main__':
     args = parser.parse_args()
