@@ -86,8 +86,8 @@ class WIG:
             _score = docs_score - corpus_score
             self.predictions[qid] = _score
             print('{} {:0.4f}'.format(qid, _score))
-        predictions_df = pd.Series(self.predictions)
-        predictions_df.to_json('wig-predictions-{}.res'.format(number_of_docs))
+        #predictions_df = pd.Series(self.predictions)
+        #predictions_df.to_json('wig-predictions-{}.res'.format(number_of_docs))
 
 
 def main(args):
