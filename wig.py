@@ -93,7 +93,7 @@ class WIG:
 def main(args):
     results_file = args.results
     query_file = args.queries
-    number_of_docs = args.docs
+    number_of_docs = int(args.docs)
     logqlc_file = args.corp_scores
     corp_scores_df = pd.read_table(logqlc_file, delim_whitespace=True, header=None, index_col=0, names=['qid', 'score'],
                                    dtype={'qid': int, 'score': float})
