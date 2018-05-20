@@ -11,6 +11,6 @@ do
 done
 printf "\n Removing filesv \n"
 
-rm -rfv tmp-testing
+
 
 #SetupFiles-indri-5.6/clarity.m-1/Clarity-Fiana clarity/clarityParam.xml -documents=2 data/ROBUST/queries.xml

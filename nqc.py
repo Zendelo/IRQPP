@@ -4,12 +4,13 @@ import argparse
 import xml.etree.ElementTree as eT
 from collections import defaultdict
 from math import sqrt
+import numpy as np
 
 import pandas as pd
 
-parser = argparse.ArgumentParser(description='WIG predictor',
+parser = argparse.ArgumentParser(description='NQC predictor',
                                  usage='Input CE(q|d) scores and queries files',
-                                 epilog='Prints the WIG predictor scores')
+                                 epilog='Prints the NQC predictor scores')
 
 parser.add_argument('results', metavar='CE(q|d)_results_file', default='baseline/QL.res',
                     help='The CE results file for the documents scores')
@@ -63,27 +64,27 @@ class QueriesParser:
         eT.dump(self.tree)
 
 
-class WIG:
+class NQC:
     def __init__(self, queries_obj, results_df, corpus_scores_df):
         self.qdb = queries_obj
         self.res = results_df
         self.corp = corpus_scores_df
         self.predictions = defaultdict(float)
 
-    def _calc_corpus_score(self, qid, qlen):
-        score_ = self.corp.loc[qid]['score']
-        return score_ / sqrt(qlen)
+    def _calc_denominator(self, qid):
+        _score = self.corp.loc[qid]['score']
+        return abs(_score)
 
-    def _calc_docs_score(self, qid, qlen, num_docs):
-        scores_ = list(self.res.loc[qid]['docScore'].head(num_docs))
-        k = min(len(scores_), num_docs)
-        return (sum(scores_) * sqrt(qlen)) / k
+    def _calc_numerator(self, qid, num_docs):
+        _scores = list(self.res.loc[qid]['docScore'].head(num_docs))
+        for i, score in enumerate(_scores):
+        return np.std(_scores)
 
     def calc_results(self, number_of_docs):
         for qid, qlen in self.qdb.query_length.items():
-            corpus_score = self._calc_corpus_score(qid, qlen)
-            docs_score = self._calc_docs_score(qid, qlen, number_of_docs)
-            _score = docs_score - corpus_score
+            _denominator = self._calc_denominator(qid)
+            _numerator = self._calc_numerator(qid, number_of_docs)
+            _score = _numerator / _denominator
             self.predictions[qid] = _score
             print('{} {:0.4f}'.format(qid, _score))
         # predictions_df = pd.Series(self.predictions)
@@ -102,9 +103,8 @@ def main(args):
                                dtype={'qid': int, 'Q0': str, 'docID': str, 'docRank': int, 'docScore': float,
                                       'ind': str})
     qdb = QueriesParser(query_file)
-
-    wig = WIG(qdb, results_df, corp_scores_df)
-    wig.calc_results(number_of_docs)
+    nqc = NQC(qdb, results_df, corp_scores_df)
+    nqc.calc_results(number_of_docs)
 
 
 if __name__ == '__main__':
