@@ -77,11 +77,12 @@ class NQC:
 
     def _calc_numerator(self, qid, num_docs):
         _scores = list(self.res.loc[qid]['docScore'].head(num_docs))
-        for i, score in enumerate(_scores):
+        # for i, score in enumerate(_scores):
+        #     _scores[i] = score * qlen
         return np.std(_scores)
 
     def calc_results(self, number_of_docs):
-        for qid, qlen in self.qdb.query_length.items():
+        for qid in self.qdb.query_length.keys():
             _denominator = self._calc_denominator(qid)
             _numerator = self._calc_numerator(qid, number_of_docs)
             _score = _numerator / _denominator
