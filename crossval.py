@@ -14,7 +14,7 @@ parser = argparse.ArgumentParser(description='Cross Validation script',
                                  usage='Use CV to optimize correlation',
                                  epilog='Prints the average correlation')
 
-parser.add_argument('-p', '--predictions', metavar='predictions_dir', default='tmp-testing/clarity-Fiana',
+parser.add_argument('-p', '--predictions', metavar='predictions_dir', default='predictions',
                     help='path to prediction results files directory')
 
 parser.add_argument('--labeled', default='baseline/QLmap1000', help='path to labeled list res')
@@ -156,8 +156,10 @@ class CrossValidation:
             test_result_b = self.corrs_df[set_id]['b']['test'][max_train_param_b]
             test_result = np.mean([test_result_a, test_result_b])
             full_results['set {}'.format(set_id)] = {
-                'best a': (max_train_param_a.split('_')[1], self.corrs_df[set_id]['a']['train'][max_train_param_a]),
-                'best b': (max_train_param_b.split('_')[1], self.corrs_df[set_id]['b']['train'][max_train_param_b]),
+                'best train a': (max_train_param_a.split('_')[1], self.corrs_df[set_id]['a']['train'][max_train_param_a]),
+                'test a': (max_train_param_a.split('_')[1], self.corrs_df[set_id]['a']['test'][max_train_param_a]),
+                'best train b': (max_train_param_b.split('_')[1], self.corrs_df[set_id]['b']['train'][max_train_param_b]),
+                'test b': (max_train_param_b.split('_')[1], self.corrs_df[set_id]['b']['test'][max_train_param_b]),
                 'average test': test_result}
             simple_results['set {}'.format(set_id)] = test_result
             test_results.append(test_result)
@@ -166,9 +168,9 @@ class CrossValidation:
         full_results_df.to_json('full_results_vector_for_{}_folds_{}_repetitions.json'.format(self.k, self.rep))
         simple_results_df = pd.Series(simple_results)
         simple_results_df.to_json(('simple_results_vector_for_{}_folds_{}_repetitions.json'.format(self.k, self.rep)))
-        print('The mean result for clarity is: {0:0.4f}'.format(np.mean(test_results)))
-        print('The variance of the results for clarity is: {0:0.4f}'.format(np.var(test_results)))
-        print('The standard deviation for clarity is: {0:0.4f}'.format(np.std(test_results)))
+        print('Mean : {0:0.4f}'.format(np.mean(test_results)))
+        print('Variance : {0:0.4f}'.format(np.var(test_results)))
+        print('Standard Deviation : {0:0.4f}'.format(np.std(test_results)))
 
     def calc_corr_df(self, df):
         dict_ = {}
