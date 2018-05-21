@@ -11,8 +11,8 @@ The code to add FB documents to a given query xml file is addFBdocs.py
 Some of the help instructions still needs to be updated.
 
 
-
-`./crossval.py -h
+```
+./crossval.py -h
 usage: Use CV to optimize correlation
 
 Cross Validation script
@@ -32,9 +32,10 @@ optional arguments:
   -l CV_FILE_PATH, --load CV_FILE_PATH
                         load existing CrossValidation JSON res
 
-Prints the average correlation`
-
-`./wig.py -h
+Prints the average correlation
+```
+```
+./wig.py -h
 usage: Input CE(q|d) scores and queries files
 
 WIG predictor
@@ -52,9 +53,9 @@ optional arguments:
                         Number of documents
 
 Prints the WIG predictor scores
-`
-
-`./nqc.py -h
+```
+```
+./nqc.py -h
 usage: Input CE(q|d) scores and queries files
 
 NQC predictor
@@ -71,9 +72,10 @@ optional arguments:
   -d fbDocs, --docs fbDocs
                         Number of documents
 
-Prints the NQC predictor scores`
-
-`./addFBdocs.py -h
+Prints the NQC predictor scores
+```
+```
+./addFBdocs.py -h
 usage: Use CV to optimize correlation
 
 Cross Validation script
@@ -87,6 +89,5 @@ optional arguments:
   -d fbDocs, --docs fbDocs
                         Number of Feedback documents to add
 
-Prints the average correlation`
-
-
+Prints the average correlation
+```
