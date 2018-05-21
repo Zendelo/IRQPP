@@ -455,7 +455,7 @@ private:
 		double pw = ((double)_environment.stemCount( term )/totalTermCount);
 		//entropy += pwq*(log(pwq)/log(2.0));
 		//cross_entropy += pwq*(log(pw)/log(2.0));
-		loglikelihood += log(pw)/log(2.0);
+		loglikelihood += log(pw);
 		}
 
 	//cross_entropy = -cross_entropy;
