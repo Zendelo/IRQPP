@@ -75,16 +75,16 @@ class NQC:
         _score = self.corp.loc[qid]['score']
         return abs(_score)
 
-    def _calc_numerator(self, qid, num_docs):
+    def _calc_numerator(self, qid, qlen, num_docs):
         _scores = list(self.res.loc[qid]['docScore'].head(num_docs))
-        # for i, score in enumerate(_scores):
-        #     _scores[i] = score * qlen
+        for i, score in enumerate(_scores):
+            _scores[i] = score * qlen
         return np.std(_scores)
 
     def calc_results(self, number_of_docs):
-        for qid in self.qdb.query_length.keys():
+        for qid, qlen in self.qdb.query_length.items():
             _denominator = self._calc_denominator(qid)
-            _numerator = self._calc_numerator(qid, number_of_docs)
+            _numerator = self._calc_numerator(qid, qlen, number_of_docs)
             _score = _numerator / _denominator
             self.predictions[qid] = _score
             print('{} {:0.4f}'.format(qid, _score))
