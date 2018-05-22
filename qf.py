@@ -113,7 +113,7 @@ class QF:
 def main(args):
     list_file = args.list1
     mod_list_file = args.list2
-    k = args.docs
+    k = int(args.docs)
     qf = QF(list_file, mod_list_file)
     qf.calc_results(k)
 
