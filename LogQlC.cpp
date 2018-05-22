@@ -397,21 +397,21 @@ private:
     try {
    
 	//This part runs the retrieval of the initial documents list for a single query
-	_results = _environment.runQuery( query, _initialRequested, queryType );
+	//_results = _environment.runQuery( query, _initialRequested, queryType );
 	std::vector<std::string> qset;
 	parse_query( query, qset );
 
 	//The number of documents in the RM
-	int fbDocs = _parameters.get( "fbDocs" , 10 );
+	//int fbDocs = _parameters.get( "fbDocs" , 10 );
 	//The term cutoff of the RM
-	int fbTerms = _parameters.get( "fbTerms" , 10 );
+	//int fbTerms = _parameters.get( "fbTerms" , 10 );
 	//the weight of the original query - usually 0 should be given in Clarity
-	double fbOrigWt = _parameters.get( "fbOrigWeight", 0 );
+	//double fbOrigWt = _parameters.get( "fbOrigWeight", 0 );
 	//Per my previous results it is better not to smooth the RM
-	std::string rmSmoothing = _parameters.get("smoothing", "method:jm,lambda:0.0");
+	//std::string rmSmoothing = _parameters.get("smoothing", "method:jm,lambda:0.0");
 	//1- rocchio, default 0 -QL scores
-	int iRocchio = _parameters.get( "fbDocumentWeights", 0);
-	if (iRocchio > 0) //give all documents the same weight
+	//int iRocchio = _parameters.get( "fbDocumentWeights", 0);
+	/*if (iRocchio > 0) //give all documents the same weight
 	{
 		for (size_t i=0; i<_results.size(); i++ )
 		{
@@ -424,7 +424,7 @@ private:
 		{
 			_results[i].score= _results[i].score*qset.size();
 		}
-	}
+	}*/
 	
 
 	//This part calculates the Entropy and CE
@@ -464,7 +464,7 @@ private:
 	//double dClarity = cross_entropy - entropy;
 	//output << q_number << " "  << entropy  << " " <<  cross_entropy << " " << dClarity << std::endl;
 	output << q_number << " " << loglikelihood << std::endl;
-	_results.clear();
+	//_results.clear();
 	}
     catch( lemur::api::Exception& e )
     {
