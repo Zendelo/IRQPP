@@ -1,5 +1,6 @@
 import argparse
-import xml.etree.ElementTree as eT
+# import xml.etree.ElementTree as eT
+from lxml import etree as eT
 from collections import defaultdict
 
 import pandas as pd
@@ -18,7 +19,8 @@ parser.add_argument('-d', '--docs', metavar='fbDocs', default=2, help='Number of
 class QueriesParser:
     def __init__(self, query_file):
         self.file = query_file
-        self.tree = eT.parse(self.file)
+        _parser = eT.XMLParser(remove_blank_text=True)
+        self.tree = eT.parse(self.file, _parser)
         self.root = self.tree.getroot()
         # query number: "Full command"
         self.full_queries = defaultdict(str)
@@ -46,7 +48,8 @@ class QueriesParser:
             for doc in fbDocs:
                 temp = eT.SubElement(query, 'feedbackDocno')
                 temp.text = doc
-        eT.dump(self.tree)
+        # eT.dump(self.tree)
+        print(eT.tostring(self.tree, pretty_print=True, encoding='unicode'))
 
 
 def main(args):
