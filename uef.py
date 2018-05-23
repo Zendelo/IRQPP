@@ -88,16 +88,18 @@ class UEF:
         return tuple(sorted(_qids))
 
     def __create_docs_sets(self, df, k):
-        _docs_dict = defaultdict(set)
+        _docs_dict = defaultdict(pd.DataFrame)
         for qid in self.queries:
-            _docs_dict[qid] = set(df.loc[qid].head(k)['docID'])
+            _temp_df = df.loc[qid].head(k)[['docID', 'docScore']]
+            _docs_dict[qid] = _temp_df.set_index('docID')
         return _docs_dict
 
     def calc_results(self):
         orig_docs_dict = self.__create_docs_sets(self.orig_list_df, self.number_of_docs)
         mod_docs_dict = self.__create_docs_sets(self.mod_list_df, self.number_of_docs)
         for qid in self.queries:
-            print('{} {}'.format(qid, len(orig_docs_dict[qid].intersection(mod_docs_dict[qid]))))
+            print('{} {:0.4f}'.format(qid, orig_docs_dict[qid]['docScore'].corr(mod_docs_dict[qid]['docScore'],
+                                                                                method='pearson')))
 
 
 def main(args):
