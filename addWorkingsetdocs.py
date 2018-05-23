@@ -10,7 +10,7 @@ parser = argparse.ArgumentParser(description='Adding WorkingSetDocs to queries x
 
 parser.add_argument('list', metavar='results_file', help='The results file for the WorkingSet')
 parser.add_argument('queries', metavar='queries_xml_file', help='The queries xml file')
-parser.add_argument('-d', '--docs', metavar='fbDocs', default=2, help='Number of Feedback documents to add')
+parser.add_argument('-d', '--docs', metavar='fbDocs', default=5, help='Number of Feedback documents to add')
 
 
 class QueriesParser:
@@ -28,16 +28,17 @@ class QueriesParser:
         for query in self.root.iter('query'):
             self.full_queries[query.find('number').text] = query.find('text').text
 
-    def add_working_set_docs(self):
+    def add_working_set_docs(self, number_of_docs):
         """
         Adds the workingSetDocs from results file to the original queries
+        :parameter: number_of_docs: number of docs to add to each query
         """
         for qid in self.full_queries.keys():
             qid = int(qid)
-            docs = self.res.loc[qid]['docID']
+            docs = self.res.loc[qid]['docID'].head(number_of_docs)
             self.fb_docs[qid] = list(docs)
 
-    def write_to_file(self):
+    def print_output(self):
         for query in self.root.iter('query'):
             qid = int(query.find('number').text)
             fbDocs = self.fb_docs[qid]
@@ -50,15 +51,15 @@ class QueriesParser:
 def main(args):
     results_file = args.list
     query_file = args.queries
-    number_of_docs = args.docs
+    number_of_docs = int(args.docs)
     results_df = pd.read_table(results_file, delim_whitespace=True, header=None, index_col=[0, 3],
                                names=['qid', 'Q0', 'docID', 'docRank', 'docScore', 'ind'],
                                dtype={'qid': int, 'Q0': str, 'docID': str, 'docRank': int, 'docScore': float,
                                       'ind': str})
 
     qdb = QueriesParser(query_file, results_df)
-    qdb.add_working_set_docs()
-    qdb.write_to_file()
+    qdb.add_working_set_docs(number_of_docs)
+    qdb.print_output()
 
 
 if __name__ == '__main__':
