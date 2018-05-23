@@ -6,6 +6,7 @@ from collections import defaultdict
 from math import sqrt
 import numpy as np
 import glob
+import csv
 
 import pandas as pd
 
@@ -17,10 +18,56 @@ parser = argparse.ArgumentParser(description='UEF predictor',
 
 parser.add_argument('list1', metavar='QL_results_file', help='The original QL results file for the documents scores')
 parser.add_argument('list2', metavar='RM1_results_file', help='The re-ranked list with RM1')
+parser.add_argument('list3', metavar='predictor_results_file', help='The predictor scores list')
 parser.add_argument('-d', '--docs', metavar='K', default=5, help='Number of k top documents')
 
 
 # parser.add_argument('-d', '--docs', metavar='KDocs', default=20, help='Number of K top documents')
+
+class DataReader:
+    def __init__(self, data: str, file_type):
+        """
+        :param data: results res
+        :param file_type: 'result' for predictor results res or 'ap' for ap results res
+        """
+        self.file_type = file_type
+        self.data = data
+        self.__number_of_col = self.__check_number_of_col()
+        if self.file_type == 'result':
+            assert self.__number_of_col == 2 or self.__number_of_col == 4, 'Wrong File format'
+            self.data_df = self.__read_results_data_2() if self.__number_of_col == 2 else self.__read_results_data_4()
+        elif self.file_type == 'ap':
+            self.data_df = self.__read_ap_data_2()
+
+    def __check_number_of_col(self):
+        with open(self.data) as f:
+            reader = csv.reader(f, delimiter=' ', skipinitialspace=True)
+            first_row = next(reader)
+            num_cols = len(first_row)
+        return int(num_cols)
+
+    def __read_results_data_2(self):
+        """Assuming data is a res with 2 columns, 'Qid Score'"""
+        data_df = pd.read_table(self.data, delim_whitespace=True, header=None, index_col=0,
+                                names=['qid', 'score'],
+                                dtype={'qid': int, 'score': np.float64})
+        return data_df
+
+    def __read_ap_data_2(self):
+        """Assuming data is a res with 2 columns, 'Qid AP'"""
+        data_df = pd.read_table(self.data, delim_whitespace=True, header=None, index_col=0,
+                                names=['qid', 'ap'],
+                                dtype={'qid': int, 'ap': np.float64})
+        return data_df
+
+    def __read_results_data_4(self):
+        """Assuming data is a res with 4 columns, 'Qid entropy cross_entropy Score'"""
+        data_df = pd.read_table(self.data, delim_whitespace=True, header=None, index_col=0,
+                                names=['qid', 'entropy', 'cross_entropy', 'score'],
+                                dtype={'qid': int, 'score': np.float64, 'entropy': np.float64,
+                                       'cross_entropy': np.float64})
+        return data_df
+
 
 class ResultsReader:
     def __init__(self, results_file):
@@ -34,50 +81,10 @@ class ResultsReader:
                                     'ind': str})
 
 
-# class QueriesParser:
-#     def __init__(self, query_file):
-#         self.file = query_file
-#         self.tree = eT.parse(self.file)
-#         self.root = self.tree.getroot()
-#         # query number: "Full command"
-#         self.full_queries = defaultdict(str)
-#         self.text_queries = defaultdict(str)
-#         self.query_length = defaultdict(int)
-#         self.fb_docs = defaultdict(list)
-#         self.__parse_queries()
-#
-#     def __parse_queries(self):
-#         for query in self.root.iter('query'):
-#             qid_ = int(query.find('number').text)
-#             qstr_ = query.find('text').text
-#             qtxt_ = qstr_[qstr_.find("(") + 1:qstr_.rfind(")")].split()
-#             self.full_queries[qid_] = qstr_
-#             self.text_queries[qid_] = qtxt_
-#             self.query_length[qid_] = len(qtxt_)
-#
-#     def add_feedback_docs(self, num_docs, res):
-#         """
-#         Adds the fbDocs from results file to the original queries
-#         :parameter: num_files: number of fbDocs to add to each query
-#         """
-#         for qid in self.full_queries.keys():
-#             qid = int(qid)
-#             docs = res.loc[qid]['docID'].head(num_docs)
-#             self.fb_docs[qid] = list(docs)
-#
-#     def write_to_file(self):
-#         for query in self.root.iter('query'):
-#             qid = int(query.find('number').text)
-#             fbDocs = self.fb_docs[qid]
-#             for doc in fbDocs:
-#                 temp = eT.SubElement(query, 'feedbackDocno')
-#                 temp.text = doc
-#         eT.dump(self.tree)
-
-
 class UEF:
-    def __init__(self, original_list, modified_list, number_of_docs):
+    def __init__(self, original_list, modified_list, number_of_docs, method='pearson'):
         self.number_of_docs = number_of_docs
+        self.method = method
         self.orig_list_df = ResultsReader(original_list).results_df
         self.mod_list_df = ResultsReader(modified_list).results_df
         self.predictions = defaultdict(float)
@@ -94,20 +101,34 @@ class UEF:
             _docs_dict[qid] = _temp_df.set_index('docID')
         return _docs_dict
 
-    def calc_results(self):
+    def __calc_similarity(self):
+        _sim_dict = defaultdict(float)
         orig_docs_dict = self.__create_docs_sets(self.orig_list_df, self.number_of_docs)
         mod_docs_dict = self.__create_docs_sets(self.mod_list_df, self.number_of_docs)
         for qid in self.queries:
-            print('{} {:0.4f}'.format(qid, orig_docs_dict[qid]['docScore'].corr(mod_docs_dict[qid]['docScore'],
-                                                                                method='pearson')))
+            _sim = orig_docs_dict[qid]['docScore'].corr(mod_docs_dict[qid]['docScore'], method=self.method)
+            _sim_dict[qid] = _sim
+        return _sim_dict
+
+    def _generate_predictor_res(self, res):
+        _pred_df = DataReader(res, 'result').data_df
+        return _pred_df[['qid', 'score']]
+
+    def calc_results(self, predictor_res):
+        _sim_dict = self.__calc_similarity()
+        _pred_results = self._generate_predictor_res(predictor_res)
+        for qid in self.queries:
+            _score = _sim_dict[qid] * _pred_results[qid]
+            print('{} {:0.4f}'.format(qid, _score))
 
 
 def main(args):
     list_file = args.list1
     mod_list_file = args.list2
+    predictor_scores_file = args.list3
     k = int(args.docs)
     uef = UEF(list_file, mod_list_file, k)
-    uef.calc_results()
+    uef.calc_results(predictor_scores_file)
 
     # for k in NUMBER_OF_DOCS:
     #     uef.calc_results(k)
