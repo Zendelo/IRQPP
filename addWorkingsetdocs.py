@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
 import argparse
-from lxml import etree as eT
 # import xml.etree.ElementTree as eT
 from collections import defaultdict
 
 import pandas as pd
+from lxml import etree as eT
 
 parser = argparse.ArgumentParser(description='Adding WorkingSetDocs to queries xml file',
                                  usage='Receives a query xml file and trec results file',

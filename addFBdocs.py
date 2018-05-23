@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
 import argparse
-# import xml.etree.ElementTree as eT
-from lxml import etree as eT
 from collections import defaultdict
 
 import pandas as pd
+# import xml.etree.ElementTree as eT
+from lxml import etree as eT
 
 parser = argparse.ArgumentParser(description='Adding fbDocs to queries xml file',
                                  usage='Receives a query xml file and trec results file',
