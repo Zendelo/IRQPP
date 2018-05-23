@@ -404,8 +404,16 @@ private:
               _results = _environment.runQuery( query, docids, _initialRequested, queryType );
             else
               _results = _environment.runQuery( query, _initialRequested, queryType );
-          }
-      }
+		  }
+	  }
+
+	  std::vector<std::string> qset;
+	  parse_query( query, qset );
+	  //Fix the results to be QL scores
+	  for (size_t i=0; i<_results.size(); i++ )
+	  {
+		_results[i].score= _results[i].score*qset.size();
+	  } 
       
       if( _expander ) {
         std::vector<indri::api::ScoredExtentResult> fbDocs;
@@ -436,13 +444,6 @@ private:
       LEMUR_RETHROW(e, "QueryThread::_runQuery Exception");
     }
 	
-	std::vector<std::string> qset;
-	parse_query( query, qset );
-	//Fix the results to be QL scores
-	for (size_t i=0; i<_results.size(); i++ )
-	{
-	  _results[i].score= _results[i].score*qset.size();
-	}
   }
 
   void _printResultRegion( std::stringstream& output, std::string queryIndex, int start, int end  ) {
