@@ -112,13 +112,15 @@ class UEF:
 
     def _generate_predictor_res(self, res):
         _pred_df = DataReader(res, 'result').data_df
-        return _pred_df[['qid', 'score']]
+        return _pred_df[['score']]
 
     def calc_results(self, predictor_res):
         _sim_dict = self.__calc_similarity()
         _pred_results = self._generate_predictor_res(predictor_res)
         for qid in self.queries:
-            _score = _sim_dict[qid] * _pred_results[qid]
+            _sim_score = _sim_dict[qid] 
+            _pred_score = _pred_results.loc[qid]['score']
+            _score = _sim_score * _pred_score
             print('{} {:0.4f}'.format(qid, _score))
 
 
