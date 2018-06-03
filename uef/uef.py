@@ -3,7 +3,7 @@
 import argparse
 import xml.etree.ElementTree as eT
 from collections import defaultdict
-from math import sqrt
+import math
 import numpy as np
 import glob
 import csv
@@ -118,6 +118,7 @@ class UEF:
         _sim_dict = self.__calc_similarity()
         _pred_results = self._generate_predictor_res(predictor_res)
         for qid in self.queries:
+            #_sim_score = math.exp(_sim_dict[qid]) 
             _sim_score = _sim_dict[qid] 
             _pred_score = _pred_results.loc[qid]['score']
             _score = _sim_score * _pred_score
