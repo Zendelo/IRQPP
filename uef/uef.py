@@ -118,8 +118,12 @@ class UEF:
         _sim_dict = self.__calc_similarity()
         _pred_results = self._generate_predictor_res(predictor_res)
         for qid in self.queries:
-            #_sim_score = math.exp(_sim_dict[qid]) 
-            _sim_score = _sim_dict[qid] 
+            # Similarity between lists exp(sim)
+            #_sim_score = math.exp(_sim_dict[qid])
+            #Similarity between lists raw correlation score (might be negative)
+            #_sim_score = _sim_dict[qid]
+            # Similarity between lists with linear indentation to be non negative
+            _sim_score = _sim_dict[qid] + 1 
             _pred_score = _pred_results.loc[qid]['score']
             _score = _sim_score * _pred_score
             print('{} {:0.4f}'.format(qid, _score))
