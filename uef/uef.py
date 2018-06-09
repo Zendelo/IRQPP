@@ -1,13 +1,10 @@
 #! /usr/bin/env python
 
 import argparse
-import xml.etree.ElementTree as eT
-from collections import defaultdict
-import math
-import numpy as np
-import glob
 import csv
+from collections import defaultdict
 
+import numpy as np
 import pandas as pd
 
 NUMBER_OF_DOCS = [5, 10, 25, 50, 100]
@@ -110,7 +107,8 @@ class UEF:
             _sim_dict[qid] = _sim
         return _sim_dict
 
-    def _generate_predictor_res(self, res):
+    @staticmethod
+    def _generate_predictor_res(res):
         _pred_df = DataReader(res, 'result').data_df
         return _pred_df[['score']]
 
@@ -118,12 +116,8 @@ class UEF:
         _sim_dict = self.__calc_similarity()
         _pred_results = self._generate_predictor_res(predictor_res)
         for qid in self.queries:
-            # Similarity between lists exp(sim)
-            #_sim_score = math.exp(_sim_dict[qid])
-            #Similarity between lists raw correlation score (might be negative)
-            #_sim_score = _sim_dict[qid]
-            # Similarity between lists with linear indentation to be non negative
-            _sim_score = _sim_dict[qid] + 1 
+            # Similarity between lists - currently pearson correlation
+            _sim_score = _sim_dict[qid]
             _pred_score = _pred_results.loc[qid]['score']
             _score = _sim_score * _pred_score
             print('{} {:0.4f}'.format(qid, _score))
@@ -136,9 +130,6 @@ def main(args):
     k = int(args.docs)
     uef = UEF(list_file, mod_list_file, k)
     uef.calc_results(predictor_scores_file)
-
-    # for k in NUMBER_OF_DOCS:
-    #     uef.calc_results(k)
 
 
 if __name__ == '__main__':
