@@ -14,8 +14,10 @@ parser = argparse.ArgumentParser(description='Queries UQV pre-processing',
                                  epilog='ROBUST version')
 
 parser.add_argument('-q', '--queries', default='data/ROBUST/queries.txt', help='path to queries.txt file')
-parser.add_argument('-u', '--UQV', default='data/ROBUST/fullqueriesUQV.txt', help='path to queriesUQV.txt file')
+parser.add_argument('-u', '--UQV', default='data/ROBUST/queriesUQV.txt', help='path to queriesUQV.txt file')
 parser.add_argument('-r', '--qrels', default='data/ROBUST/qrels', help='path to qrels file')
+parser.add_argument('-x', '--queriestxt', default='data/ROBUST/fullqueriesUQV.txt',
+                    help='path to txt file to convert to xml')
 
 
 class QueriesTextParser:
@@ -104,16 +106,39 @@ class QrelsParser:
                 print('{} 1 {} 1'.format(qid, doc))
 
 
+class QueriesXMLParser:
+    def __init__(self, queries):
+        self.queries = queries
+        self.root = etree.Element('parameters')
+        self._add_queries()
+
+    def _add_queries(self):
+        for qid, text in self.queries.queries_dict.items():
+            query = etree.SubElement(self.root, 'query')
+            number = etree.SubElement(query, 'number')
+            number.text = qid
+            txt = etree.SubElement(query, 'text')
+            txt.text = '#combine( {} )'.format(text)
+
+    def print_queries_xml(self):
+        print(etree.tostring(self.root, pretty_print=True, encoding='unicode'))
+
+
 def main(args: parser):
     queries_file = args.queries
     uqv_file = args.UQV
     qrels_file = args.qrels
+    txt_file = args.queriestxt
 
     original_queries = QueriesTextParser(queries_file, 'original')
     uqv_queries = QueriesTextParser(uqv_file, 'uqv')
     qrels_obj = QrelsParser(qrels_file, original_queries, uqv_queries)
+    queries_txt = QueriesTextParser(txt_file)
+    query_xml = QueriesXMLParser(queries_txt)
 
-    qrels_obj.print_results()
+    query_xml.print_queries_xml()
+
+    # qrels_obj.print_results()
 
 
 if __name__ == '__main__':
