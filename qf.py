@@ -28,10 +28,12 @@ class ResultsReader:
         self.results_df = self.__read_file()
 
     def __read_file(self):
-        return pd.read_table(self.results, delim_whitespace=True, header=None, index_col=[0],
-                             names=['qid', 'Q0', 'docID', 'docRank', 'docScore', 'ind'],
-                             dtype={'qid': int, 'Q0': str, 'docID': str, 'docRank': int, 'docScore': float,
-                                    'ind': str})
+        results_df = pd.read_table(self.results, delim_whitespace=True, header=None, index_col=0,
+                                   names=['qid', 'Q0', 'docID', 'docRank', 'docScore', 'ind'],
+                                   dtype={'qid': str, 'Q0': str, 'docID': str, 'docRank': int, 'docScore': float,
+                                          'ind': str})
+        results_df.index = results_df.index.map(str)
+        return results_df
 
 
 class QueriesParser:
@@ -48,7 +50,7 @@ class QueriesParser:
 
     def __parse_queries(self):
         for query in self.root.iter('query'):
-            qid_ = int(query.find('number').text)
+            qid_ = query.find('number').text
             qstr_ = query.find('text').text
             qtxt_ = qstr_[qstr_.find("(") + 1:qstr_.rfind(")")].split()
             self.full_queries[qid_] = qstr_
@@ -61,13 +63,13 @@ class QueriesParser:
         :parameter: num_files: number of fbDocs to add to each query
         """
         for qid in self.full_queries.keys():
-            qid = int(qid)
+            qid = qid
             docs = res.loc[qid]['docID'].head(num_docs)
             self.fb_docs[qid] = list(docs)
 
     def write_to_file(self):
         for query in self.root.iter('query'):
-            qid = int(query.find('number').text)
+            qid = query.find('number').text
             fbDocs = self.fb_docs[qid]
             for doc in fbDocs:
                 temp = eT.SubElement(query, 'feedbackDocno')
