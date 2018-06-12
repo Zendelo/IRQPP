@@ -56,21 +56,21 @@ class DataReader:
         """Assuming data is a res with 2 columns, 'Qid Score'"""
         data_df = pd.read_table(self.data, delim_whitespace=True, header=None, index_col=0,
                                 names=['qid', 'score'],
-                                dtype={'qid': str, 'score': np.float64})
+                                dtype={'qid': int, 'score': np.float64})
         return data_df
 
     def __read_ap_data_2(self):
         """Assuming data is a res with 2 columns, 'Qid AP'"""
         data_df = pd.read_table(self.data, delim_whitespace=True, header=None, index_col=0,
                                 names=['qid', 'ap'],
-                                dtype={'qid': str, 'ap': np.float64})
+                                dtype={'qid': int, 'ap': np.float64})
         return data_df
 
     def __read_results_data_4(self):
         """Assuming data is a res with 4 columns, 'Qid entropy cross_entropy Score'"""
         data_df = pd.read_table(self.data, delim_whitespace=True, header=None, index_col=0,
                                 names=['qid', 'entropy', 'cross_entropy', 'score'],
-                                dtype={'qid': str, 'score': np.float64, 'entropy': np.float64,
+                                dtype={'qid': int, 'score': np.float64, 'entropy': np.float64,
                                        'cross_entropy': np.float64})
         return data_df
 
@@ -100,7 +100,7 @@ class CrossValidation:
         for file_ in all_files:
             fname = file_.split('-')[-1]
             df = DataReader(file_, 'result').data_df
-            df = df.rename(index=str, columns={"qid": "qid", "score": 'score_{}'.format(fname)}, )
+            df = df.rename(index=int, columns={"qid": "qid", "score": 'score_{}'.format(fname)}, )
             list_.append(df)
         ap_df = DataReader(ap_file, 'ap').data_df
         list_.append(ap_df)
