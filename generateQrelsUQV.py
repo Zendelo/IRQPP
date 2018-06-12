@@ -138,7 +138,7 @@ def main(args: parser):
 
     query_xml.print_queries_xml()
 
-    # qrels_obj.print_results()
+    #qrels_obj.print_results()
 
 
 if __name__ == '__main__':
