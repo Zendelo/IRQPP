@@ -136,9 +136,9 @@ def main(args: parser):
     queries_txt = QueriesTextParser(txt_file)
     query_xml = QueriesXMLParser(queries_txt)
 
-    query_xml.print_queries_xml()
+    # query_xml.print_queries_xml()
 
-    #qrels_obj.print_results()
+    # qrels_obj.print_results()
 
 
 if __name__ == '__main__':
