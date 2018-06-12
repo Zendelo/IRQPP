@@ -4,8 +4,8 @@ import argparse
 from collections import defaultdict
 
 import pandas as pd
-# import xml.etree.ElementTree as eT
-from lxml import etree as eT
+# import xml.etree.ElementTree as etree
+from lxml import etree as etree
 
 parser = argparse.ArgumentParser(description='Adding fbDocs to queries xml file',
                                  usage='Receives a query xml file and trec results file',
@@ -15,14 +15,14 @@ parser.add_argument('-r', '--results', metavar='results_file', default='baseline
                     help='The results file for the Relevance Feedback')
 parser.add_argument('-q', '--queries', metavar='queries_xml_file', default='data/ROBUST/queries.xml',
                     help='The queries xml file')
-parser.add_argument('-d', '--docs', metavar='fbDocs', default=2, help='Number of Feedback documents to add')
+parser.add_argument('-d', '--docs', metavar='fbDocs', type=int, default=2, help='Number of Feedback documents to add')
 
 
 class QueriesParser:
     def __init__(self, query_file):
         self.file = query_file
-        _parser = eT.XMLParser(remove_blank_text=True)
-        self.tree = eT.parse(self.file, _parser)
+        _parser = etree.XMLParser(remove_blank_text=True)
+        self.tree = etree.parse(self.file, _parser)
         self.root = self.tree.getroot()
         # query number: "Full command"
         self.full_queries = defaultdict(str)
@@ -39,28 +39,28 @@ class QueriesParser:
         :parameter: num_files: number of fbDocs to add to each query
         """
         for qid in self.full_queries.keys():
-            qid = int(qid)
+            qid = qid
             docs = res.loc[qid]['docID'].head(num_docs)
             self.fb_docs[qid] = list(docs)
 
     def write_to_file(self):
         for query in self.root.iter('query'):
-            qid = int(query.find('number').text)
+            qid = query.find('number').text
             fbDocs = self.fb_docs[qid]
             for doc in fbDocs:
-                temp = eT.SubElement(query, 'feedbackDocno')
+                temp = etree.SubElement(query, 'feedbackDocno')
                 temp.text = doc
-        # eT.dump(self.tree)
-        print(eT.tostring(self.tree, pretty_print=True, encoding='unicode'))
+        # etree.dump(self.tree)
+        print(etree.tostring(self.tree, pretty_print=True, encoding='unicode'))
 
 
 def main(args):
     results_file = args.results
     query_file = args.queries
-    number_of_docs = int(args.docs)
+    number_of_docs = args.docs
     results_df = pd.read_table(results_file, delim_whitespace=True, header=None, index_col=[0, 3],
                                names=['qid', 'Q0', 'docID', 'docRank', 'docScore', 'ind'],
-                               dtype={'qid': int, 'Q0': str, 'docID': str, 'docRank': int, 'docScore': float,
+                               dtype={'qid': str, 'Q0': str, 'docID': str, 'docRank': int, 'docScore': float,
                                       'ind': str})
 
     qdb = QueriesParser(query_file)
