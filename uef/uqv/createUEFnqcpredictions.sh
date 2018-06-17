@@ -3,6 +3,6 @@
 for i in {5,10,25,50,100,250,500,1000} 
 do
 	printf "\n Creating predictions with $i documents \n"
-	python3.6 ~/repos/IRQPP/uef/uef.py ~/baseline/UQVQL.res ~/predictionsUQV/uef/lists/list-$i ~/predcitionsUQV/nqc/predictions/predictions-$i -d $i > ~/predictionsUQV/uef/nqc/predictions-$i
+	python3.6 ~/repos/IRQPP/uef/uqv/uef.py ~/baseline/UQVQL.res ~/predictionsUQV/uef/lists/list-$i ~/predictionsUQV/nqc/predictions/predictions-$i -d $i > ~/predictionsUQV/uef/nqc/predictions/predictions-$i
 done
 
