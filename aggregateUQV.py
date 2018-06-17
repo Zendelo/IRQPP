@@ -60,6 +60,7 @@ class DataReader:
                                 names=['qid', 'entropy', 'cross_entropy', 'score'],
                                 dtype={'qid': str, 'score': np.float64, 'entropy': np.float64,
                                        'cross_entropy': np.float64})
+        data_df = data_df.filter(['qid', 'score'], axis=1)
         return data_df
 
 
@@ -102,10 +103,10 @@ class Aggregate:
 
 def main(args: parser):
     map_file = args.map
-    predictions_file = args.map
+    predictions_file = args.predictions
     agg_func = args.function
 
-    assert map_file is None and predictions_file is None, 'No file was given'
+    assert not (map_file is None and predictions_file is None), 'No file was given'
 
     if map_file is not None:
         ap_scores = DataReader(map_file, 'ap')
