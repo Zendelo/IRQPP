@@ -5,7 +5,7 @@
 for i in {5,10,25,50,100,250,500,1000}
 do
 	printf "\n ******** Running for: $i documents ******** \n"
-	SetupFiles-indri-5.6/runqueryql/IndriRunQueryQL baseline/indriRunQF.xml -fbDocs=$i data/ROBUST/queries.xml > tmp-testing/qf/lists/list-$i
+	~/SetupFiles-indri-5.6/runqueryql/IndriRunQueryQL ~/baseline/indriRunQF.xml -fbDocs=$i data/ROBUST/queries.xml > basicPredictions/qf/lists/list-$i
 done
 #printf "\n Removing filesv \n"
 
