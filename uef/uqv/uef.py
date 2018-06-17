@@ -16,7 +16,7 @@ parser = argparse.ArgumentParser(description='UEF predictor',
 parser.add_argument('list1', metavar='QL_results_file', help='The original QL results file for the documents scores')
 parser.add_argument('list2', metavar='RM1_results_file', help='The re-ranked list with RM1')
 parser.add_argument('list3', metavar='predictor_results_file', help='The predictor scores list')
-parser.add_argument('-d', '--docs', metavar='K', default=5, help='Number of k top documents')
+parser.add_argument('-d', '--docs', metavar='K', default=5, type=int, help='Number of k top documents')
 
 
 # parser.add_argument('-d', '--docs', metavar='KDocs', default=20, help='Number of K top documents')
@@ -47,21 +47,21 @@ class DataReader:
         """Assuming data is a res with 2 columns, 'Qid Score'"""
         data_df = pd.read_table(self.data, delim_whitespace=True, header=None, index_col=0,
                                 names=['qid', 'score'],
-                                dtype={'qid': int, 'score': np.float64})
+                                dtype={'qid': str, 'score': np.float64})
         return data_df
 
     def __read_ap_data_2(self):
         """Assuming data is a res with 2 columns, 'Qid AP'"""
         data_df = pd.read_table(self.data, delim_whitespace=True, header=None, index_col=0,
                                 names=['qid', 'ap'],
-                                dtype={'qid': int, 'ap': np.float64})
+                                dtype={'qid': str, 'ap': np.float64})
         return data_df
 
     def __read_results_data_4(self):
         """Assuming data is a res with 4 columns, 'Qid entropy cross_entropy Score'"""
         data_df = pd.read_table(self.data, delim_whitespace=True, header=None, index_col=0,
                                 names=['qid', 'entropy', 'cross_entropy', 'score'],
-                                dtype={'qid': int, 'score': np.float64, 'entropy': np.float64,
+                                dtype={'qid': str, 'score': np.float64, 'entropy': np.float64,
                                        'cross_entropy': np.float64})
         return data_df
 
@@ -74,7 +74,7 @@ class ResultsReader:
     def __read_file(self):
         return pd.read_table(self.results, delim_whitespace=True, header=None, index_col=[0],
                              names=['qid', 'Q0', 'docID', 'docRank', 'docScore', 'ind'],
-                             dtype={'qid': int, 'Q0': str, 'docID': str, 'docRank': int, 'docScore': float,
+                             dtype={'qid': str, 'Q0': str, 'docID': str, 'docRank': int, 'docScore': float,
                                     'ind': str})
 
 
@@ -127,7 +127,7 @@ def main(args):
     list_file = args.list1
     mod_list_file = args.list2
     predictor_scores_file = args.list3
-    k = int(args.docs)
+    k = args.docs
     uef = UEF(list_file, mod_list_file, k)
     uef.calc_results(predictor_scores_file)
 
