@@ -15,7 +15,7 @@ parser.add_argument('-q', '--queries', default='data/ROBUST/queries.txt', help='
 parser.add_argument('-u', '--UQV', default='data/ROBUST/fullqueriesUQV.txt', help='path to queriesUQV.txt file')
 parser.add_argument('-a', '--map', default=None, help='path to ap scores file')
 parser.add_argument('-p', '--predictions', default=None, help='path to prediction scores file')
-parser.add_argument('-f', '--function', default='max', choices=['max', 'sum', 'min', 'avg'], help='Aggregate function')
+parser.add_argument('-f', '--function', default='avg', choices=['max', 'std', 'min', 'avg'], help='Aggregate function')
 
 
 class DataReader:
@@ -87,8 +87,8 @@ class Aggregate:
                 score = np.min(scores)
             elif self.agg_func.lower() == 'avg':
                 score = np.mean(scores)
-            elif self.agg_func.lower() == 'sum':
-                score = np.sum(scores)
+            elif self.agg_func.lower() == 'std':
+                score = np.std(scores)
             elif self.agg_func.lower() == 'med':
                 score = np.median(scores)
             else:
