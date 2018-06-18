@@ -11,8 +11,6 @@ parser = argparse.ArgumentParser(description='UQV aggregation script',
                                  usage='Create new UQV scores',
                                  epilog='ROBUST version')
 
-parser.add_argument('-q', '--queries', default='data/ROBUST/queries.txt', help='path to queries.txt file')
-parser.add_argument('-u', '--UQV', default='data/ROBUST/fullqueriesUQV.txt', help='path to queriesUQV.txt file')
 parser.add_argument('-a', '--map', default=None, help='path to ap scores file')
 parser.add_argument('-p', '--predictions', default=None, help='path to prediction scores file')
 parser.add_argument('-f', '--function', default='avg', choices=['max', 'std', 'min', 'avg'], help='Aggregate function')

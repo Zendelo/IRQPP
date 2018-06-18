@@ -1,6 +1,13 @@
 import pandas as pd
 import csv
 from collections import defaultdict
+import argparse
+
+parser = argparse.ArgumentParser(description='UQV aggregation script',
+                                 usage='Create new UQV scores',
+                                 epilog='ROBUST version')
+
+parser.add_argument('results', metavar='Aggregate_Results_File', default=None, help='path to agg res file')
 
 
 def read_file(file):
@@ -34,8 +41,8 @@ def read_file(file):
     return temp_dict
 
 
-def main():
-    results_file = 'aggregates.res'
+def main(args: parser):
+    results_file = args.results
     res_dic = read_file(results_file)
     for p in res_dic:
         print(p)
@@ -43,4 +50,5 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    args = parser.parse_args()
+    main(args)
