@@ -13,7 +13,8 @@ parser = argparse.ArgumentParser(description='UQV aggregation script',
 
 parser.add_argument('-a', '--map', default=None, help='path to ap scores file')
 parser.add_argument('-p', '--predictions', default=None, help='path to prediction scores file')
-parser.add_argument('-f', '--function', default='avg', choices=['max', 'std', 'min', 'avg'], help='Aggregate function')
+parser.add_argument('-f', '--function', default='avg', choices=['max', 'std', 'min', 'avg', 'med'],
+                    help='Aggregate function')
 
 
 class DataReader:
