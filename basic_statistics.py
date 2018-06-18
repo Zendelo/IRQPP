@@ -11,10 +11,11 @@ parser.add_argument('results', metavar='Aggregate_Results_File', default=None, h
 
 
 def read_file(file):
-    df = pd.read_table(file)
-    print('Mean : {}'.format(df.mean()))
-    print('Var : {}'.format(df.var()))
-    print('STD : {}'.format(df.std()))
+    df = pd.read_table(file, delim_whitespace=True, index_col=0, names=['score'])
+    # print(df.head())
+    print('Mean : {:0.4f}'.format(float(df.mean(axis=0))))
+    print('Var : {:0.4f}'.format(float(df.var(0))))
+    print('STD : {:0.4f}'.format(float(df.std(0))))
 
 
 def main(args: parser):
