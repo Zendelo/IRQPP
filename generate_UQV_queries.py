@@ -15,7 +15,7 @@ parser = argparse.ArgumentParser(description='Queries UQV post-processing',
 
 parser.add_argument('-q', '--queries', default='data/ROBUST/fullqueriesUQV.txt', help='path to queries.txt file')
 parser.add_argument('-m', '--map', default='baseline/UQVmap1000', help='path to UQV AP@1000 results')
-parser.add_argument('-f', '--function', default='med', choices=['max', 'min', 'med'], help='Select queries function')
+parser.add_argument('-f', '--function', default='max', choices=['max', 'min', 'med_low', 'med_high'], help='Select queries function')
 
 
 class DataReader:
@@ -110,10 +110,10 @@ class Aggregate:
                 qid = max(_dict, key=lambda key: _dict[key])
             elif self.agg_func == 'min':
                 qid = min(_dict, key=lambda key: _dict[key])
-            elif self.agg_func == 'med_min':
+            elif self.agg_func == 'med_low':
                 x = median_low(_dict.values())
                 qid = self.ap.data_df.loc[vars][self.ap.data_df['ap'] == x].head(1).index[0]
-            elif self.agg_func == 'med_max':
+            elif self.agg_func == 'med_high':
                 y = median_high(_dict.values())
                 qid = self.ap.data_df.loc[vars][self.ap.data_df['ap'] == y].head(1).index[0]
             else:
@@ -141,7 +141,7 @@ class QueriesXMLParser:
         for qid, text in self.queries.queries_dict.items():
             query = etree.SubElement(self.root, 'query')
             number = etree.SubElement(query, 'number')
-            number.text = qid
+            number.text = str(qid)
             txt = etree.SubElement(query, 'text')
             txt.text = '#combine( {} )'.format(text)
 
