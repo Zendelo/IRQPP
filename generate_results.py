@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 import argparse
 from subprocess import run
-
-import pandas as pd
+import multiprocessing
 
 PREDICTORS = ['clarity', 'nqc', 'wig', 'qf']
 NUM_DOCS = [5, 10, 25, 50, 100, 250, 500, 1000]
@@ -28,34 +27,72 @@ class GeneratePredictions:
     def __init__(self, queries, predictions_dir):
         self.queries = queries
         self.predictions_dir = predictions_dir
+        self.cpu_cores = multiprocessing.cpu_count()
 
-    def generate_clartiy(self):
+    def __run_predictor(self, predictions_dir, predictor_exe, parameters, running_param, lists=False):
+        threads = '-threads={}'.format(self.cpu_cores - 1)
+        if lists:
+            res = 'list'
+            print('\n ******** Generating Lists ******** \n')
+        else:
+            res = 'predictions'
+            print('\n ******** Generating Predictions ******** \n')
+
+        for n in NUM_DOCS:
+            print('\n ******** Running for: {} documents ******** \n'.format(n))
+            output = predictions_dir + '{}-{}'.format(res, n)
+            run('{} {} {} {}{} {} > {}'.format(predictor_exe, parameters, threads, running_param, n, self.queries,
+                                               output),
+                shell=True)
+
+    def generate_clartiy(self, predictions_dir=None):
         predictor_exe = '~/SetupFiles-indri-5.6/clarity.m-2/Clarity-Anna'
-        parameters = '~/clarity/clarityParam.xml'
+        parameters = '~/QppUqvProj/Results/ROBUST/test/clarityParam.xml'
         running_param = '-fbDocs='
-        predictions_dir = self.predictions_dir + 'clarity/predictions/'
-        for n in NUM_DOCS:
-            print('\n ******** Running for: {} documents ******** \n'.format(n))
-            output = predictions_dir + 'predictions-{}'.format(n)
-            run('{} {} {}{} {} > {}'.format(predictor_exe, parameters, running_param, n, self.queries, output),
-                shell=True)
+        if predictions_dir is None:
+            predictions_dir = self.predictions_dir + 'clarity/predictions/'
+        else:
+            predictions_dir = predictions_dir + 'clarity/predictions/'
+        self.__run_predictor(predictions_dir, predictor_exe, parameters, running_param)
 
-    def generate_wig(self):
+    def generate_wig(self, predictions_dir=None):
         predictor_exe = 'python3.6 ~/repos/IRQPP/wig.py'
-        parameters = '~/baseline/singleUQV/CE.res'
-        running_param = '-fbDocs='
-        predictions_dir = self.predictions_dir + 'clarity/predictions/'
-        for n in NUM_DOCS:
-            print('\n ******** Running for: {} documents ******** \n'.format(n))
-            output = predictions_dir + 'predictions-{}'.format(n)
-            run('{} {} {}{} {} > {}'.format(predictor_exe, parameters, running_param, n, self.queries, output),
-                shell=True)
-    #   ~/data/ROBUST/singleUQV/queries$k.xml ~/baseline/singleUQV/logqlc$k.res -d $i > ~/predictionsUQV/singleUQV/wig$k/predictions/predictions-$i
-    def generate_nqc(self):
-        pass
+        parameters = '~/QppUqvProj/Results/ROBUST/test'
+        running_param = '-d '
+        if predictions_dir is None:
+            predictions_dir = self.predictions_dir + 'wig/predictions/'
+        else:
+            predictions_dir = predictions_dir + 'wig/predictions/'
+        self.__run_predictor(predictions_dir, predictor_exe, parameters, running_param)
 
-    def generate_qf(self):
-        pass
+    def generate_nqc(self, predictions_dir=None):
+        predictor_exe = 'python3.6 ~/repos/IRQPP/nqc.py'
+        parameters = '~/QppUqvProj/Results/ROBUST/test'
+        running_param = '-d '
+        if predictions_dir is None:
+            predictions_dir = self.predictions_dir + 'nqc/predictions/'
+        else:
+            predictions_dir = predictions_dir + 'nqc/predictions/'
+        self.__run_predictor(predictions_dir, predictor_exe, parameters, running_param)
+
+    def generate_qf(self, predictions_dir=None):
+        # TODO: modify the function to work with QF
+        self._generate_lists_qf()
+        predictor_exe = 'python3.6 ~/repos/IRQPP/qf.py'
+        parameters = '~/QppUqvProj/Results/ROBUST/test'
+        running_param = '-d '
+        if predictions_dir is None:
+            predictions_dir = self.predictions_dir + 'qf/predictions/'
+        else:
+            predictions_dir = predictions_dir + 'qf/predictions/'
+        self.__run_predictor(predictions_dir, predictor_exe, parameters, running_param)
+
+    def _generate_lists_qf(self):
+        predictor_exe = '~/SetupFiles-indri-5.6/runqueryql/IndriRunQueryQL'
+        parameters = '~/QppUqvProj/Results/ROBUST/test/indriRunQF.xml'
+        running_param = '-fbDocs='
+        predictions_dir = self.predictions_dir + 'qf/lists/'
+        self.__run_predictor(predictions_dir, predictor_exe, parameters, running_param, lists=True)
 
     def generate_uef(self):
         pass
