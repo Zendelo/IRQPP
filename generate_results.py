@@ -27,7 +27,7 @@ class GeneratePredictions:
     def __init__(self, queries, predictions_dir):
         self.queries = queries
         self.predictions_dir = predictions_dir
-        self.cpu_cores = multiprocessing.cpu_count()
+        self.cpu_cores = max(multiprocessing.cpu_count() * 0.5, min(multiprocessing.cpu_count() - 1, 16))
 
     def __run_predictor(self, predictions_dir, predictor_exe, parameters, running_param, lists=False):
         threads = '-threads={}'.format(self.cpu_cores - 1)

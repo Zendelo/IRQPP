@@ -123,17 +123,39 @@ def print_big_latex(res_dict):
     std_dict = defaultdict(list)
     pred_list = ['clarity', 'wig', 'nqc', 'qf']
     agg_list = ['avg', 'max', 'med', 'min', 'std']
-    for j in agg_list:
-        for i in agg_list:
-            test[i, j] = {'clarity': res_dict['clarity'][i][j], 'wig': res_dict['wig'][i][j],
-                          'nqc': res_dict['nqc'][i][j], 'qf': res_dict['qf'][i][j]}
+    for pred in agg_list:
+        for ap in agg_list:
+            test[ap, pred] = {'clarity': '${}$'.format(res_dict['clarity'][ap][pred]),
+                              'wig': '${}$'.format(res_dict['wig'][ap][pred]),
+                              'nqc': '${}$'.format(res_dict['nqc'][ap][pred]),
+                              'qf': '${}$'.format(res_dict['qf'][ap][pred])}
     # print(pd.DataFrame.from_dict(test['avg', 'avg'], orient='index'))
-    for j in agg_list:
-        for i in agg_list:
-            # print(j, i)
-            x = pd.DataFrame.from_dict(test[j, i], orient='index')
-            # print(x)
-            print(x.to_latex(header=False, multirow=True))
+    col = 0
+    print('\\begin{tabular}{lccccc}')
+    print('\\toprule')
+    print('{AP} &     avg &     max &     med &     min &     std \\\\')
+    print('predictor &         &         &         &         &         \\\\')
+    print('\\midrule')
+
+    for pred in agg_list:
+        for ap in agg_list:
+            # print('pred {}'.format(pred), 'ap {}'.format(ap))
+            x = pd.DataFrame.from_dict(test[ap, pred], orient='index')
+
+            if col % 5 == 0:
+                print('{}   &'.format(pred))
+                print(x.to_latex(header=False, multirow=True, index=True, escape=False))
+            else:
+                print(x.to_latex(header=False, multirow=True, index=False, escape=False))
+            col += 1
+
+            if col % 5 == 0:
+                print('\\\\')
+            else:
+                print('&')
+
+    print('\\bottomrule')
+    print('\\end{tabular}')
     # for j in agg_list:
     #
     #     avg_dict[j].append({'clarity': res_dict['clarity']['avg'][j], 'wig': res_dict['wig']['avg'][j],
