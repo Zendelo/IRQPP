@@ -144,43 +144,38 @@ def print_big_latex(res_dict):
 
             if col % 5 == 0:
                 print('{}   &'.format(pred))
-                print(x.to_latex(header=False, multirow=True, index=True, escape=False))
+                latex = x.to_latex(header=False, multirow=True, index=True, escape=False)
             else:
-                print(x.to_latex(header=False, multirow=True, index=False, escape=False))
+                latex = x.to_latex(header=False, multirow=True, index=False, escape=False)
+            latex = latex.replace('\\toprule', '')
+            latex = latex.replace('\\bottomrule', '')
+            print(latex)
             col += 1
 
             if col % 5 == 0:
                 print('\\\\')
+                if pred != 'std':
+                    print('\\hline')
             else:
                 print('&')
 
     print('\\bottomrule')
     print('\\end{tabular}')
-    # for j in agg_list:
     #
-    #     avg_dict[j].append({'clarity': res_dict['clarity']['avg'][j], 'wig': res_dict['wig']['avg'][j],
-    #                         'nqc': res_dict['nqc']['avg'][j], 'qf': res_dict['qf']['avg'][j]})
-    # max_dict['max'].append({p: res_dict[p]['max'][j]})
-    # med_dict['med'].append({p: res_dict[p]['med'][j]})
-    # min_dict['min'].append({p: res_dict[p]['min'][j]})
-    # std_dict['std'].append({p: res_dict[p]['std'][j]})
-
-    # print(avg_dict)
-    # print(pd.DataFrame(avg_dict))
-    exit()
-    df = pd.DataFrame.from_records(res_dict, columns=['ap', 'predictor', 'mean'])
-    df = df.set_index(['ap'])
-    df = df.sort_index()
-    df = df.sort_values(['predictor'])
-    avg_df = df.loc['avg']
-    max_df = df.loc['max']
-    med_df = df.loc['med']
-    min_df = df.loc['min']
-    std_df = df.loc['std']
-    x = reduce(lambda left, right: pd.merge(left, right, on='predictor'), [avg_df, max_df, med_df, min_df, std_df])
-    x = x.set_index('predictor')
-    x.columns = ['avg', 'max', 'med', 'min', 'std']
-    print(x.to_latex())
+    # exit()
+    # df = pd.DataFrame.from_records(res_dict, columns=['ap', 'predictor', 'mean'])
+    # df = df.set_index(['ap'])
+    # df = df.sort_index()
+    # df = df.sort_values(['predictor'])
+    # avg_df = df.loc['avg']
+    # max_df = df.loc['max']
+    # med_df = df.loc['med']
+    # min_df = df.loc['min']
+    # std_df = df.loc['std']
+    # x = reduce(lambda left, right: pd.merge(left, right, on='predictor'), [avg_df, max_df, med_df, min_df, std_df])
+    # x = x.set_index('predictor')
+    # x.columns = ['avg', 'max', 'med', 'min', 'std']
+    # print(x.to_latex())
     return x
 
 
