@@ -13,8 +13,7 @@ parser = argparse.ArgumentParser(description='NQC predictor',
                                  epilog='Prints the NQC predictor scores')
 
 parser.add_argument('results', metavar='CE(q|d)_results_file', help='The CE results file for the documents scores')
-parser.add_argument('corp_scores', metavar='QLC', default='logqlc.res',
-                    help='The queries xml file')
+parser.add_argument('corp_scores', metavar='QLC', help='logqlc QL Corpus scores of the queries')
 parser.add_argument('queries', metavar='queries_xml_file', default='data/ROBUST/queries.xml',
                     help='The queries xml file')
 parser.add_argument('-t', '--textqueries', metavar='queries_txt_file', default='data/ROBUST/queries.txt',

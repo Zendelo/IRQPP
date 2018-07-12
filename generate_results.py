@@ -22,7 +22,7 @@ parser.add_argument('-q', '--queries', metavar='queries.xml', default='data/ROBU
 parser.add_argument('-m', '--measure', default='pearson', type=str,
                     help='default correlation measure type is pearson', choices=['pearson', 'spearman', 'kendall'])
 parser.add_argument('-c', '--corpus', default='ROBUST', type=str,
-                    help='corpus (index) to work with', choices=['ROBUST', 'ClueWebB12'])
+                    help='corpus (index) to work with', choices=['ROBUST', 'ClueWeb12B'])
 
 
 class GeneratePredictions:
