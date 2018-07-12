@@ -113,6 +113,21 @@ def print_latex(res_dict, p=None):
     return x.to_dict(orient='dict')
 
 
+def bold_max_col(res_dict):
+    """Boldface the maximum value for each AP aggregate"""
+    max_cols = defaultdict()
+    for agg in aggregates_list:
+        max_pred = defaultdict()
+        max_val = 0
+        for pred in predictors_list:
+            max_agg = max(res_dict[pred][agg], key=res_dict[pred][agg].get)
+            _max_val = float(res_dict[pred][agg][max_agg])
+            if _max_val > max_val:
+                max_val = _max_val
+                max_pred = {'aggregate': max_agg, 'predictor': pred, 'corr': max_val}
+        res_dict[max_pred['predictor']][agg][max_pred['aggregate']] = '\\textbf{{{}}}'.format(max_pred['corr'])
+
+
 def print_big_latex(res_dict):
     # test = list()
     test = defaultdict()
@@ -121,8 +136,8 @@ def print_big_latex(res_dict):
     med_dict = defaultdict(list)
     min_dict = defaultdict(list)
     std_dict = defaultdict(list)
-    pred_list = ['clarity', 'wig', 'nqc', 'qf']
-    agg_list = ['avg', 'max', 'med', 'min', 'std']
+    # pred_list = ['clarity', 'wig', 'nqc', 'qf']
+    agg_list = aggregates_list
     for pred in agg_list:
         for ap in agg_list:
             test[ap, pred] = {'clarity': '${}$'.format(res_dict['clarity'][ap][pred]),
@@ -161,22 +176,6 @@ def print_big_latex(res_dict):
 
     print('\\bottomrule')
     print('\\end{tabular}')
-    #
-    # exit()
-    # df = pd.DataFrame.from_records(res_dict, columns=['ap', 'predictor', 'mean'])
-    # df = df.set_index(['ap'])
-    # df = df.sort_index()
-    # df = df.sort_values(['predictor'])
-    # avg_df = df.loc['avg']
-    # max_df = df.loc['max']
-    # med_df = df.loc['med']
-    # min_df = df.loc['min']
-    # std_df = df.loc['std']
-    # x = reduce(lambda left, right: pd.merge(left, right, on='predictor'), [avg_df, max_df, med_df, min_df, std_df])
-    # x = x.set_index('predictor')
-    # x.columns = ['avg', 'max', 'med', 'min', 'std']
-    # print(x.to_latex())
-    return x
 
 
 def main(args: parser):
@@ -190,20 +189,13 @@ def main(args: parser):
         _dict = defaultdict()
         res_dic = read_file(results_file)
         for p in res_dic:
-            # print(p)
             _dict[p] = print_latex(res_dic[p], p)
-        # print(_dict)
-        # temp = ['avg', 'max', 'med', 'min', 'std']
-        # tdict = defaultdict(list)
-        # for ag1 in temp:
-        #     for ag2 in temp:
-        #         for p, df in _dict.items():
-        #             tdict[(ag1, ag2)].append({'clarity': ap, 'nqc': pred, 'wig': mean, 'qf': var})
-
-        # print(tdict)
+        bold_max_col(_dict)
         print_big_latex(_dict)
 
 
 if __name__ == '__main__':
+    predictors_list = ['clarity', 'wig', 'nqc', 'qf']
+    aggregates_list = ['avg', 'max', 'med', 'min', 'std']
     args = parser.parse_args()
     main(args)
