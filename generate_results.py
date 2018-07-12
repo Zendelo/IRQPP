@@ -70,6 +70,7 @@ class GeneratePredictions:
                     shell=True)
 
     def generate_clartiy(self, predictions_dir=None):
+        print('\n -- Clarity -- \n')
         predictor_exe = '~/SetupFiles-indri-5.6/clarity.m-2/Clarity-Anna'
         parameters = '~/QppUqvProj/Results/{}/test/clarityParam.xml'.format(self.corpus)
         running_param = '-fbDocs='
@@ -80,6 +81,7 @@ class GeneratePredictions:
         self.__run_predictor(predictions_dir, predictor_exe, parameters, running_param)
 
     def generate_wig(self, predictions_dir=None):
+        print('\n -- WIG -- \n')
         predictor_exe = 'python3.6 ~/repos/IRQPP/wig.py'
         ce_scores = '~/QppUqvProj/Results/{}/test/basic/CE.res'.format(self.corpus)
         qlc_scores = '~/QppUqvProj/Results/{}/test/basic/logqlc.res'.format(self.corpus)
@@ -92,6 +94,7 @@ class GeneratePredictions:
         self.__run_predictor(predictions_dir, predictor_exe, parameters, running_param)
 
     def generate_nqc(self, predictions_dir=None):
+        print('\n -- NQC -- \n')
         predictor_exe = 'python3.6 ~/repos/IRQPP/nqc.py'
         ce_scores = '~/QppUqvProj/Results/{}/test/basic/CE.res'.format(self.corpus)
         qlc_scores = '~/QppUqvProj/Results/{}/test/basic/logqlc.res'.format(self.corpus)
@@ -104,6 +107,7 @@ class GeneratePredictions:
         self.__run_predictor(predictions_dir, predictor_exe, parameters, running_param)
 
     def generate_qf(self, predictions_dir=None):
+        print('\n -- QF -- \n')
         self._generate_lists_qf()
         predictor_exe = 'python3.6 ~/repos/IRQPP/qf.py'
         parameters = '~/QppUqvProj/Results/{}/test/basic/QL.res'.format(self.corpus)
