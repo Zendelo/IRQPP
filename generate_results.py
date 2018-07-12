@@ -52,7 +52,7 @@ class GeneratePredictions:
                 run('{} {} {} {}{} {} > {}'.format(predictor_exe, parameters, threads, running_param, n, self.queries,
                                                    output), shell=True)
 
-        if 'qf' in predictor_exe.lower():
+        elif 'qf' in predictor_exe.lower():
             lists_dir = predictions_dir.replace('predictions', 'lists')
             for n in NUM_DOCS:
                 for k in LIST_CUT_OFF:
