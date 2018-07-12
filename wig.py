@@ -13,9 +13,9 @@ parser = argparse.ArgumentParser(description='WIG predictor',
 
 parser.add_argument('results', metavar='CE(q|d)_results_file', default='baseline/QL.res',
                     help='The CE results file for the documents scores')
-parser.add_argument('queries', metavar='queries_xml_file', default='data/ROBUST/queries.xml',
-                    help='The queries xml file')
 parser.add_argument('corp_scores', metavar='QLC', default='logqlc.res',
+                    help='The queries xml file')
+parser.add_argument('queries', metavar='queries_xml_file', default='data/ROBUST/queries.xml',
                     help='The queries xml file')
 parser.add_argument('-t', '--textqueries', metavar='queries_txt_file', default='data/ROBUST/queries.txt',
                     help='The queries txt file')
