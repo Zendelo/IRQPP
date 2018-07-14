@@ -201,7 +201,7 @@ class GeneratePredictions:
         queries = predictions_dir + 'queriesUEF'
         self.__run_predictor(predictions_dir, predictor_exe, parameters, running_param)
         predictor_exe = '~/SetupFiles-indri-5.6/runqueryql/IndriRunQueryQL'
-        parameters = '~/QppUqvProj/Results/{}/test/indriRunQL.xml'.format(self.corpus)
+        parameters = '~/QppUqvProj/Results/{}/test/indriRunQF.xml'.format(self.corpus)
         running_param = '-fbDocs='
         predictions_dir = self.predictions_dir + 'uef/lists/'
         self.__run_predictor(predictions_dir, predictor_exe, parameters, running_param, lists=True, queries=queries)
