@@ -1,7 +1,18 @@
 #!/usr/bin/env python
+
 import argparse
 from subprocess import run
 import multiprocessing
+import os
+
+# TODO: Add directories checks and creation
+# os.path.exists('file or dir')
+# os.path.isfile('file')
+# os.path.isdir('dir')
+
+# TODO: Create for UQV aggregations
+# TODO: Create for UQV singles
+# TODO: Create CV process and write the results to tables
 
 PREDICTORS = ['clarity', 'nqc', 'wig', 'qf']
 NUM_DOCS = [5, 10, 25, 50, 100, 250, 500, 1000]
@@ -12,21 +23,20 @@ parser = argparse.ArgumentParser(description='Full Results Pipeline Automation G
                                  epilog='Currently Beta Version')
 
 parser.add_argument('--predictor', metavar='predictor_name', default='clarity', help='predictor to run',
-                    choices=['clarity', 'wig', 'nqc', 'qf', 'uef'])
-parser.add_argument('-r', '--predictions_dir', metavar='parameters_file_path', default='clarity/clarityParam.xml',
-                    help='path to predictor parameters res')
-parser.add_argument('--hyper', metavar='hyper_parameter', default='-documents=', choices=['documents', 'fbDocs'],
-                    help='The parameter to optimize')
-parser.add_argument('-q', '--queries', metavar='queries.xml', default='data/ROBUST/queries.xml',
+                    choices=['clarity', 'wig', 'nqc', 'qf', 'uef', 'all'])
+parser.add_argument('-r', '--predictions_dir', metavar='parameters_file_path',
+                    default='~/QppUqvProj/Results/ROBUST/basicPredictions/', help='path where to save results')
+parser.add_argument('-q', '--queries', metavar='queries.xml', default='~/data/ROBUST/queries.xml',
                     help='path to queries xml res')
-parser.add_argument('-m', '--measure', default='pearson', type=str,
-                    help='default correlation measure type is pearson', choices=['pearson', 'spearman', 'kendall'])
-parser.add_argument('-c', '--corpus', default='ROBUST', type=str,
-                    help='corpus (index) to work with', choices=['ROBUST', 'ClueWeb12B'])
+parser.add_argument('-c', '--corpus', default='ROBUST', type=str, help='corpus (index) to work with',
+                    choices=['ROBUST', 'ClueWeb12B'])
+parser.add_argument('--qtype', default='basic', type=str, help='The type of queries to run',
+                    choices=['basic', 'single', 'aggregated'])
+parser.add_argument('--generate', help="generate new predictions", action="store_true")
 
 
 class GeneratePredictions:
-    def __init__(self, queries, predictions_dir, corpus='ROBUST'):
+    def __init__(self, queries, predictions_dir, corpus='ROBUST', qtype='basic'):
         """
         :param queries: queries XML file
         :param predictions_dir: default predictions results dir
@@ -34,10 +44,24 @@ class GeneratePredictions:
         self.queries = queries
         self.predictions_dir = predictions_dir
         self.corpus = corpus
+        self.qtype = qtype
         self.cpu_cores = max(multiprocessing.cpu_count() * 0.5, min(multiprocessing.cpu_count() - 1, 16))
 
-    def __run_predictor(self, predictions_dir, predictor_exe, parameters, running_param, lists=False):
+    @staticmethod
+    def __run_indri_app(predictor_exe, parameters, threads, running_param, n, queries, output):
+        ensure_dir(output)
+        run('{} {} {} {}{} {} > {}'.format(predictor_exe, parameters, threads, running_param, n, queries, output),
+            shell=True)
+
+    @staticmethod
+    def __run_py_predictor(predictor_exe, parameters, temporal_var, running_param, n, output):
+        ensure_dir(output)
+        run('{} {} {} {}{} > {}'.format(predictor_exe, parameters, temporal_var, running_param, n, output), shell=True)
+
+    def __run_predictor(self, predictions_dir, predictor_exe, parameters, running_param, lists=False, queries=None):
         threads = '-threads={}'.format(self.cpu_cores)
+        if queries is None:
+            queries = self.queries
         if lists:
             res = 'list'
             print('\n ******** Generating Lists ******** \n')
@@ -46,28 +70,56 @@ class GeneratePredictions:
             print('\n ******** Generating Predictions ******** \n')
 
         if 'indri' in predictor_exe.lower():
+            # Running indri APP
             for n in NUM_DOCS:
                 print('\n ******** Running for: {} documents ******** \n'.format(n))
                 output = predictions_dir + '{}-{}'.format(res, n)
-                run('{} {} {} {}{} {} > {}'.format(predictor_exe, parameters, threads, running_param, n, self.queries,
-                                                   output), shell=True)
+                if 'uef' in queries.lower():
+                    # Assuming it's uef lists creation
+                    queries = '{}-{}'.format(queries, n)
+                self.__run_indri_app(predictor_exe, parameters, threads, running_param, n, queries, output)
 
-        elif 'qf' in predictor_exe.lower():
+        elif predictor_exe.endswith('qf.py'):
             lists_dir = predictions_dir.replace('predictions', 'lists')
             for n in NUM_DOCS:
                 for k in LIST_CUT_OFF:
                     print('\n ******** Running for: {} documents + {} list cutoff ******** \n'.format(n, k))
                     output = predictions_dir + '{}-{}+{}'.format(res, n, k)
                     inlist = lists_dir + 'list-{}'.format(n)
-                    run('{} {} {} {}{} > {}'.format(predictor_exe, parameters, inlist, running_param, k, output),
-                        shell=True)
-        else:
-            # Assuming the predictor is NQC or WIG
+                    self.__run_py_predictor(predictor_exe, parameters, inlist, running_param, k, output)
+
+        elif predictor_exe.endswith('addWorkingsetdocs.py'):
+            print('\n ******** Generating UEF query files ******** \n')
+            for n in NUM_DOCS:
+                output = predictions_dir + 'queriesUEF-{}.xml'.format(n)
+                self.__run_py_predictor(predictor_exe, parameters, queries, running_param, n, output)
+
+        elif predictor_exe.endswith(('nqc.py', 'wig.py')):
             for n in NUM_DOCS:
                 print('\n ******** Running for: {} documents ******** \n'.format(n))
                 output = predictions_dir + '{}-{}'.format(res, n)
-                run('{} {} {} {}{} > {}'.format(predictor_exe, parameters, self.queries, running_param, n, output),
-                    shell=True)
+                self.__run_py_predictor(predictor_exe, parameters, queries, running_param, n, output)
+
+        elif predictor_exe.endswith('uef.py'):
+            lists_dir = predictions_dir + 'lists/'
+            for pred in PREDICTORS:
+                for n in NUM_DOCS:
+                    if pred != 'qf':
+                        print('\n ******** Running for: {} documents ******** \n'.format(n))
+                        output = predictions_dir + '{}/{}-{}'.format(pred, res, n)
+                        inlist = lists_dir + 'list-{}'.format(n)
+                        predictions = predictions_dir.replace('uef', pred) + 'predictions/{}-{}'.format(res, n)
+                        params = '{} {}'.format(inlist, predictions)
+                        self.__run_py_predictor(predictor_exe, parameters, params, running_param, n, output)
+                    else:
+                        for k in LIST_CUT_OFF:
+                            print('\n ******** Running for: {} documents + {} list cutoff ******** \n'.format(n, k))
+                            output = predictions_dir + '{}/{}-{}+{}'.format(pred, res, n, k)
+                            inlist = lists_dir + 'list-{}'.format(n)
+                            predictions = predictions_dir.replace('uef', pred)
+                            predictions += 'predictions/{}-{}+{}'.format(res, n, k)
+                            params = '{} {}'.format(inlist, predictions)
+                            self.__run_py_predictor(predictor_exe, parameters, params, running_param, n, output)
 
     def generate_clartiy(self, predictions_dir=None):
         print('\n -- Clarity -- \n')
@@ -83,8 +135,8 @@ class GeneratePredictions:
     def generate_wig(self, predictions_dir=None):
         print('\n -- WIG -- \n')
         predictor_exe = 'python3.6 ~/repos/IRQPP/wig.py'
-        ce_scores = '~/QppUqvProj/Results/{}/test/basic/CE.res'.format(self.corpus)
-        qlc_scores = '~/QppUqvProj/Results/{}/test/basic/logqlc.res'.format(self.corpus)
+        ce_scores = '~/QppUqvProj/Results/{}/test/{}/CE.res'.format(self.corpus, self.qtype)
+        qlc_scores = '~/QppUqvProj/Results/{}/test/{}/logqlc.res'.format(self.corpus, self.qtype)
         parameters = '{} {}'.format(ce_scores, qlc_scores)
         running_param = '-d '
         if predictions_dir is None:
@@ -96,8 +148,8 @@ class GeneratePredictions:
     def generate_nqc(self, predictions_dir=None):
         print('\n -- NQC -- \n')
         predictor_exe = 'python3.6 ~/repos/IRQPP/nqc.py'
-        ce_scores = '~/QppUqvProj/Results/{}/test/basic/CE.res'.format(self.corpus)
-        qlc_scores = '~/QppUqvProj/Results/{}/test/basic/logqlc.res'.format(self.corpus)
+        ce_scores = '~/QppUqvProj/Results/{}/test/{}/CE.res'.format(self.corpus, self.qtype)
+        qlc_scores = '~/QppUqvProj/Results/{}/test/{}/logqlc.res'.format(self.corpus, self.qtype)
         parameters = '{} {}'.format(ce_scores, qlc_scores)
         running_param = '-d '
         if predictions_dir is None:
@@ -110,7 +162,7 @@ class GeneratePredictions:
         print('\n -- QF -- \n')
         self._generate_lists_qf()
         predictor_exe = 'python3.6 ~/repos/IRQPP/qf.py'
-        parameters = '~/QppUqvProj/Results/{}/test/basic/QL.res'.format(self.corpus)
+        parameters = '~/QppUqvProj/Results/{}/test/{}/QL.res'.format(self.corpus, self.qtype)
         running_param = '-d '
         if predictions_dir is None:
             predictions_dir = self.predictions_dir + 'qf/predictions/'
@@ -126,11 +178,34 @@ class GeneratePredictions:
         self.__run_predictor(predictions_dir, predictor_exe, parameters, running_param, lists=True)
 
     def generate_uef(self):
-        pass
+        """Assuming all the previous predictions exist, will generate the uef lists and predictions"""
+        self._generate_lists_uef()
+        predictor_exe = 'python3.6 ~/repos/IRQPP/uef/uef.py'
+        parameters = '~/QppUqvProj/Results/{}/test/{}/QL.res'.format(self.corpus, self.qtype)
+        running_param = '-d '
+        predictions_dir = self.predictions_dir + 'uef/'
+        self.__run_predictor(predictions_dir, predictor_exe, parameters, running_param)
+
+    def _generate_lists_uef(self):
+        predictor_exe = 'python3.6 ~/repos/IRQPP/addWorkingsetdocs.py'
+        parameters = '~/QppUqvProj/Results/{}/test/{}/QL.res'.format(self.corpus, self.qtype)
+        running_param = '-d '
+        predictions_dir = self.predictions_dir + 'uef/data/'
+        self.__run_predictor(predictions_dir, predictor_exe, parameters, running_param)
+        predictor_exe = '~/SetupFiles-indri-5.6/runqueryql/IndriRunQueryQL'
+        parameters = '~/QppUqvProj/Results/{}/test/{}/QL.res'.format(self.corpus, self.qtype)
+        running_param = '-d '
+        predictions_dir = self.predictions_dir + 'uef/lists/'
+        queries = 'data/queriesUEF-'
+        self.__run_predictor(predictions_dir, predictor_exe, parameters, running_param, lists=True, queries=queries)
 
 
 class CrossValidation:
+    # TODO: Implement CV
     def __init__(self):
+        pass
+
+    def __run_predictor(self, predictions_dir, predictor_exe, parameters, running_param, lists=False):
         pass
 
 
@@ -139,19 +214,44 @@ class GenerateTable:
         pass
 
 
-def main(args):
-    predictor_exe = args.predictor
-    predictions_dir = args.predictions_dir
-    test_parameter = args.hyper
-    queries = args.queries
-    correlation_measure = args.measure
-    corpus = args.corpus
-    predict = GeneratePredictions(queries, predictions_dir, corpus)
+def ensure_dir(file_path):
+    directory = os.path.dirname(file_path)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
 
-    predict.generate_clartiy()
-    predict.generate_nqc()
-    predict.generate_wig()
-    predict.generate_qf()
+
+def main(args):
+    predictions_dir = args.predictions_dir
+    queries = args.queries
+    corpus = args.corpus
+    queries_type = args.qtype
+    generate = args.generate
+    predictor = args.predictor
+
+    predict = GeneratePredictions(queries, predictions_dir, corpus, queries_type)
+
+    if predictor.lower() == 'clarity':
+        predict.generate_clartiy()
+    if predictor.lower() == 'nqc':
+        if generate:
+            predict.generate_nqc()
+    if predictor.lower() == 'wig':
+        if generate:
+            predict.generate_wig()
+    if predictor.lower() == 'qf':
+        if generate:
+            predict.generate_qf()
+    if predictor.lower() == 'uef':
+        if generate:
+            predict.generate_uef()
+
+    if predictor.lower() == 'all':
+        if generate:
+            predict.generate_clartiy()
+            predict.generate_nqc()
+            predict.generate_wig()
+            predict.generate_qf()
+            predict.generate_uef()
 
 
 if __name__ == '__main__':

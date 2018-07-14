@@ -94,7 +94,7 @@ class CrossValidation:
             self.__load_k_folds()
 
     def _build_full_set(self, dir, ap_file):
-        """Assuming the predictions files are named : predictions-[0-9]"""
+        """Assuming the predictions files are named : predictions-[*]"""
         all_files = glob.glob(dir + "/*predictions*")
         list_ = []
         for file_ in all_files:
