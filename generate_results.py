@@ -24,7 +24,7 @@ parser = argparse.ArgumentParser(description='Full Results Pipeline Automation G
 
 parser.add_argument('--predictor', metavar='predictor_name', help='predictor to run',
                     choices=['clarity', 'wig', 'nqc', 'qf', 'uef', 'all'])
-parser.add_argument('-r', '--predictions_dir', metavar='parameters_file_path',
+parser.add_argument('-r', '--predictions_dir', metavar='results_dir_path',
                     default='~/QppUqvProj/Results/ROBUST/basicPredictions/', help='path where to save results')
 parser.add_argument('-q', '--queries', metavar='queries.xml', default='~/data/ROBUST/queries.xml',
                     help='path to queries xml res')
@@ -215,6 +215,8 @@ class GenerateTable:
 
 
 def ensure_dir(file_path):
+    # tilde expansion
+    file_path = os.path.expanduser(file_path)
     directory = os.path.dirname(file_path)
     if not os.path.exists(directory):
         os.makedirs(directory)
