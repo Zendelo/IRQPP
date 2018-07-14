@@ -227,7 +227,7 @@ def ensure_file(files):
     for file in files:
         # tilde expansion
         file_path = os.path.expanduser(file)
-        assert os.path.isfile(file_path), 'The file {} doesn\'t exist. Please create the file first'
+        assert os.path.isfile(file_path), 'The file {} doesn\'t exist. Please create the file first'.format(file)
 
 
 def main(args):
