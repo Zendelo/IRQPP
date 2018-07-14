@@ -59,7 +59,6 @@ class GeneratePredictions:
         run('{} {} {} {}{} > {}'.format(predictor_exe, parameters, temporal_var, running_param, n, output), shell=True)
 
     def __run_predictor(self, predictions_dir, predictor_exe, parameters, running_param, lists=False, queries=None):
-        ensure_file((predictions_dir, predictor_exe, parameters, running_param))
         threads = '-threads={}'.format(self.cpu_cores)
         if queries is None:
             queries = self.queries
@@ -78,6 +77,7 @@ class GeneratePredictions:
                 if 'uef' in queries.lower():
                     # Assuming it's uef lists creation
                     queries = '{}-{}'.format(queries, n)
+                ensure_file([predictor_exe, parameters, queries])
                 self.__run_indri_app(predictor_exe, parameters, threads, running_param, n, queries, output)
 
         elif predictor_exe.endswith('qf.py'):
@@ -87,18 +87,21 @@ class GeneratePredictions:
                     print('\n ******** Running for: {} documents + {} list cutoff ******** \n'.format(n, k))
                     output = predictions_dir + '{}-{}+{}'.format(res, n, k)
                     inlist = lists_dir + 'list-{}'.format(n)
+                    ensure_file([predictor_exe, parameters, inlist])
                     self.__run_py_predictor(predictor_exe, parameters, inlist, running_param, k, output)
 
         elif predictor_exe.endswith('addWorkingsetdocs.py'):
             print('\n ******** Generating UEF query files ******** \n')
             for n in NUM_DOCS:
                 output = predictions_dir + 'queriesUEF-{}.xml'.format(n)
+                ensure_file([predictor_exe, parameters, queries])
                 self.__run_py_predictor(predictor_exe, parameters, queries, running_param, n, output)
 
         elif predictor_exe.endswith(('nqc.py', 'wig.py')):
             for n in NUM_DOCS:
                 print('\n ******** Running for: {} documents ******** \n'.format(n))
                 output = predictions_dir + '{}-{}'.format(res, n)
+                ensure_file([predictor_exe, parameters, queries])
                 self.__run_py_predictor(predictor_exe, parameters, queries, running_param, n, output)
 
         elif predictor_exe.endswith('uef.py'):
@@ -111,6 +114,7 @@ class GeneratePredictions:
                         inlist = lists_dir + 'list-{}'.format(n)
                         predictions = predictions_dir.replace('uef', pred) + 'predictions/{}-{}'.format(res, n)
                         params = '{} {}'.format(inlist, predictions)
+                        ensure_file([predictor_exe, parameters, inlist, predictions])
                         self.__run_py_predictor(predictor_exe, parameters, params, running_param, n, output)
                     else:
                         for k in LIST_CUT_OFF:
@@ -120,6 +124,7 @@ class GeneratePredictions:
                             predictions = predictions_dir.replace('uef', pred)
                             predictions += 'predictions/{}-{}+{}'.format(res, n, k)
                             params = '{} {}'.format(inlist, predictions)
+                            ensure_file([predictor_exe, parameters, inlist, predictions])
                             self.__run_py_predictor(predictor_exe, parameters, params, running_param, n, output)
 
     def generate_clartiy(self, predictions_dir=None):
@@ -227,7 +232,7 @@ def ensure_file(files):
     for file in files:
         # tilde expansion
         file_path = os.path.expanduser(file)
-        assert os.path.isfile(file_path), 'The file {} doesn\'t exist. Please create the file first'.format(file)
+        assert os.path.isfile(file_path), "The file {} doesn't exist. Please create the file first".format(file)
 
 
 def main(args):
