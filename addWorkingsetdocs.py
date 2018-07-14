@@ -38,7 +38,6 @@ class QueriesParser:
         :parameter: number_of_docs: number of docs to add to each query
         """
         for qid in self.full_queries.keys():
-            qid = qid
             docs = self.res.loc[qid]['docID'].head(number_of_docs)
             self.fb_docs[qid] = list(docs)
 
@@ -62,6 +61,7 @@ def main(args):
                                names=['qid', 'Q0', 'docID', 'docRank', 'docScore', 'ind'],
                                dtype={'qid': str, 'Q0': str, 'docID': str, 'docRank': int, 'docScore': float,
                                       'ind': str})
+    results_df.index = results_df.index.map(str)
 
     qdb = QueriesParser(query_file, results_df)
     qdb.add_working_set_docs(number_of_docs)

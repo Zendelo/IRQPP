@@ -71,12 +71,13 @@ class GeneratePredictions:
 
         if 'indri' in predictor_exe.lower():
             # Running indri APP
+            _queries = queries
             for n in NUM_DOCS:
                 print('\n ******** Running for: {} documents ******** \n'.format(n))
                 output = predictions_dir + '{}-{}'.format(res, n)
                 if 'uef' in queries.lower():
                     # Assuming it's uef lists creation
-                    queries = '{}-{}'.format(queries, n)
+                    queries = '{}-{}.xml'.format(_queries, n)
                 ensure_file([predictor_exe, parameters, queries])
                 self.__run_indri_app(predictor_exe, parameters, threads, running_param, n, queries, output)
 
@@ -87,21 +88,21 @@ class GeneratePredictions:
                     print('\n ******** Running for: {} documents + {} list cutoff ******** \n'.format(n, k))
                     output = predictions_dir + '{}-{}+{}'.format(res, n, k)
                     inlist = lists_dir + 'list-{}'.format(n)
-                    ensure_file([predictor_exe, parameters, inlist])
+                    ensure_file([predictor_exe.split()[1]] + [parameters, inlist])
                     self.__run_py_predictor(predictor_exe, parameters, inlist, running_param, k, output)
 
         elif predictor_exe.endswith('addWorkingsetdocs.py'):
             print('\n ******** Generating UEF query files ******** \n')
             for n in NUM_DOCS:
                 output = predictions_dir + 'queriesUEF-{}.xml'.format(n)
-                ensure_file([predictor_exe, parameters, queries])
+                ensure_file([predictor_exe.split()[1]] + [parameters, queries])
                 self.__run_py_predictor(predictor_exe, parameters, queries, running_param, n, output)
 
         elif predictor_exe.endswith(('nqc.py', 'wig.py')):
             for n in NUM_DOCS:
                 print('\n ******** Running for: {} documents ******** \n'.format(n))
                 output = predictions_dir + '{}-{}'.format(res, n)
-                ensure_file([predictor_exe, parameters, queries])
+                ensure_file([predictor_exe.split()[1]] + [parameters, queries])
                 self.__run_py_predictor(predictor_exe, parameters, queries, running_param, n, output)
 
         elif predictor_exe.endswith('uef.py'):
@@ -114,7 +115,7 @@ class GeneratePredictions:
                         inlist = lists_dir + 'list-{}'.format(n)
                         predictions = predictions_dir.replace('uef', pred) + 'predictions/{}-{}'.format(res, n)
                         params = '{} {}'.format(inlist, predictions)
-                        ensure_file([predictor_exe, parameters, inlist, predictions])
+                        ensure_file([predictor_exe.split()[1]] + [parameters, inlist, predictions])
                         self.__run_py_predictor(predictor_exe, parameters, params, running_param, n, output)
                     else:
                         for k in LIST_CUT_OFF:
@@ -124,7 +125,7 @@ class GeneratePredictions:
                             predictions = predictions_dir.replace('uef', pred)
                             predictions += 'predictions/{}-{}+{}'.format(res, n, k)
                             params = '{} {}'.format(inlist, predictions)
-                            ensure_file([predictor_exe, parameters, inlist, predictions])
+                            ensure_file([predictor_exe.split()[1]] + [parameters, inlist, predictions])
                             self.__run_py_predictor(predictor_exe, parameters, params, running_param, n, output)
 
     def generate_clartiy(self, predictions_dir=None):
@@ -197,12 +198,12 @@ class GeneratePredictions:
         parameters = '~/QppUqvProj/Results/{}/test/{}/QL.res'.format(self.corpus, self.qtype)
         running_param = '-d '
         predictions_dir = self.predictions_dir + 'uef/data/'
+        queries = predictions_dir + 'queriesUEF'
         self.__run_predictor(predictions_dir, predictor_exe, parameters, running_param)
         predictor_exe = '~/SetupFiles-indri-5.6/runqueryql/IndriRunQueryQL'
-        parameters = '~/QppUqvProj/Results/{}/test/{}/QL.res'.format(self.corpus, self.qtype)
-        running_param = '-d '
+        parameters = '~/QppUqvProj/Results/{}/test/indriRunQL.xml'.format(self.corpus)
+        running_param = '-fbDocs='
         predictions_dir = self.predictions_dir + 'uef/lists/'
-        queries = 'data/queriesUEF-'
         self.__run_predictor(predictions_dir, predictor_exe, parameters, running_param, lists=True, queries=queries)
 
 
