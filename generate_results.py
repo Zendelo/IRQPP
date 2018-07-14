@@ -59,6 +59,7 @@ class GeneratePredictions:
         run('{} {} {} {}{} > {}'.format(predictor_exe, parameters, temporal_var, running_param, n, output), shell=True)
 
     def __run_predictor(self, predictions_dir, predictor_exe, parameters, running_param, lists=False, queries=None):
+        ensure_file((predictions_dir, predictor_exe, parameters, running_param))
         threads = '-threads={}'.format(self.cpu_cores)
         if queries is None:
             queries = self.queries
@@ -220,6 +221,13 @@ def ensure_dir(file_path):
     directory = os.path.dirname(file_path)
     if not os.path.exists(directory):
         os.makedirs(directory)
+
+
+def ensure_file(files):
+    for file in files:
+        # tilde expansion
+        file_path = os.path.expanduser(file)
+        assert os.path.isfile(file_path), 'The file {} doesn\'t exist. Please create the file first'
 
 
 def main(args):
