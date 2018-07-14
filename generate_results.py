@@ -22,7 +22,7 @@ parser = argparse.ArgumentParser(description='Full Results Pipeline Automation G
                                  usage='Run / Load Results and generate table in LateX',
                                  epilog='Currently Beta Version')
 
-parser.add_argument('--predictor', metavar='predictor_name', default='clarity', help='predictor to run',
+parser.add_argument('--predictor', metavar='predictor_name', help='predictor to run',
                     choices=['clarity', 'wig', 'nqc', 'qf', 'uef', 'all'])
 parser.add_argument('-r', '--predictions_dir', metavar='parameters_file_path',
                     default='~/QppUqvProj/Results/ROBUST/basicPredictions/', help='path where to save results')
@@ -231,7 +231,8 @@ def main(args):
     predict = GeneratePredictions(queries, predictions_dir, corpus, queries_type)
 
     if predictor.lower() == 'clarity':
-        predict.generate_clartiy()
+        if generate:
+            predict.generate_clartiy()
     if predictor.lower() == 'nqc':
         if generate:
             predict.generate_nqc()
