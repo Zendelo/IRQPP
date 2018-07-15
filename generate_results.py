@@ -111,7 +111,7 @@ class GeneratePredictions:
                 for n in NUM_DOCS:
                     if pred != 'qf':
                         print('\n ******** Running for: {} documents ******** \n'.format(n))
-                        output = predictions_dir + '{}/{}-{}'.format(pred, res, n)
+                        output = predictions_dir + '{}/predictions/{}-{}'.format(pred, res, n)
                         inlist = lists_dir + 'list-{}'.format(n)
                         predictions = predictions_dir.replace('uef', pred) + 'predictions/{}-{}'.format(res, n)
                         params = '{} {}'.format(inlist, predictions)
@@ -120,7 +120,7 @@ class GeneratePredictions:
                     else:
                         for k in LIST_CUT_OFF:
                             print('\n ******** Running for: {} documents + {} list cutoff ******** \n'.format(n, k))
-                            output = predictions_dir + '{}/{}-{}+{}'.format(pred, res, n, k)
+                            output = predictions_dir + '{}/predictions/{}-{}+{}'.format(pred, res, n, k)
                             inlist = lists_dir + 'list-{}'.format(n)
                             predictions = predictions_dir.replace('uef', pred)
                             predictions += 'predictions/{}-{}+{}'.format(res, n, k)
