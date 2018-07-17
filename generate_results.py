@@ -214,11 +214,11 @@ class GeneratePredictions:
         for n in NUM_DOCS:
             for func in AGGREGATE_FUNCTIONS:
                 predictions_dir = self.predictions_dir.replace('raw', func)
-                output = '{}/{}/predictions/predictions-{}'.format(predictions_dir, predictor, n)
+                output = '{}{}/predictions/predictions-{}'.format(predictions_dir, predictor, n)
                 ensure_dir(output)
                 raw_res = '{}/predictions-{}'.format(raw_dir, n)
                 ensure_files([script.split(' ')[1], raw_res])
-                run('{} -p {} -f {} > {}'.format(script, raw_res, func, output))
+                run('{} -p {} -f {} > {}'.format(script, raw_res, func, output), shell=True)
 
 
 class CrossValidation:
