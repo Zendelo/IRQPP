@@ -43,7 +43,7 @@ class GeneratePredictions:
         :param predictions_dir: default predictions results dir
         """
         self.queries = queries
-        self.predictions_dir = os.path.normpath(predictions_dir) + '/'
+        self.predictions_dir = os.path.normpath(os.path.expanduser(predictions_dir)) + '/'
         self.corpus = corpus
         self.qtype = qtype
         self.cpu_cores = max(multiprocessing.cpu_count() * 0.5, min(multiprocessing.cpu_count() - 1, 16))
@@ -210,7 +210,7 @@ class GeneratePredictions:
     def calc_aggregations(self, predictor):
         print('----- Calculating aggregated predictions results -----')
         script = 'python3.6 ~/repos/IRQPP/aggregateUQV.py'
-        raw_dir = '{}/{}/predictions/'.format(self.predictions_dir, predictor)
+        raw_dir = os.path.normpath('{}/{}/predictions/'.format(self.predictions_dir, predictor))
         for n in NUM_DOCS:
             for func in AGGREGATE_FUNCTIONS:
                 predictions_dir = self.predictions_dir.replace('raw', func)
