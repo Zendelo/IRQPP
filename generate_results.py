@@ -42,7 +42,7 @@ class GeneratePredictions:
         :param predictions_dir: default predictions results dir
         """
         self.queries = queries
-        self.predictions_dir = predictions_dir
+        self.predictions_dir = os.path.normpath(predictions_dir) + '/'
         self.corpus = corpus
         self.qtype = qtype
         self.cpu_cores = max(multiprocessing.cpu_count() * 0.5, min(multiprocessing.cpu_count() - 1, 16))
@@ -213,6 +213,11 @@ class CrossValidation:
         pass
 
     def __run_predictor(self, predictions_dir, predictor_exe, parameters, running_param, lists=False):
+        # ~/QppUqvProj/Results/ClueWeb12B/basicPredictions/uef/clarity $ python3.6 ~/repos/IRQPP/crossval.py -l ~/QppUqvProj/Results/ClueWeb12B/test/2_folds_30_repetitions.json --labeled ../../../test/basic/QLmap1000 -p predictions/
+        #
+        # Mean : 0.2692
+        # Variance : 0.0019
+        # Standard Deviation : 0.0435
         pass
 
 
@@ -231,9 +236,11 @@ def ensure_dir(file_path):
 
 def ensure_file(files):
     for file in files:
-        # tilde expansion
-        file_path = os.path.expanduser(file)
-        assert os.path.isfile(file_path), "The file {} doesn't exist. Please create the file first".format(file)
+        _file = file.split(' ')
+        for file in _file:
+            # tilde expansion
+            file_path = os.path.expanduser(file)
+            assert os.path.isfile(file_path), "The file {} doesn't exist. Please create the file first".format(file)
 
 
 def main(args):

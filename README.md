@@ -1,6 +1,20 @@
 # IRQPP
 
+The main 'pipe' script is `generate_results.py`
+Before running the code you must ensure having the following files:
+
+_Results Files_
+1. ~/QppUqvProj/Results/{}/test/{}/QL.res
+2. ~/QppUqvProj/Results/{}/test/{}/CE.res
+3. ~/QppUqvProj/Results/{}/test/{}/logqlc.res
+
+_Parameters Files_
+1. ~/QppUqvProj/Results/{}/test/indriRunQF.xml
+2. ~/QppUqvProj/Results/{}/test/indriRunQL.xml
+3. ~/QppUqvProj/Results/{}/test/clarityParam.xml
 LogQLC stands for QL of the query with the entire corpus
+
+
 
 The evaluation code is crosseval.py
 The code to add FB documents to a given query xml file is addFBdocs.py
