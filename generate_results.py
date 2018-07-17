@@ -307,7 +307,7 @@ def main(args):
         if queries_type == 'aggregated':
             for pred in PREDICTORS:
                 predict.calc_aggregations(pred)
-                predict.calc_aggregations('{}/{}'.format(predictor, pred))
+                predict.calc_aggregations('uef/{}'.format(pred))
 
 
 if __name__ == '__main__':
