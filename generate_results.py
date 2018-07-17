@@ -210,13 +210,13 @@ class GeneratePredictions:
     def calc_aggregations(self, predictor):
         print('----- Calculating aggregated predictions results -----')
         script = 'python3.6 ~/repos/IRQPP/aggregateUQV.py'
-        raw_dir = os.path.normpath('{}/{}/predictions/'.format(self.predictions_dir, predictor))
+        raw_dir = os.path.normpath('{}/{}/predictions'.format(self.predictions_dir, predictor))
         for n in NUM_DOCS:
             for func in AGGREGATE_FUNCTIONS:
                 predictions_dir = self.predictions_dir.replace('raw', func)
                 output = '{}/{}/predictions/predictions-{}'.format(predictions_dir, predictor, n)
                 ensure_dir(output)
-                raw_res = '{}predictions-{}'.format(raw_dir, n)
+                raw_res = '{}/predictions-{}'.format(raw_dir, n)
                 ensure_files([script.split(' ')[1], raw_res])
                 run('{} -p {} -f {} > {}'.format(script, raw_res, func, output))
 
