@@ -4,14 +4,15 @@ The main 'pipe' script is `generate_results.py`
 Before running the code you must ensure having the following files:
 
 _Results Files_
-1. ~/QppUqvProj/Results/{}/test/{}/QL.res
-2. ~/QppUqvProj/Results/{}/test/{}/CE.res
-3. ~/QppUqvProj/Results/{}/test/{}/logqlc.res
+1. ~/QppUqvProj/Results/{corpus}/test/{queries type}/QL.res
+2. ~/QppUqvProj/Results/{corpus}/test/{queries type}/CE.res
+3. ~/QppUqvProj/Results/{corpus}/test/{queries type}/logqlc.res
 
 _Parameters Files_
-1. ~/QppUqvProj/Results/{}/test/indriRunQF.xml
-2. ~/QppUqvProj/Results/{}/test/indriRunQL.xml
-3. ~/QppUqvProj/Results/{}/test/clarityParam.xml
+1. ~/QppUqvProj/Results/{corpus}/test/indriRunQF.xml
+2. ~/QppUqvProj/Results/{corpus}/test/indriRunQL.xml
+3. ~/QppUqvProj/Results/{corpus}/test/clarityParam.xml
+
 LogQLC stands for QL of the query with the entire corpus
 
 

@@ -17,6 +17,7 @@ import os
 PREDICTORS = ['clarity', 'nqc', 'wig', 'qf']
 NUM_DOCS = [5, 10, 25, 50, 100, 250, 500, 1000]
 LIST_CUT_OFF = [5, 10, 25, 50, 100]
+AGGREGATE_FUNCTIONS = ['max', 'std', 'min', 'avg', 'med']
 
 parser = argparse.ArgumentParser(description='Full Results Pipeline Automation Generator',
                                  usage='Run / Load Results and generate table in LateX',
@@ -78,7 +79,7 @@ class GeneratePredictions:
                 if 'uef' in queries.lower():
                     # Assuming it's uef lists creation
                     queries = '{}-{}.xml'.format(_queries, n)
-                ensure_file([predictor_exe, parameters, queries])
+                ensure_files([predictor_exe, parameters, queries])
                 self.__run_indri_app(predictor_exe, parameters, threads, running_param, n, queries, output)
 
         elif predictor_exe.endswith('qf.py'):
@@ -88,21 +89,21 @@ class GeneratePredictions:
                     print('\n ******** Running for: {} documents + {} list cutoff ******** \n'.format(n, k))
                     output = predictions_dir + '{}-{}+{}'.format(res, n, k)
                     inlist = lists_dir + 'list-{}'.format(n)
-                    ensure_file([predictor_exe.split()[1]] + [parameters, inlist])
+                    ensure_files([predictor_exe.split()[1]] + [parameters, inlist])
                     self.__run_py_predictor(predictor_exe, parameters, inlist, running_param, k, output)
 
         elif predictor_exe.endswith('addWorkingsetdocs.py'):
             print('\n ******** Generating UEF query files ******** \n')
             for n in NUM_DOCS:
                 output = predictions_dir + 'queriesUEF-{}.xml'.format(n)
-                ensure_file([predictor_exe.split()[1]] + [parameters, queries])
+                ensure_files([predictor_exe.split()[1]] + [parameters, queries])
                 self.__run_py_predictor(predictor_exe, parameters, queries, running_param, n, output)
 
         elif predictor_exe.endswith(('nqc.py', 'wig.py')):
             for n in NUM_DOCS:
                 print('\n ******** Running for: {} documents ******** \n'.format(n))
                 output = predictions_dir + '{}-{}'.format(res, n)
-                ensure_file([predictor_exe.split()[1]] + [parameters, queries])
+                ensure_files([predictor_exe.split()[1]] + [parameters, queries])
                 self.__run_py_predictor(predictor_exe, parameters, queries, running_param, n, output)
 
         elif predictor_exe.endswith('uef.py'):
@@ -115,7 +116,7 @@ class GeneratePredictions:
                         inlist = lists_dir + 'list-{}'.format(n)
                         predictions = predictions_dir.replace('uef', pred) + 'predictions/{}-{}'.format(res, n)
                         params = '{} {}'.format(inlist, predictions)
-                        ensure_file([predictor_exe.split()[1]] + [parameters, inlist, predictions])
+                        ensure_files([predictor_exe.split()[1]] + [parameters, inlist, predictions])
                         self.__run_py_predictor(predictor_exe, parameters, params, running_param, n, output)
                     else:
                         for k in LIST_CUT_OFF:
@@ -125,7 +126,7 @@ class GeneratePredictions:
                             predictions = predictions_dir.replace('uef', pred)
                             predictions += 'predictions/{}-{}+{}'.format(res, n, k)
                             params = '{} {}'.format(inlist, predictions)
-                            ensure_file([predictor_exe.split()[1]] + [parameters, inlist, predictions])
+                            ensure_files([predictor_exe.split()[1]] + [parameters, inlist, predictions])
                             self.__run_py_predictor(predictor_exe, parameters, params, running_param, n, output)
 
     def generate_clartiy(self, predictions_dir=None):
@@ -206,6 +207,19 @@ class GeneratePredictions:
         predictions_dir = self.predictions_dir + 'uef/lists/'
         self.__run_predictor(predictions_dir, predictor_exe, parameters, running_param, lists=True, queries=queries)
 
+    def calc_aggregations(self, predictor):
+        print('----- Calculating aggregated predictions results -----')
+        script = 'python3.6 ~/repos/IRQPP/aggregateUQV.py'
+        raw_dir = '{}/{}/predictions/'.format(self.predictions_dir, predictor)
+        for n in NUM_DOCS:
+            for func in AGGREGATE_FUNCTIONS:
+                predictions_dir = self.predictions_dir.replace('raw', func)
+                output = '{}/{}/predictions/predictions-{}'.format(predictions_dir, predictor, n)
+                ensure_dir(output)
+                raw_res = '{}predictions-{}'.format(raw_dir, n)
+                ensure_files([script.split(' ')[1], raw_res])
+                run('{} -p {} -f {} > {}'.format(script, raw_res, func, output))
+
 
 class CrossValidation:
     # TODO: Implement CV
@@ -234,7 +248,7 @@ def ensure_dir(file_path):
         os.makedirs(directory)
 
 
-def ensure_file(files):
+def ensure_files(files):
     for file in files:
         _file = file.split(' ')
         for file in _file:
@@ -251,23 +265,37 @@ def main(args):
     generate = args.generate
     predictor = args.predictor
 
+    if queries_type == 'aggregated':
+        predictions_dir = '{}/raw'.format(predictions_dir)
+
     predict = GeneratePredictions(queries, predictions_dir, corpus, queries_type)
 
     if predictor.lower() == 'clarity':
         if generate:
             predict.generate_clartiy()
+        if queries_type == 'aggregated':
+            predict.calc_aggregations(predictor)
     if predictor.lower() == 'nqc':
         if generate:
             predict.generate_nqc()
+        if queries_type == 'aggregated':
+            predict.calc_aggregations(predictor)
     if predictor.lower() == 'wig':
         if generate:
             predict.generate_wig()
+        if queries_type == 'aggregated':
+            predict.calc_aggregations(predictor)
     if predictor.lower() == 'qf':
         if generate:
             predict.generate_qf()
+        if queries_type == 'aggregated':
+            predict.calc_aggregations(predictor)
     if predictor.lower() == 'uef':
         if generate:
             predict.generate_uef()
+        if queries_type == 'aggregated':
+            for pred in PREDICTORS:
+                predict.calc_aggregations('{}/{}'.format(predictor, pred))
 
     if predictor.lower() == 'all':
         if generate:
@@ -276,6 +304,10 @@ def main(args):
             predict.generate_wig()
             predict.generate_qf()
             predict.generate_uef()
+        if queries_type == 'aggregated':
+            for pred in PREDICTORS:
+                predict.calc_aggregations(pred)
+                predict.calc_aggregations('{}/{}'.format(predictor, pred))
 
 
 if __name__ == '__main__':
