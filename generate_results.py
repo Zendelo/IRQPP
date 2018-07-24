@@ -5,6 +5,8 @@ import multiprocessing
 import os
 from subprocess import run
 
+from Timer.timer import Timer
+
 # TODO: Add directories checks and creation
 # os.path.exists('file or dir')
 # os.path.isfile('file')
@@ -291,6 +293,8 @@ def main(args):
 
     if queries_type == 'aggregated' or queries_type == 'single':
         predictions_dir = '{}/uqvPredictions/raw'.format(predictions_dir)
+    else:
+        predictions_dir = '{}/basicPredictions'.format(predictions_dir)
 
     predict = GeneratePredictions(queries, predictions_dir, corpus, queries_type)
 
@@ -298,13 +302,17 @@ def main(args):
         # Special case for generating results
         if predictor == 'all':
             for pred in PREDICTORS:
+                generation_timer = Timer('{} generating'.format(pred))
                 method = generate_functions.get(pred, None)
                 assert method is not None, 'No applicable generate function found for {}'.format(pred)
-                method(predict, predictor)
+                method(predict)
+                generation_timer.stop()
             else:
+                generation_timer = Timer('{} generating'.format(predictor))
                 method = generate_functions.get(predictor, None)
                 assert method is not None, 'No applicable generate function found for {}'.format(predictor)
-                method(predict, predictor)
+                method(predict)
+                generation_timer.stop()
 
     if predictor == 'all':
         if queries_type != 'basic':
@@ -322,5 +330,7 @@ def main(args):
 
 
 if __name__ == '__main__':
+    overall_timer = Timer('Total running')
     args = parser.parse_args()
     main(args)
+    overall_timer.stop()

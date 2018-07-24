@@ -1,0 +1,3 @@
+[submodule "Timer"]
+	path = Timer
+	url = https://github.com/nadavo/Timer.git
