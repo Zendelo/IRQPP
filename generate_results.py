@@ -24,7 +24,7 @@ AGGREGATE_FUNCTIONS = ['max', 'std', 'min', 'avg', 'med']
 SINGLE_FUNCTIONS = ['max', 'min', 'medl', 'medh']
 
 parser = argparse.ArgumentParser(description='Full Results Pipeline Automation Generator',
-                                 usage='Run / Load Results and generate table in LateX',
+                                 usage='python3.6 generate_results.py --predictor PREDICTOR -c CORPUS -q QUERIES ',
                                  epilog='Currently Beta Version')
 
 parser.add_argument('--predictor', metavar='predictor_name', help='predictor to run',
@@ -301,18 +301,18 @@ def main(args):
     if generate:
         # Special case for generating results
         if predictor == 'all':
-            for pred in PREDICTORS:
+            for pred in PREDICTORS + ['uef']:
                 generation_timer = Timer('{} generating'.format(pred))
                 method = generate_functions.get(pred, None)
                 assert method is not None, 'No applicable generate function found for {}'.format(pred)
                 method(predict)
                 generation_timer.stop()
-            else:
-                generation_timer = Timer('{} generating'.format(predictor))
-                method = generate_functions.get(predictor, None)
-                assert method is not None, 'No applicable generate function found for {}'.format(predictor)
-                method(predict)
-                generation_timer.stop()
+        else:
+            generation_timer = Timer('{} generating'.format(predictor))
+            method = generate_functions.get(predictor, None)
+            assert method is not None, 'No applicable generate function found for {}'.format(predictor)
+            method(predict)
+            generation_timer.stop()
 
     if predictor == 'all':
         if queries_type != 'basic':
@@ -325,12 +325,14 @@ def main(args):
         if queries_type != 'basic':
             method = calc_functions.get(queries_type, None)
             assert method is not None, 'No applicable calculation function found for {}'.format(queries_type)
-            method(predict, predictor)
-            method(predict, 'uef/{}'.format(predictor))
+            if predictor == 'uef':
+                method(predict, 'uef/{}'.format(predictor))
+            else:
+                method(predict, predictor)
 
 
 if __name__ == '__main__':
-    overall_timer = Timer('Total running')
     args = parser.parse_args()
+    overall_timer = Timer('Total running')
     main(args)
     overall_timer.stop()
