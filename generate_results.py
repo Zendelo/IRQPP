@@ -1,23 +1,25 @@
 #!/usr/bin/env python
 
 import argparse
-from subprocess import run
 import multiprocessing
 import os
+from subprocess import run
 
 # TODO: Add directories checks and creation
 # os.path.exists('file or dir')
 # os.path.isfile('file')
 # os.path.isdir('dir')
-
 # TODO: Create for UQV aggregations
+
 # TODO: Create for UQV singles
 # TODO: Create CV process and write the results to tables
+# TODO: Add a check that all necessary files exist on startup (to avoid later crash)
 
 PREDICTORS = ['clarity', 'nqc', 'wig', 'qf']
 NUM_DOCS = [5, 10, 25, 50, 100, 250, 500, 1000]
 LIST_CUT_OFF = [5, 10, 25, 50, 100]
 AGGREGATE_FUNCTIONS = ['max', 'std', 'min', 'avg', 'med']
+SINGLE_FUNCTIONS = ['max', 'min', 'medl', 'medh']
 
 parser = argparse.ArgumentParser(description='Full Results Pipeline Automation Generator',
                                  usage='Run / Load Results and generate table in LateX',
@@ -25,8 +27,8 @@ parser = argparse.ArgumentParser(description='Full Results Pipeline Automation G
 
 parser.add_argument('--predictor', metavar='predictor_name', help='predictor to run',
                     choices=['clarity', 'wig', 'nqc', 'qf', 'uef', 'all'])
-parser.add_argument('-r', '--predictions_dir', metavar='results_dir_path',
-                    default='~/QppUqvProj/Results/ROBUST/basicPredictions/', help='path where to save results')
+# parser.add_argument('-r', '--predictions_dir', metavar='results_dir_path',
+#                     default='~/QppUqvProj/Results/ROBUST/basicPredictions/', help='path where to save results')
 parser.add_argument('-q', '--queries', metavar='queries.xml', default='~/data/ROBUST/queries.xml',
                     help='path to queries xml res')
 parser.add_argument('-c', '--corpus', default='ROBUST', type=str, help='corpus (index) to work with',
@@ -143,9 +145,9 @@ class GeneratePredictions:
     def generate_wig(self, predictions_dir=None):
         print('\n -- WIG -- \n')
         predictor_exe = 'python3.6 ~/repos/IRQPP/wig.py'
-        ce_scores = '~/QppUqvProj/Results/{}/test/{}/CE.res'.format(self.corpus, self.qtype)
+        ql_scores = '~/QppUqvProj/Results/{}/test/{}/QL.res'.format(self.corpus, self.qtype)
         qlc_scores = '~/QppUqvProj/Results/{}/test/{}/logqlc.res'.format(self.corpus, self.qtype)
-        parameters = '{} {}'.format(ce_scores, qlc_scores)
+        parameters = '{} {}'.format(ql_scores, qlc_scores)
         running_param = '-d '
         if predictions_dir is None:
             predictions_dir = self.predictions_dir + 'wig/predictions/'
@@ -156,9 +158,9 @@ class GeneratePredictions:
     def generate_nqc(self, predictions_dir=None):
         print('\n -- NQC -- \n')
         predictor_exe = 'python3.6 ~/repos/IRQPP/nqc.py'
-        ce_scores = '~/QppUqvProj/Results/{}/test/{}/CE.res'.format(self.corpus, self.qtype)
+        ql_scores = '~/QppUqvProj/Results/{}/test/{}/QL.res'.format(self.corpus, self.qtype)
         qlc_scores = '~/QppUqvProj/Results/{}/test/{}/logqlc.res'.format(self.corpus, self.qtype)
-        parameters = '{} {}'.format(ce_scores, qlc_scores)
+        parameters = '{} {}'.format(ql_scores, qlc_scores)
         running_param = '-d '
         if predictions_dir is None:
             predictions_dir = self.predictions_dir + 'nqc/predictions/'
@@ -220,6 +222,19 @@ class GeneratePredictions:
                 ensure_files([script.split(' ')[1], raw_res])
                 run('{} -p {} -f {} > {}'.format(script, raw_res, func, output), shell=True)
 
+    def calc_singles(self, predictor):
+        print('----- Calculating UQV single predictions results -----')
+        script = 'python3.6 ~/repos/IRQPP/singleUQV.py'
+        raw_dir = os.path.normpath('{}/{}/predictions'.format(self.predictions_dir, predictor))
+        for n in NUM_DOCS:
+            for func in SINGLE_FUNCTIONS:
+                predictions_dir = self.predictions_dir.replace('raw', func)
+                output = '{}{}/predictions/predictions-{}'.format(predictions_dir, predictor, n)
+                ensure_dir(output)
+                raw_res = '{}/predictions-{}'.format(raw_dir, n)
+                ensure_files([script.split(' ')[1], raw_res])
+                run('{} -p {} -f {} > {}'.format(script, raw_res, func, output), shell=True)
+
 
 class CrossValidation:
     # TODO: Implement CV
@@ -258,56 +273,52 @@ def ensure_files(files):
 
 
 def main(args):
-    predictions_dir = args.predictions_dir
+    generate_functions = {'clarity': GeneratePredictions.generate_clartiy,
+                          'nqc': GeneratePredictions.generate_nqc,
+                          'wig': GeneratePredictions.generate_wig,
+                          'qf': GeneratePredictions.generate_qf,
+                          'uef': GeneratePredictions.generate_uef}
+
+    calc_functions = {'single': GeneratePredictions.calc_singles,
+                      'aggregated': GeneratePredictions.calc_aggregations}
+
     queries = args.queries
     corpus = args.corpus
     queries_type = args.qtype
     generate = args.generate
     predictor = args.predictor
+    predictions_dir = '~/QppUqvProj/Results/{}/'.format(corpus)
 
-    if queries_type == 'aggregated':
-        predictions_dir = '{}/raw'.format(predictions_dir)
+    if queries_type == 'aggregated' or queries_type == 'single':
+        predictions_dir = '{}/uqvPredictions/raw'.format(predictions_dir)
 
     predict = GeneratePredictions(queries, predictions_dir, corpus, queries_type)
 
-    if predictor.lower() == 'clarity':
-        if generate:
-            predict.generate_clartiy()
-        if queries_type == 'aggregated':
-            predict.calc_aggregations(predictor)
-    if predictor.lower() == 'nqc':
-        if generate:
-            predict.generate_nqc()
-        if queries_type == 'aggregated':
-            predict.calc_aggregations(predictor)
-    if predictor.lower() == 'wig':
-        if generate:
-            predict.generate_wig()
-        if queries_type == 'aggregated':
-            predict.calc_aggregations(predictor)
-    if predictor.lower() == 'qf':
-        if generate:
-            predict.generate_qf()
-        if queries_type == 'aggregated':
-            predict.calc_aggregations(predictor)
-    if predictor.lower() == 'uef':
-        if generate:
-            predict.generate_uef()
-        if queries_type == 'aggregated':
+    if generate:
+        # Special case for generating results
+        if predictor == 'all':
             for pred in PREDICTORS:
-                predict.calc_aggregations('{}/{}'.format(predictor, pred))
+                method = generate_functions.get(pred, None)
+                assert method is not None, 'No applicable generate function found for {}'.format(pred)
+                method(predict, predictor)
+            else:
+                method = generate_functions.get(predictor, None)
+                assert method is not None, 'No applicable generate function found for {}'.format(predictor)
+                method(predict, predictor)
 
-    if predictor.lower() == 'all':
-        if generate:
-            predict.generate_clartiy()
-            predict.generate_nqc()
-            predict.generate_wig()
-            predict.generate_qf()
-            predict.generate_uef()
-        if queries_type == 'aggregated':
+    if predictor == 'all':
+        if queries_type != 'basic':
             for pred in PREDICTORS:
-                predict.calc_aggregations(pred)
-                predict.calc_aggregations('uef/{}'.format(pred))
+                method = calc_functions.get(queries_type, None)
+                assert method is not None, 'No applicable calculation function found for {}'.format(queries_type)
+                method(predict, pred)
+                method(predict, 'uef/{}'.format(pred))
+    else:
+        if queries_type != 'basic':
+            method = calc_functions.get(queries_type, None)
+            assert method is not None, 'No applicable calculation function found for {}'.format(queries_type)
+            method(predict, predictor)
+            method(predict, 'uef/{}'.format(predictor))
 
 
 if __name__ == '__main__':

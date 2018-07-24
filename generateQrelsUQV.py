@@ -29,15 +29,17 @@ class QueriesTextParser:
         self.kind = kind
         if self.kind.lower() == 'uqv':
             # {qid: [qid-x-y]} list of all variations
-            self.query_var = self.__generate_query_var()
+            self.query_var, self.var_qid = self.__generate_query_var()
 
     def __generate_query_var(self):
-        vars_dict = defaultdict(list)
+        qid_vars_dict = defaultdict(list)
+        vars_qid_dict = defaultdict(str)
         for row in self.queries_df.values:
             rawqid = row[0]
-            qid = int(rawqid.split('-')[0])
-            vars_dict[qid].append(rawqid)
-        return vars_dict
+            qid = rawqid.split('-')[0]
+            qid_vars_dict[qid].append(rawqid)
+            vars_qid_dict[rawqid] = qid
+        return qid_vars_dict, vars_qid_dict
 
     def __generate_queries_dict(self, file):
         with open(file, 'r') as f:
@@ -49,13 +51,17 @@ class QueriesTextParser:
                 self.queries_dict[qid] = text
             f.close()
 
+    def get_orig_qid(self, var_qid):
+        return self.var_qid[var_qid]
+
 
 class QrelsParser:
     def __init__(self, file, queries: QueriesTextParser, uqv: QueriesTextParser):
         self.queries = queries
         self.uqv = uqv
         self._add_original_queries()
-        self.results_df = pd.read_table(file, delim_whitespace=True, header=None, names=['qid', 'iter', 'docNo', 'rel'])
+        self.results_df = pd.read_table(file, delim_whitespace=True, header=None, names=['qid', 'iter', 'docNo', 'rel'],
+                                        dtype={'qid': str, 'iter': int, 'docNo': str, 'rel': int})
         self.results_dict = defaultdict(list)
         self._generate_qrels_dict()
         self.new_results_dict = defaultdict(list)
@@ -63,7 +69,7 @@ class QrelsParser:
 
     def _generate_qrels_dict(self):
         for qid in self.queries.queries_dict.keys():
-            temp_df = self.results_df[self.results_df['qid'] == int(qid)]
+            temp_df = self.results_df[self.results_df['qid'] == qid]
             docs = temp_df[temp_df['rel'] == 1]['docNo'].values
             self.results_dict[qid] = docs
 
@@ -101,9 +107,14 @@ class QrelsParser:
             print('{}:{}'.format(qid, text))
 
     def print_results(self):
-        for qid, docs in self.new_results_dict.items():
-            for doc in docs:
-                print('{} 1 {} 1'.format(qid, doc))
+        for qid in self.uqv.queries_dict.keys():
+            orig_qid = self.uqv.get_orig_qid(qid)
+            it = self.results_df[self.results_df['qid'] == orig_qid]['iter']
+            rel = self.results_df[self.results_df['qid'] == orig_qid]['rel']
+            docs = self.results_df[self.results_df['qid'] == orig_qid]['docNo']
+            _df = pd.concat([it, docs, rel], axis=1)
+            _df.insert(0, 'qid', qid)
+            print(_df.to_string(index=False, header=False, justify='left'))
 
 
 class QueriesXMLParser:
@@ -139,6 +150,8 @@ def main(args: parser):
     # query_xml.print_queries_xml()
 
     # qrels_obj.print_results()
+
+    qrels_obj.print_results()
 
 
 if __name__ == '__main__':

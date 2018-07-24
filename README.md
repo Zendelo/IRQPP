@@ -5,8 +5,7 @@ Before running the code you must ensure having the following files:
 
 _Results Files_
 1. ~/QppUqvProj/Results/{corpus}/test/{queries type}/QL.res
-2. ~/QppUqvProj/Results/{corpus}/test/{queries type}/CE.res
-3. ~/QppUqvProj/Results/{corpus}/test/{queries type}/logqlc.res
+2. ~/QppUqvProj/Results/{corpus}/test/{queries type}/logqlc.res
 
 _Parameters Files_
 1. ~/QppUqvProj/Results/{corpus}/test/indriRunQF.xml
