@@ -303,7 +303,7 @@ def main(args):
         if predictor == 'all':
             for pred in PREDICTORS:
                 generation_timer = Timer('{} generating'.format(pred))
-                method = generate_functions.get(pred, None)
+      cd           method = generate_functions.get(pred, None)
                 assert method is not None, 'No applicable generate function found for {}'.format(pred)
                 method(predict)
                 generation_timer.stop()
