@@ -228,6 +228,7 @@ class GeneratePredictions:
         print('----- Calculating UQV single predictions results -----')
         script = 'python3.6 ~/repos/IRQPP/singleUQV.py'
         raw_dir = os.path.normpath('{}/{}/predictions'.format(self.predictions_dir, predictor))
+        map_raw = '~/QppUqvProj/Results/{}/test/{}/QLmap1000'.format(self.corpus, self.qtype)
         for n in NUM_DOCS:
             for func in SINGLE_FUNCTIONS:
                 predictions_dir = self.predictions_dir.replace('raw', func)
@@ -235,7 +236,7 @@ class GeneratePredictions:
                 ensure_dir(output)
                 raw_res = '{}/predictions-{}'.format(raw_dir, n)
                 ensure_files([script.split(' ')[1], raw_res])
-                run('{} -p {} -f {} > {}'.format(script, raw_res, func, output), shell=True)
+                run('{} {} {} -f {} > {}'.format(script, map_raw, raw_res, func, output), shell=True)
 
 
 class CrossValidation:
