@@ -49,7 +49,7 @@ class GeneratePredictions:
         self.queries = queries
         self.predictions_dir = os.path.normpath(os.path.expanduser(predictions_dir)) + '/'
         self.corpus = corpus
-        self.qtype = qtype
+        self.qtype = qtype if qtype == 'basic' else 'raw'
         self.cpu_cores = max(multiprocessing.cpu_count() * 0.5, min(multiprocessing.cpu_count() - 1, 16))
 
     @staticmethod
@@ -147,7 +147,7 @@ class GeneratePredictions:
     def generate_wig(self, predictions_dir=None):
         print('\n -- WIG -- \n')
         predictor_exe = 'python3.6 ~/repos/IRQPP/wig.py'
-        ql_scores = '~/QppUqvProj/Results/{}/test/{}/QL.res'.format(self.corpus, self.qtype)
+        ql_scores = '~/QppUqvProj/Results/{}/test/{}/CE.res'.format(self.corpus, self.qtype)
         qlc_scores = '~/QppUqvProj/Results/{}/test/{}/logqlc.res'.format(self.corpus, self.qtype)
         parameters = '{} {}'.format(ql_scores, qlc_scores)
         running_param = '-d '
@@ -160,7 +160,7 @@ class GeneratePredictions:
     def generate_nqc(self, predictions_dir=None):
         print('\n -- NQC -- \n')
         predictor_exe = 'python3.6 ~/repos/IRQPP/nqc.py'
-        ql_scores = '~/QppUqvProj/Results/{}/test/{}/QL.res'.format(self.corpus, self.qtype)
+        ql_scores = '~/QppUqvProj/Results/{}/test/{}/CE.res'.format(self.corpus, self.qtype)
         qlc_scores = '~/QppUqvProj/Results/{}/test/{}/logqlc.res'.format(self.corpus, self.qtype)
         parameters = '{} {}'.format(ql_scores, qlc_scores)
         running_param = '-d '
@@ -249,6 +249,7 @@ class CrossValidation:
         # Mean : 0.2692
         # Variance : 0.0019
         # Standard Deviation : 0.0435
+        # python ~/repos/IRQPP/crossval.py -p ./predictions/ -l ../../../test/2_folds_30_repetitions.json --labeled ../../../test/basic/QLmap1000
         pass
 
 
