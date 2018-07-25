@@ -50,7 +50,7 @@ class GeneratePredictions:
         self.predictions_dir = os.path.normpath(os.path.expanduser(predictions_dir)) + '/'
         self.corpus = corpus
         self.qtype = qtype if qtype == 'basic' else 'raw'
-        self.cpu_cores = max(multiprocessing.cpu_count() * 0.5, min(multiprocessing.cpu_count() - 1, 16))
+        self.cpu_cores = max(multiprocessing.cpu_count() * 0.5, min(multiprocessing.cpu_count(), 16))
 
     @staticmethod
     def __run_indri_app(predictor_exe, parameters, threads, running_param, n, queries, output):
