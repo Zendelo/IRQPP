@@ -221,14 +221,12 @@ class GeneratePredictions:
         script = 'python3.6 ~/repos/IRQPP/aggregateUQV.py'
         raw_dir = os.path.normpath('{}/{}/predictions'.format(self.predictions_dir, predictor))
         res_files = glob.glob('{}/*predictions*'.format(raw_dir))
-        print('res_files: \n{}'.format(res_files))
         for file in res_files:
             for func in AGGREGATE_FUNCTIONS:
                 predictions_dir = self.predictions_dir.replace('raw', 'aggregated')
                 n = file.split('-')[-1]
                 output = '{}/{}/{}/predictions/predictions-{}'.format(predictions_dir, func, predictor, n)
                 ensure_dir(output)
-                # raw_res = '{}/predictions-{}'.format(raw_dir, 5)
                 ensure_files([script.split(' ')[1], file])
                 run('{} -p {} -f {} > {}'.format(script, file, func, output), shell=True)
 
@@ -237,14 +235,15 @@ class GeneratePredictions:
         script = 'python3.6 ~/repos/IRQPP/singleUQV.py'
         raw_dir = os.path.normpath('{}/{}/predictions'.format(self.predictions_dir, predictor))
         map_raw = '~/QppUqvProj/Results/{}/test/{}/QLmap1000'.format(self.corpus, self.qtype)
-        for n in NUM_DOCS:
+        res_files = glob.glob('{}/*predictions*'.format(raw_dir))
+        for file in res_files:
             for func in SINGLE_FUNCTIONS:
                 predictions_dir = self.predictions_dir.replace('raw', 'single')
+                n = file.split('-')[-1]
                 output = '{}/{}/{}/predictions/predictions-{}'.format(predictions_dir, func, predictor, n)
                 ensure_dir(output)
-                raw_res = '{}/predictions-{}'.format(raw_dir, n)
-                ensure_files([script.split(' ')[1], raw_res])
-                run('{} {} {} -f {} > {}'.format(script, map_raw, raw_res, func, output), shell=True)
+                ensure_files([script.split(' ')[1], file])
+                run('{} {} {} -f {} > {}'.format(script, map_raw, file, func, output), shell=True)
 
 
 class CrossValidation:
@@ -344,6 +343,6 @@ def main(args):
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    overall_timer = Timer('Total running')
+    overall_timer = Timer('Total runtime')
     main(args)
     overall_timer.stop()
