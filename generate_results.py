@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+import glob
 import multiprocessing
 import os
 from subprocess import run
@@ -12,8 +13,8 @@ from Timer.timer import Timer
 # os.path.isfile('file')
 # os.path.isdir('dir')
 # TODO: Create for UQV aggregations
-
 # TODO: Create for UQV singles
+
 # TODO: Create CV process and write the results to tables
 # TODO: Add a check that all necessary files exist on startup (to avoid later crash)
 
@@ -38,10 +39,11 @@ parser.add_argument('-c', '--corpus', default='ROBUST', type=str, help='corpus (
 parser.add_argument('--qtype', default='basic', type=str, help='The type of queries to run',
                     choices=['basic', 'single', 'aggregated'])
 parser.add_argument('--generate', help="generate new predictions", action="store_true")
+parser.add_argument('--lists', help="generate new lists", action="store_true")
 
 
 class GeneratePredictions:
-    def __init__(self, queries, predictions_dir, corpus='ROBUST', qtype='basic'):
+    def __init__(self, queries, predictions_dir, corpus, qtype, lists):
         """
         :param queries: queries XML file
         :param predictions_dir: default predictions results dir
@@ -50,6 +52,7 @@ class GeneratePredictions:
         self.predictions_dir = os.path.normpath(os.path.expanduser(predictions_dir)) + '/'
         self.corpus = corpus
         self.qtype = qtype if qtype == 'basic' else 'raw'
+        self.gen_lists = lists
         self.cpu_cores = max(multiprocessing.cpu_count() * 0.5, min(multiprocessing.cpu_count(), 16))
 
     @staticmethod
@@ -172,7 +175,8 @@ class GeneratePredictions:
 
     def generate_qf(self, predictions_dir=None):
         print('\n -- QF -- \n')
-        self._generate_lists_qf()
+        if self.gen_lists:
+            self._generate_lists_qf()
         predictor_exe = 'python3.6 ~/repos/IRQPP/qf.py'
         parameters = '~/QppUqvProj/Results/{}/test/{}/QL.res'.format(self.corpus, self.qtype)
         running_param = '-d '
@@ -191,7 +195,8 @@ class GeneratePredictions:
 
     def generate_uef(self):
         """Assuming all the previous predictions exist, will generate the uef lists and predictions"""
-        self._generate_lists_uef()
+        if self.gen_lists:
+            self._generate_lists_uef()
         predictor_exe = 'python3.6 ~/repos/IRQPP/uef/uef.py'
         parameters = '~/QppUqvProj/Results/{}/test/{}/QL.res'.format(self.corpus, self.qtype)
         running_param = '-d '
@@ -215,14 +220,17 @@ class GeneratePredictions:
         print('----- Calculating aggregated predictions results -----')
         script = 'python3.6 ~/repos/IRQPP/aggregateUQV.py'
         raw_dir = os.path.normpath('{}/{}/predictions'.format(self.predictions_dir, predictor))
-        for n in NUM_DOCS:
+        res_files = glob.glob('{}/*predictions*'.format(raw_dir))
+        print('res_files: \n{}'.format(res_files))
+        for file in res_files:
             for func in AGGREGATE_FUNCTIONS:
-                predictions_dir = self.predictions_dir.replace('raw', func)
-                output = '{}{}/predictions/predictions-{}'.format(predictions_dir, predictor, n)
+                predictions_dir = self.predictions_dir.replace('raw', 'aggregated')
+                n = file.split('-')[-1]
+                output = '{}/{}/{}/predictions/predictions-{}'.format(predictions_dir, func, predictor, n)
                 ensure_dir(output)
-                raw_res = '{}/predictions-{}'.format(raw_dir, n)
-                ensure_files([script.split(' ')[1], raw_res])
-                run('{} -p {} -f {} > {}'.format(script, raw_res, func, output), shell=True)
+                # raw_res = '{}/predictions-{}'.format(raw_dir, 5)
+                ensure_files([script.split(' ')[1], file])
+                run('{} -p {} -f {} > {}'.format(script, file, func, output), shell=True)
 
     def calc_singles(self, predictor):
         print('----- Calculating UQV single predictions results -----')
@@ -231,8 +239,8 @@ class GeneratePredictions:
         map_raw = '~/QppUqvProj/Results/{}/test/{}/QLmap1000'.format(self.corpus, self.qtype)
         for n in NUM_DOCS:
             for func in SINGLE_FUNCTIONS:
-                predictions_dir = self.predictions_dir.replace('raw', func)
-                output = '{}{}/predictions/predictions-{}'.format(predictions_dir, predictor, n)
+                predictions_dir = self.predictions_dir.replace('raw', 'single')
+                output = '{}/{}/{}/predictions/predictions-{}'.format(predictions_dir, func, predictor, n)
                 ensure_dir(output)
                 raw_res = '{}/predictions-{}'.format(raw_dir, n)
                 ensure_files([script.split(' ')[1], raw_res])
@@ -291,6 +299,7 @@ def main(args):
     queries_type = args.qtype
     generate = args.generate
     predictor = args.predictor
+    generate_lists = args.lists
     predictions_dir = '~/QppUqvProj/Results/{}/'.format(corpus)
 
     if queries_type == 'aggregated' or queries_type == 'single':
@@ -298,7 +307,7 @@ def main(args):
     else:
         predictions_dir = '{}/basicPredictions'.format(predictions_dir)
 
-    predict = GeneratePredictions(queries, predictions_dir, corpus, queries_type)
+    predict = GeneratePredictions(queries, predictions_dir, corpus, queries_type, generate_lists)
 
     if generate:
         # Special case for generating results
