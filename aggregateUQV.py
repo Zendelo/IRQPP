@@ -7,13 +7,13 @@ from collections import defaultdict
 import numpy as np
 import pandas as pd
 
-parser = argparse.ArgumentParser(description='UQV aggregation script',
-                                 usage='Create new UQV scores',
-                                 epilog='ROBUST version')
+parser = argparse.ArgumentParser(description='UQV aggregated queries calculations script',
+                                 usage='python3.6 aggregateUQV.py RAW_AP_FILE RAW_PREDICTIONS_FILE -f FUNCTION',
+                                 epilog='Calculate new UQV scores')
 
-parser.add_argument('-a', '--map', default=None, help='path to ap scores file')
-parser.add_argument('-p', '--predictions', default=None, help='path to prediction scores file')
-parser.add_argument('-f', '--function', default='avg', choices=['max', 'std', 'min', 'avg', 'med'],
+parser.add_argument('-m', '--map', metavar='RAW_AP_FILE', help='path to raw ap scores file')
+parser.add_argument('-p', '--predictions', metavar='RAW_PREDICTIONS_FILE', help='path to raw predictions file')
+parser.add_argument('-f', '--function', type=str, default='avg', choices=['max', 'std', 'min', 'avg', 'med'],
                     help='Aggregate function')
 
 
