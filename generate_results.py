@@ -275,8 +275,8 @@ class CrossVal:
                                          file_to_load=self.cv_map_f, load=True, test=self.corr_measure,
                                          ap_file=ap_score)
                 uef_cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_uef_predictions_dir,
-                                         file_to_load=self.cv_map_f, load=True, test=self.corr_measure,
-                                         ap_file=ap_score)
+                                             file_to_load=self.cv_map_f, load=True, test=self.corr_measure,
+                                             ap_file=ap_score)
                 mean = cv_obj.calc_test_results()
                 uef_mean = uef_cv_obj.calc_test_results()
                 _p_res.append(mean)
@@ -388,7 +388,7 @@ def main(args):
             else:
                 method(predict, predictor)
     base_dir = '~/QppUqvProj/Results/{}'.format(corpus)
-    cv = CrossVal(base_dir=base_dir, cv_map_file=cv_map_file, correlation_measure='pearson')
+    cv = CrossVal(base_dir=base_dir, cv_map_file=cv_map_file, correlation_measure=corr_measure)
     cv.calc_aggregated('avg')
 
 
