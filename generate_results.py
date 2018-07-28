@@ -288,18 +288,17 @@ class CrossVal:
             uef_sr.name = uef_p
             _results[p] = sr
             _results[uef_p] = uef_sr
-        print(pd.DataFrame.from_dict(_results))
-        print(pd.DataFrame.from_dict(_results, orient='index'))
-        print(pd.DataFrame.from_records(_results))
-        return pd.DataFrame.from_dict(_results, orient='index')
+        res_df = pd.DataFrame.from_dict(_results, orient='index')
+        _predictors = [p for p in PREDICTORS]
+        _uef_predictors = ['uef({})'.format(p) for p in PREDICTORS]
+        res_df = res_df.reindex(index=PREDICTORS + _uef_predictors)
+        return res_df
 
     def create_table(self):
-        _list = []
         for agg in AGGREGATE_FUNCTIONS:
             _df = self.calc_aggregated(agg)
             _df.columns = AGGREGATE_FUNCTIONS
-            _list.append(_df)
-        print(pd.concat(_list))
+            print('\n {} \n'.format(_df))
 
 
 class GenerateTable:
@@ -390,7 +389,7 @@ def main(args):
                 method(predict, predictor)
     base_dir = '~/QppUqvProj/Results/{}'.format(corpus)
     cv = CrossVal(base_dir=base_dir, cv_map_file=cv_map_file, correlation_measure=corr_measure)
-    cv.calc_aggregated('avg')
+    cv.create_table()
 
 
 if __name__ == '__main__':
