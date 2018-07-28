@@ -266,18 +266,28 @@ class CrossVal:
         _results = defaultdict()
         for p in PREDICTORS:
             _predictions_dir = os.path.normpath('{}/{}/predictions'.format(predictions_dir, p))
-            _predictions_dir = os.path.normpath('{}/{}/predictions'.format(predictions_dir, p))
+            _uef_predictions_dir = os.path.normpath('{}/uef/{}/predictions'.format(predictions_dir, p))
             _p_res = list()
+            _uef_p_res = list()
             for agg in AGGREGATE_FUNCTIONS:
                 ap_score = ensure_file('{}/map1000-{}'.format(test_dir, agg))
-                cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=predictions_dir,
+                cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_predictions_dir,
+                                         file_to_load=self.cv_map_f, load=True, test=self.corr_measure,
+                                         ap_file=ap_score)
+                uef_cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_uef_predictions_dir,
                                          file_to_load=self.cv_map_f, load=True, test=self.corr_measure,
                                          ap_file=ap_score)
                 mean = cv_obj.calc_test_results()
+                uef_mean = uef_cv_obj.calc_test_results()
                 _p_res.append(mean)
+                _uef_p_res.append(uef_mean)
             sr = pd.Series(_p_res)
+            uef_sr = pd.Series(_uef_p_res)
             sr.name = p
+            uef_p = 'uef({})'.format(p)
+            uef_sr.name = uef_p
             _results[p] = sr
+            _results[uef_p] = uef_sr
         print(pd.DataFrame.from_dict(_results))
         print(pd.DataFrame.from_dict(_results, orient='index'))
         print(pd.DataFrame.from_records(_results))
