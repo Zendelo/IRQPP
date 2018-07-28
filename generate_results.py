@@ -315,16 +315,17 @@ class GenerateTable:
         self.cv = cv
 
     def print_latex_table(self):
-        print('\\begin{tabular}{lccccc}')
-        print('\\toprule')
-        print('{AP} &     avg &     max &     med &     min &     std \\\\')
-        print('predictor &         &         &         &         &         \\\\')
-        print('\\midrule')
-        tables = self.cv.create_tables()
-        for table in tables:
-            print(table)
-        print('\\bottomrule')
-        print('\\end{tabular}')
+        # print('\\begin{tabular}{lccccc}')
+        # print('\\toprule')
+        # print('{AP} &     avg &     max &     med &     min &     std \\\\')
+        # print('predictor &         &         &         &         &         \\\\')
+        # print('\\midrule')
+        for agg in AGGREGATE_FUNCTIONS:
+            _df = self.cv.calc_aggregated(agg)
+            _df.insert(0, column='Predictor agg', value=agg, allow_duplicates=False)
+            print(_df.to_latex(header=False, multirow=True, multicolumn=True, index=True, escape=False))
+        # print('\\bottomrule')
+        # print('\\end{tabular}')
 
 
 def ensure_dir(file_path):
