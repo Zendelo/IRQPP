@@ -92,6 +92,7 @@ class CrossValidation:
             self.index = self.full_set.index
             self.file_name = self._generate_k_folds()
             self.__load_k_folds()
+        self.__calc_correlations()
 
     def _build_full_set(self, dir, ap_file):
         """Assuming the predictions files are named : predictions-[*]"""
@@ -129,7 +130,7 @@ class CrossValidation:
     def __load_k_folds(self):
         self.data_sets_map = pd.read_json(self.file_name)
 
-    def calc_correlations(self):
+    def __calc_correlations(self):
         sets = self.data_sets_map.columns
         corr_results = defaultdict(dict)
         for set_id in sets:
@@ -171,6 +172,7 @@ class CrossValidation:
         print('Mean : {0:0.4f}'.format(np.mean(test_results)))
         print('Variance : {0:0.4f}'.format(np.var(test_results)))
         print('Standard Deviation : {0:0.4f}'.format(np.std(test_results)))
+        return np.mean(test_results)
 
     def calc_corr_df(self, df):
         dict_ = {}
@@ -197,7 +199,6 @@ def main(args):
         y = CrossValidation(k=splits, rep=repeats, predictions_dir=predictions_dir, file_to_load=load_file, load=True,
                             test=correlation_measure,
                             ap_file=labeled_file)
-    y.calc_correlations()
     y.calc_test_results()
 
 

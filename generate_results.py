@@ -5,8 +5,11 @@ import glob
 import multiprocessing
 import os
 from subprocess import run
+from collections import defaultdict
+import pandas as pd
 
 from Timer.timer import Timer
+from crossval import CrossValidation
 
 # TODO: Add directories checks and creation
 # os.path.exists('file or dir')
@@ -23,6 +26,8 @@ NUM_DOCS = [5, 10, 25, 50, 100, 250, 500, 1000]
 LIST_CUT_OFF = [5, 10, 25, 50, 100]
 AGGREGATE_FUNCTIONS = ['max', 'std', 'min', 'avg', 'med']
 SINGLE_FUNCTIONS = ['max', 'min', 'medl', 'medh']
+SPLITS = 2
+REPEATS = 30
 
 parser = argparse.ArgumentParser(description='Full Results Pipeline Automation Generator',
                                  usage='python3.6 generate_results.py --predictor PREDICTOR -c CORPUS -q QUERIES ',
@@ -38,6 +43,8 @@ parser.add_argument('-c', '--corpus', default='ROBUST', type=str, help='corpus (
                     choices=['ROBUST', 'ClueWeb12B'])
 parser.add_argument('--qtype', default='basic', type=str, help='The type of queries to run',
                     choices=['basic', 'single', 'aggregated'])
+parser.add_argument('-m', '--measure', default='pearson', type=str,
+                    help='default correlation measure type is pearson', choices=['pearson', 'spearman', 'kendall'], )
 parser.add_argument('--generate', help="generate new predictions", action="store_true")
 parser.add_argument('--lists', help="generate new lists", action="store_true")
 
@@ -246,19 +253,31 @@ class GeneratePredictions:
                 run('{} {} {} -f {} > {}'.format(script, map_raw, file, func, output), shell=True)
 
 
-class CrossValidation:
-    # TODO: Implement CV
-    def __init__(self):
-        pass
+class CrossVal:
+    def __init__(self, base_dir, cv_map_file, correlation_measure):
+        self.base_dir = base_dir
+        self.test_dir = os.path.normpath('{}/test/'.format(self.base_dir))
+        self.cv_map_f = cv_map_file
+        self.corr_measure = correlation_measure
 
-    def __run_predictor(self, predictions_dir, predictor_exe, parameters, running_param, lists=False):
-        # ~/QppUqvProj/Results/ClueWeb12B/basicPredictions/uef/clarity $ python3.6 ~/repos/IRQPP/crossval.py -l ~/QppUqvProj/Results/ClueWeb12B/test/2_folds_30_repetitions.json --labeled ../../../test/basic/QLmap1000 -p predictions/
-        #
-        # Mean : 0.2692
-        # Variance : 0.0019
-        # Standard Deviation : 0.0435
-        # python ~/repos/IRQPP/crossval.py -p ./predictions/ -l ../../../test/2_folds_30_repetitions.json --labeled ../../../test/basic/QLmap1000
-        pass
+    def calc_aggregated(self, aggregation):
+        test_dir = os.path.normpath('{}/aggregated'.format(self.test_dir))
+        predictions_dir = '{}/uqvPredictions/aggregated/{}'.format(self.base_dir, aggregation)
+        _results = defaultdict(dict)
+        for p in PREDICTORS:
+            _predictions_dir = os.path.normpath('{}/{}/predictions'.format(predictions_dir, p))
+            _p_res = defaultdict()
+            for agg in AGGREGATE_FUNCTIONS:
+                ap_score = '{}/map1000-{}'.format(test_dir, agg)
+                cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=predictions_dir,
+                                         file_to_load=self.cv_map_f, load=True, test=self.corr_measure,
+                                         ap_file=ap_score)
+                mean = cv_obj.calc_test_results()
+                _p_res[agg] = mean
+            _results[aggregation][p] = _p_res
+        print(pd.DataFrame.from_dict(_results))
+        print(pd.DataFrame.from_dict(_results, orient='index'))
+        print(pd.DataFrame.from_records(_results))
 
 
 class GenerateTable:
@@ -296,10 +315,12 @@ def main(args):
     queries = args.queries
     corpus = args.corpus
     queries_type = args.qtype
+    corr_measure = args.measure
     generate = args.generate
     predictor = args.predictor
     generate_lists = args.lists
     predictions_dir = '~/QppUqvProj/Results/{}/'.format(corpus)
+    cv_map_file = '{}/test/2_folds_30_repetitions.json'.format(predictions_dir)
 
     if queries_type == 'aggregated' or queries_type == 'single':
         predictions_dir = '{}/uqvPredictions/raw'.format(predictions_dir)
@@ -339,6 +360,9 @@ def main(args):
                 method(predict, 'uef/{}'.format(predictor))
             else:
                 method(predict, predictor)
+    base_dir = '~/QppUqvProj/Results/{}'.format(corpus)
+    cv = CrossVal(base_dir=base_dir, cv_map_file=cv_map_file, correlation_measure='pearson')
+    cv.calc_aggregated('avg')
 
 
 if __name__ == '__main__':
