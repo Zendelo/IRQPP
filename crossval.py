@@ -169,10 +169,11 @@ class CrossValidation:
         full_results_df.to_json('full_results_vector_for_{}_folds_{}_repetitions.json'.format(self.k, self.rep))
         simple_results_df = pd.Series(simple_results)
         simple_results_df.to_json(('simple_results_vector_for_{}_folds_{}_repetitions.json'.format(self.k, self.rep)))
-        print('Mean : {0:0.4f}'.format(np.mean(test_results)))
-        print('Variance : {0:0.4f}'.format(np.var(test_results)))
-        print('Standard Deviation : {0:0.4f}'.format(np.std(test_results)))
-        return np.mean(test_results)
+        mean = np.mean(test_results)
+        # print('Mean : {0:0.4f}'.format(mean))
+        # print('Variance : {0:0.4f}'.format(np.var(test_results)))
+        # print('Standard Deviation : {0:0.4f}'.format(np.std(test_results)))
+        return '{0:0.4f}'.format(mean)
 
     def calc_corr_df(self, df):
         dict_ = {}

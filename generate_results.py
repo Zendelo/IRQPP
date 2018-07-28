@@ -24,7 +24,7 @@ from crossval import CrossValidation
 PREDICTORS = ['clarity', 'nqc', 'wig', 'qf']
 NUM_DOCS = [5, 10, 25, 50, 100, 250, 500, 1000]
 LIST_CUT_OFF = [5, 10, 25, 50, 100]
-AGGREGATE_FUNCTIONS = ['max', 'std', 'min', 'avg', 'med']
+AGGREGATE_FUNCTIONS = ['avg', 'max', 'med', 'min', 'std']
 SINGLE_FUNCTIONS = ['max', 'min', 'medl', 'medh']
 SPLITS = 2
 REPEATS = 30
@@ -224,7 +224,7 @@ class GeneratePredictions:
         self.__run_predictor(predictions_dir, predictor_exe, parameters, running_param, lists=True, queries=queries)
 
     def calc_aggregations(self, predictor):
-        print('----- Calculating aggregated predictions results -----')
+        print('----- Calculating {} aggregated predictions results -----'.format(predictor))
         script = 'python3.6 ~/repos/IRQPP/aggregateUQV.py'
         raw_dir = os.path.normpath('{}/{}/predictions'.format(self.predictions_dir, predictor))
         res_files = glob.glob('{}/*predictions*'.format(raw_dir))
@@ -238,7 +238,7 @@ class GeneratePredictions:
                 run('{} -p {} -f {} > {}'.format(script, file, func, output), shell=True)
 
     def calc_singles(self, predictor):
-        print('----- Calculating UQV single predictions results -----')
+        print('----- Calculating {} single predictions results -----'.format(predictor))
         script = 'python3.6 ~/repos/IRQPP/singleUQV.py'
         raw_dir = os.path.normpath('{}/{}/predictions'.format(self.predictions_dir, predictor))
         map_raw = '~/QppUqvProj/Results/{}/test/{}/QLmap1000'.format(self.corpus, self.qtype)
@@ -263,21 +263,33 @@ class CrossVal:
     def calc_aggregated(self, aggregation):
         test_dir = os.path.normpath('{}/aggregated'.format(self.test_dir))
         predictions_dir = '{}/uqvPredictions/aggregated/{}'.format(self.base_dir, aggregation)
-        _results = defaultdict(dict)
+        _results = defaultdict()
         for p in PREDICTORS:
             _predictions_dir = os.path.normpath('{}/{}/predictions'.format(predictions_dir, p))
-            _p_res = defaultdict()
+            _predictions_dir = os.path.normpath('{}/{}/predictions'.format(predictions_dir, p))
+            _p_res = list()
             for agg in AGGREGATE_FUNCTIONS:
                 ap_score = ensure_file('{}/map1000-{}'.format(test_dir, agg))
                 cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=predictions_dir,
                                          file_to_load=self.cv_map_f, load=True, test=self.corr_measure,
                                          ap_file=ap_score)
                 mean = cv_obj.calc_test_results()
-                _p_res[agg] = mean
-            _results[aggregation][p] = _p_res
+                _p_res.append(mean)
+            sr = pd.Series(_p_res)
+            sr.name = p
+            _results[p] = sr
         print(pd.DataFrame.from_dict(_results))
         print(pd.DataFrame.from_dict(_results, orient='index'))
         print(pd.DataFrame.from_records(_results))
+        return pd.DataFrame.from_dict(_results, orient='index')
+
+    def create_table(self):
+        _list = []
+        for agg in AGGREGATE_FUNCTIONS:
+            _df = self.calc_aggregated(agg)
+            _df.columns = AGGREGATE_FUNCTIONS
+            _list.append(_df)
+        print(pd.concat(_list))
 
 
 class GenerateTable:
