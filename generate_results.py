@@ -257,7 +257,7 @@ class CrossVal:
     def __init__(self, base_dir, cv_map_file, correlation_measure):
         self.base_dir = base_dir
         self.test_dir = os.path.normpath('{}/test/'.format(self.base_dir))
-        self.cv_map_f = cv_map_file
+        self.cv_map_f = ensure_file(cv_map_file)
         self.corr_measure = correlation_measure
 
     def calc_aggregated(self, aggregation):
@@ -268,7 +268,7 @@ class CrossVal:
             _predictions_dir = os.path.normpath('{}/{}/predictions'.format(predictions_dir, p))
             _p_res = defaultdict()
             for agg in AGGREGATE_FUNCTIONS:
-                ap_score = '{}/map1000-{}'.format(test_dir, agg)
+                ap_score = ensure_file('{}/map1000-{}'.format(test_dir, agg))
                 cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=predictions_dir,
                                          file_to_load=self.cv_map_f, load=True, test=self.corr_measure,
                                          ap_file=ap_score)
@@ -295,11 +295,16 @@ def ensure_dir(file_path):
 
 def ensure_files(files):
     for file in files:
-        _file = file.split(' ')
-        for file in _file:
-            # tilde expansion
-            file_path = os.path.expanduser(file)
-            assert os.path.isfile(file_path), "The file {} doesn't exist. Please create the file first".format(file)
+        for _file in file.split(' '):
+            ensure_file(_file)
+
+
+def ensure_file(file):
+    """Ensure a single file exists, returns the full path of the file if True"""
+    # tilde expansion
+    file_path = os.path.expanduser(file)
+    assert os.path.isfile(file_path), "The file {} doesn't exist. Please create the file first".format(file)
+    return file_path
 
 
 def main(args):
