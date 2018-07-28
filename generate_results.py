@@ -4,8 +4,9 @@ import argparse
 import glob
 import multiprocessing
 import os
-from subprocess import run
 from collections import defaultdict
+from subprocess import run
+
 import pandas as pd
 
 from Timer.timer import Timer
@@ -264,10 +265,15 @@ class CrossVal:
         test_dir = os.path.normpath('{}/aggregated'.format(self.test_dir))
         predictions_dir = '{}/uqvPredictions/aggregated/{}'.format(self.base_dir, aggregation)
         _results = defaultdict()
+
         for p in PREDICTORS:
+            # dir of aggregated prediction results
             _predictions_dir = os.path.normpath('{}/{}/predictions'.format(predictions_dir, p))
+            # dir of aggregated uef prediction results
             _uef_predictions_dir = os.path.normpath('{}/uef/{}/predictions'.format(predictions_dir, p))
+            # list to save non uef results for a specific predictor with different AP files
             _p_res = list()
+            # list to save uef results
             _uef_p_res = list()
             for agg in AGGREGATE_FUNCTIONS:
                 ap_score = ensure_file('{}/map1000-{}'.format(test_dir, agg))
@@ -279,8 +285,9 @@ class CrossVal:
                                              ap_file=ap_score)
                 mean = cv_obj.calc_test_results()
                 uef_mean = uef_cv_obj.calc_test_results()
-                _p_res.append(mean)
-                _uef_p_res.append(uef_mean)
+                _p_res.append('${}$'.format(mean))
+                _uef_p_res.append('${}$'.format(uef_mean))
+
             sr = pd.Series(_p_res)
             uef_sr = pd.Series(_uef_p_res)
             sr.name = p
@@ -288,22 +295,36 @@ class CrossVal:
             uef_sr.name = uef_p
             _results[p] = sr
             _results[uef_p] = uef_sr
+
         res_df = pd.DataFrame.from_dict(_results, orient='index')
-        _predictors = [p for p in PREDICTORS]
         _uef_predictors = ['uef({})'.format(p) for p in PREDICTORS]
         res_df = res_df.reindex(index=PREDICTORS + _uef_predictors)
         return res_df
 
-    def create_table(self):
+    def create_tables(self):
+        _list = []
         for agg in AGGREGATE_FUNCTIONS:
             _df = self.calc_aggregated(agg)
             _df.columns = AGGREGATE_FUNCTIONS
-            print('\n {} \n'.format(_df))
+            _list.append(_df.to_latex(header=False, multirow=True, index=True, escape=False))
+        return _list
 
 
 class GenerateTable:
-    def __init__(self):
-        pass
+    def __init__(self, cv: CrossVal):
+        self.cv = cv
+
+    def print_latex_table(self):
+        print('\\begin{tabular}{lccccc}')
+        print('\\toprule')
+        print('{AP} &     avg &     max &     med &     min &     std \\\\')
+        print('predictor &         &         &         &         &         \\\\')
+        print('\\midrule')
+        tables = self.cv.create_tables()
+        for table in tables:
+            print(table)
+        print('\\bottomrule')
+        print('\\end{tabular}')
 
 
 def ensure_dir(file_path):
@@ -389,7 +410,8 @@ def main(args):
                 method(predict, predictor)
     base_dir = '~/QppUqvProj/Results/{}'.format(corpus)
     cv = CrossVal(base_dir=base_dir, cv_map_file=cv_map_file, correlation_measure=corr_measure)
-    cv.create_table()
+    lat = GenerateTable(cv)
+    lat.print_latex_table()
 
 
 if __name__ == '__main__':
