@@ -384,7 +384,8 @@ def main(args):
             method = calc_functions.get(queries_type, None)
             assert method is not None, 'No applicable calculation function found for {}'.format(queries_type)
             if predictor == 'uef':
-                method(predict, 'uef/{}'.format(predictor))
+                for p in PREDICTORS:
+                    method(predict, 'uef/{}'.format(p))
             else:
                 method(predict, predictor)
     base_dir = '~/QppUqvProj/Results/{}'.format(corpus)
