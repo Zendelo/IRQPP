@@ -255,7 +255,7 @@ class GeneratePredictions:
 
 class CrossVal:
     def __init__(self, base_dir, cv_map_file, correlation_measure):
-        self.base_dir = base_dir
+        self.base_dir = os.path.normpath(os.path.expanduser(base_dir))
         self.test_dir = os.path.normpath('{}/test/'.format(self.base_dir))
         self.cv_map_f = ensure_file(cv_map_file)
         self.corr_measure = correlation_measure
