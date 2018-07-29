@@ -299,6 +299,11 @@ class CrossVal:
         res_df = pd.DataFrame.from_dict(_results, orient='index')
         _uef_predictors = ['uef({})'.format(p) for p in PREDICTORS]
         res_df = res_df.reindex(index=PREDICTORS + _uef_predictors)
+        res_df.reset_index(inplace=True)
+        res_df.insert(loc=0, column='pred-agg', value=aggregation)
+        res_df.columns = ['predictor-agg', 'predictor'] + AGGREGATE_FUNCTIONS
+        res_df.set_index(['predictor-agg', 'predictor'], inplace=True)
+        res_df.index = res_df.index.drop_duplicates('first')
         return res_df
 
     def create_tables(self):
@@ -320,10 +325,14 @@ class GenerateTable:
         # print('{AP} &     avg &     max &     med &     min &     std \\\\')
         # print('predictor &         &         &         &         &         \\\\')
         # print('\\midrule')
-        for agg in AGGREGATE_FUNCTIONS:
+        
+        _df = self.cv.calc_aggregated(AGGREGATE_FUNCTIONS[0])
+        print(_df.reset_index().to_latex(header=True, multirow=False, multicolumn=False, index=False, escape=False, index_names=False))
+
+        for agg in AGGREGATE_FUNCTIONS[1:]:
             _df = self.cv.calc_aggregated(agg)
-            _df.insert(0, column='Predictor agg', value=agg, allow_duplicates=False)
-            print(_df.to_latex(header=False, multirow=True, multicolumn=True, index=True, escape=False))
+            _df.reset_index(inplace=True)
+            print(_df.to_latex(header=False, multirow=False, multicolumn=False, index=False, escape=False, index_names=False))
         # print('\\bottomrule')
         # print('\\end{tabular}')
 
