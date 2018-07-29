@@ -347,7 +347,8 @@ class CrossVal:
         res_df = pd.DataFrame.from_dict(_results, orient='index')
         _uef_predictors = ['uef({})'.format(p) for p in PREDICTORS]
         res_df = res_df.reindex(index=PREDICTORS + _uef_predictors)
-        res_df.columns = ['predictor'] + CORR_MEASURES
+        res_df.reset_index(inplace=True)
+        res_df.columns = ['Predictor'] + CORR_MEASURES
         return res_df
 
     def calc_basic(self):
@@ -405,18 +406,18 @@ class GenerateTable:
         for agg in AGGREGATE_FUNCTIONS[1:]:
             _df = self.cv.calc_aggregated(agg)
             print(_df.to_latex(header=False, multirow=False, multicolumn=False, index=False, escape=False,
-                               index_names=False))
+                               index_names=False, column_format='clccccc'))
 
     def print_sing_latex_table(self):
         for sing in SINGLE_FUNCTIONS:
             _df = self.cv.calc_single(sing)
             print(_df.to_latex(header=True, multirow=False, multicolumn=False, index=False, escape=False,
-                               index_names=False))
+                               index_names=False, column_format='lccc'))
 
     def print_basic_latex_table(self):
         _df = self.cv.calc_basic()
         print(_df.to_latex(header=True, multirow=False, multicolumn=False, index=False, escape=False,
-                           index_names=False))
+                           index_names=False, column_format='lccc'))
 
 
 def ensure_dir(file_path):
