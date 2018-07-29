@@ -22,7 +22,7 @@ from crossval import CrossValidation
 # TODO: Create CV process and write the results to tables
 # TODO: Add a check that all necessary files exist on startup (to avoid later crash)
 
-PREDICTORS = ['clarity', 'nqc', 'wig', 'qf']
+PREDICTORS = ['clarity', 'nqc', 'wig']  # , 'qf']
 NUM_DOCS = [5, 10, 25, 50, 100, 250, 500, 1000]
 LIST_CUT_OFF = [5, 10, 25, 50, 100]
 AGGREGATE_FUNCTIONS = ['avg', 'max', 'med', 'min', 'std']
@@ -390,6 +390,7 @@ class CrossVal:
         res_df = pd.DataFrame.from_dict(_results, orient='index')
         _uef_predictors = ['uef({})'.format(p) for p in PREDICTORS]
         res_df = res_df.reindex(index=PREDICTORS + _uef_predictors)
+        res_df.reset_index(inplace=True)
         res_df.columns = ['predictor'] + CORR_MEASURES
         return res_df
 
