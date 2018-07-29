@@ -4,8 +4,9 @@ import argparse
 import glob
 import multiprocessing
 import os
-from subprocess import run
 from collections import defaultdict
+from subprocess import run
+
 import pandas as pd
 
 from Timer.timer import Timer
@@ -24,7 +25,7 @@ from crossval import CrossValidation
 PREDICTORS = ['clarity', 'nqc', 'wig', 'qf']
 NUM_DOCS = [5, 10, 25, 50, 100, 250, 500, 1000]
 LIST_CUT_OFF = [5, 10, 25, 50, 100]
-AGGREGATE_FUNCTIONS = ['max', 'std', 'min', 'avg', 'med']
+AGGREGATE_FUNCTIONS = ['avg', 'max', 'med', 'min', 'std']
 SINGLE_FUNCTIONS = ['max', 'min', 'medl', 'medh']
 SPLITS = 2
 REPEATS = 30
@@ -224,7 +225,7 @@ class GeneratePredictions:
         self.__run_predictor(predictions_dir, predictor_exe, parameters, running_param, lists=True, queries=queries)
 
     def calc_aggregations(self, predictor):
-        print('----- Calculating aggregated predictions results -----')
+        print('----- Calculating {} aggregated predictions results -----'.format(predictor))
         script = 'python3.6 ~/repos/IRQPP/aggregateUQV.py'
         raw_dir = os.path.normpath('{}/{}/predictions'.format(self.predictions_dir, predictor))
         res_files = glob.glob('{}/*predictions*'.format(raw_dir))
@@ -238,7 +239,7 @@ class GeneratePredictions:
                 run('{} -p {} -f {} > {}'.format(script, file, func, output), shell=True)
 
     def calc_singles(self, predictor):
-        print('----- Calculating UQV single predictions results -----')
+        print('----- Calculating {} single predictions results -----'.format(predictor))
         script = 'python3.6 ~/repos/IRQPP/singleUQV.py'
         raw_dir = os.path.normpath('{}/{}/predictions'.format(self.predictions_dir, predictor))
         map_raw = '~/QppUqvProj/Results/{}/test/{}/QLmap1000'.format(self.corpus, self.qtype)
@@ -263,26 +264,77 @@ class CrossVal:
     def calc_aggregated(self, aggregation):
         test_dir = os.path.normpath('{}/aggregated'.format(self.test_dir))
         predictions_dir = '{}/uqvPredictions/aggregated/{}'.format(self.base_dir, aggregation)
-        _results = defaultdict(dict)
+        _results = defaultdict()
+
         for p in PREDICTORS:
+            # dir of aggregated prediction results
             _predictions_dir = os.path.normpath('{}/{}/predictions'.format(predictions_dir, p))
-            _p_res = defaultdict()
+            # dir of aggregated uef prediction results
+            _uef_predictions_dir = os.path.normpath('{}/uef/{}/predictions'.format(predictions_dir, p))
+            # list to save non uef results for a specific predictor with different AP files
+            _p_res = list()
+            # list to save uef results
+            _uef_p_res = list()
             for agg in AGGREGATE_FUNCTIONS:
                 ap_score = ensure_file('{}/map1000-{}'.format(test_dir, agg))
-                cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=predictions_dir,
+                cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_predictions_dir,
                                          file_to_load=self.cv_map_f, load=True, test=self.corr_measure,
                                          ap_file=ap_score)
+                uef_cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_uef_predictions_dir,
+                                             file_to_load=self.cv_map_f, load=True, test=self.corr_measure,
+                                             ap_file=ap_score)
                 mean = cv_obj.calc_test_results()
-                _p_res[agg] = mean
-            _results[aggregation][p] = _p_res
-        print(pd.DataFrame.from_dict(_results))
-        print(pd.DataFrame.from_dict(_results, orient='index'))
-        print(pd.DataFrame.from_records(_results))
+                uef_mean = uef_cv_obj.calc_test_results()
+                _p_res.append('${}$'.format(mean))
+                _uef_p_res.append('${}$'.format(uef_mean))
+
+            sr = pd.Series(_p_res)
+            uef_sr = pd.Series(_uef_p_res)
+            sr.name = p
+            uef_p = 'uef({})'.format(p)
+            uef_sr.name = uef_p
+            _results[p] = sr
+            _results[uef_p] = uef_sr
+
+        res_df = pd.DataFrame.from_dict(_results, orient='index')
+        _uef_predictors = ['uef({})'.format(p) for p in PREDICTORS]
+        res_df = res_df.reindex(index=PREDICTORS + _uef_predictors)
+        res_df.reset_index(inplace=True)
+        res_df.insert(loc=0, column='pred-agg', value=aggregation)
+        res_df.columns = ['predictor-agg', 'predictor'] + AGGREGATE_FUNCTIONS
+        res_df.set_index(['predictor-agg', 'predictor'], inplace=True)
+        res_df.index = res_df.index.drop_duplicates('first')
+        return res_df
+
+    def create_tables(self):
+        _list = []
+        for agg in AGGREGATE_FUNCTIONS:
+            _df = self.calc_aggregated(agg)
+            _df.columns = AGGREGATE_FUNCTIONS
+            _list.append(_df.to_latex(header=False, multirow=True, index=True, escape=False))
+        return _list
 
 
 class GenerateTable:
-    def __init__(self):
-        pass
+    def __init__(self, cv: CrossVal):
+        self.cv = cv
+
+    def print_latex_table(self):
+        # print('\\begin{tabular}{lccccc}')
+        # print('\\toprule')
+        # print('{AP} &     avg &     max &     med &     min &     std \\\\')
+        # print('predictor &         &         &         &         &         \\\\')
+        # print('\\midrule')
+        
+        _df = self.cv.calc_aggregated(AGGREGATE_FUNCTIONS[0])
+        print(_df.reset_index().to_latex(header=True, multirow=False, multicolumn=False, index=False, escape=False, index_names=False))
+
+        for agg in AGGREGATE_FUNCTIONS[1:]:
+            _df = self.cv.calc_aggregated(agg)
+            _df.reset_index(inplace=True)
+            print(_df.to_latex(header=False, multirow=False, multicolumn=False, index=False, escape=False, index_names=False))
+        # print('\\bottomrule')
+        # print('\\end{tabular}')
 
 
 def ensure_dir(file_path):
@@ -362,12 +414,14 @@ def main(args):
             method = calc_functions.get(queries_type, None)
             assert method is not None, 'No applicable calculation function found for {}'.format(queries_type)
             if predictor == 'uef':
-                method(predict, 'uef/{}'.format(predictor))
+                for p in PREDICTORS:
+                    method(predict, 'uef/{}'.format(p))
             else:
                 method(predict, predictor)
     base_dir = '~/QppUqvProj/Results/{}'.format(corpus)
-    cv = CrossVal(base_dir=base_dir, cv_map_file=cv_map_file, correlation_measure='pearson')
-    cv.calc_aggregated('avg')
+    cv = CrossVal(base_dir=base_dir, cv_map_file=cv_map_file, correlation_measure=corr_measure)
+    lat = GenerateTable(cv)
+    lat.print_latex_table()
 
 
 if __name__ == '__main__':
