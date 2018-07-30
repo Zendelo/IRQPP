@@ -301,9 +301,9 @@ class CrossVal:
             _results[uef_p] = uef_sr
 
         res_df = pd.DataFrame.from_dict(_results, orient='index')
-        _predictors = [p.upper() for p in PREDICTORS]
         _uef_predictors = ['uef({})'.format(p) for p in PREDICTORS]
-        res_df = res_df.reindex(index=_predictors + _uef_predictors)
+        res_df = res_df.reindex(index=PREDICTORS + _uef_predictors)
+        res_df.index = res_df.index.upper()
         res_df.reset_index(inplace=True)
         res_df.insert(loc=0, column='pred-agg', value=aggregation)
         res_df.columns = ['predictor-agg', 'predictor'] + AGGREGATE_FUNCTIONS
@@ -346,9 +346,9 @@ class CrossVal:
             _results[uef_p] = uef_sr
 
         res_df = pd.DataFrame.from_dict(_results, orient='index')
-        _predictors = [p.upper() for p in PREDICTORS]
-        _uef_predictors = ['uef({})'.format(p.upper()) for p in PREDICTORS]
-        res_df = res_df.reindex(index=_predictors + _uef_predictors)
+        _uef_predictors = ['uef({})'.format(p) for p in PREDICTORS]
+        res_df = res_df.reindex(index=PREDICTORS + _uef_predictors)
+        res_df.index = res_df.index.upper()
         res_df.reset_index(inplace=True)
         res_df.columns = ['Predictor'] + CORR_MEASURES
         return res_df
@@ -390,9 +390,9 @@ class CrossVal:
             _results[uef_p] = uef_sr
 
         res_df = pd.DataFrame.from_dict(_results, orient='index')
-        _predictors = [p.upper() for p in PREDICTORS]
         _uef_predictors = ['uef({})'.format(p) for p in PREDICTORS]
-        res_df = res_df.reindex(index=_predictors + _uef_predictors)
+        res_df = res_df.reindex(index=PREDICTORS + _uef_predictors)
+        res_df.index = res_df.index.upper()
         res_df.reset_index(inplace=True)
         res_df.columns = ['predictor'] + CORR_MEASURES
         return res_df
