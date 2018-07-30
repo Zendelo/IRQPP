@@ -22,7 +22,7 @@ from crossval import CrossValidation
 # TODO: Create CV process and write the results to tables
 # TODO: Add a check that all necessary files exist on startup (to avoid later crash)
 
-PREDICTORS = ['clarity', 'nqc', 'wig']  # , 'qf']
+PREDICTORS = ['clarity', 'nqc', 'wig', 'qf']
 NUM_DOCS = [5, 10, 25, 50, 100, 250, 500, 1000]
 LIST_CUT_OFF = [5, 10, 25, 50, 100]
 AGGREGATE_FUNCTIONS = ['avg', 'max', 'med', 'min', 'std']
@@ -411,6 +411,7 @@ class GenerateTable:
 
     def print_sing_latex_table(self):
         for sing in SINGLE_FUNCTIONS:
+            print('\n*** Table for {} AP queries ***\n'.format(sing))
             _df = self.cv.calc_single(sing)
             print(_df.to_latex(header=True, multirow=False, multicolumn=False, index=False, escape=False,
                                index_names=False, column_format='lccc'))
