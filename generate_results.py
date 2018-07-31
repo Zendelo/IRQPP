@@ -419,14 +419,13 @@ class GenerateTable:
             _df = self.cv.calc_aggregated(agg)
             table = _df.to_latex(header=False, multirow=False, multicolumn=False, index=False, escape=False,
                                  index_names=False, column_format='clccccc')
-            table = table.replace('\\begin{{tabular}}{{clccccc}}', '')
-            table = table.replace('\\end{{tabular}}', '')
-            table = table.replace('\\end{{tabular}}', '')
+            table = table.replace('\\begin{tabular}{clccccc}', '')
+            table = table.replace('\\end{tabular}', '')
             table = table.replace('\\toprule', '\\multirow{{8}}{{*}}{{{}}}'.format(agg))
             print(table)
-        print('\\end{{tabular}}')
-        print('\\end{{center}}')
-        print('\\end{{table}}')
+        print('\\end{tabular}')
+        print('\\end{center}')
+        print('\\end{table}')
 
     def print_sing_latex_table(self):
         for sing in SINGLE_FUNCTIONS:
