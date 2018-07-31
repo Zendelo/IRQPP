@@ -22,7 +22,7 @@ from crossval import CrossValidation
 # TODO: Create CV process and write the results to tables
 # TODO: Add a check that all necessary files exist on startup (to avoid later crash)
 
-PREDICTORS = ['clarity', 'nqc', 'wig', 'qf']
+PREDICTORS = ['clarity', 'nqc', 'wig']#, 'qf']
 NUM_DOCS = [5, 10, 25, 50, 100, 250, 500, 1000]
 LIST_CUT_OFF = [5, 10, 25, 50, 100]
 AGGREGATE_FUNCTIONS = ['avg', 'max', 'med', 'min', 'std']
@@ -405,9 +405,9 @@ class GenerateTable:
 
     def print_agg_latex_table(self):
         _agg = AGGREGATE_FUNCTIONS[0]
-        print('\\begin{{table}}[ht!]')
-        print('\\begin{{center}}')
-        print('\\caption{{ {} UQV aggregated {} Correlations}}'.format(self.corpus, self.cv.corr_measure))
+        print('\\begin{table}[ht!]')
+        print('\\begin{center}')
+        print('\\caption{{ {} UQV aggregated {} Correlations}}'.format(self.corpus, self.cv.corr_measure.capitalize()))
         _df = self.cv.calc_aggregated(_agg)
         table = _df.to_latex(header=True, multirow=False, multicolumn=False, index=False, escape=False,
                              index_names=False, column_format='clccccc')
@@ -422,7 +422,7 @@ class GenerateTable:
             table = table.replace('\\begin{{tabular}}{{clccccc}}', '')
             table = table.replace('\\end{{tabular}}', '')
             table = table.replace('\\end{{tabular}}', '')
-            table = table.replace('\\toprule', '\\multirow{{8}}{{*}}{}'.format(agg))
+            table = table.replace('\\toprule', '\\multirow{{8}}{{*}}{ {} }'.format(agg))
             print(table)
         print('\\end{{tabular}}')
         print('\\end{{center}}')
