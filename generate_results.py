@@ -421,6 +421,7 @@ class GenerateTable:
                                  index_names=False, column_format='clccccc')
             table = table.replace('\\begin{tabular}{clccccc}', '')
             table = table.replace('\\end{tabular}', '')
+            table = table.replace('{}'.format(agg), '')
             table = table.replace('\\toprule', '\\multirow{{8}}{{*}}{{{}}}'.format(agg))
             print(table)
         print('\\end{tabular}')
