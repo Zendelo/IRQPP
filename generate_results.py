@@ -399,18 +399,34 @@ class CrossVal:
 
 
 class GenerateTable:
-    def __init__(self, cv: CrossVal):
+    def __init__(self, cv: CrossVal, corpus):
         self.cv = cv
+        self.corpus = corpus
 
     def print_agg_latex_table(self):
-        _df = self.cv.calc_aggregated(AGGREGATE_FUNCTIONS[0])
-        print(
-            _df.to_latex(header=True, multirow=False, multicolumn=False, index=False, escape=False, index_names=False))
+        _agg = AGGREGATE_FUNCTIONS[0]
+        print('\\begin{{table}}[ht!]')
+        print('\\begin{{center}}')
+        print('\\caption{{ {} UQV aggregated {} Correlations}}'.format(self.corpus, self.cv.corr_measure))
+        _df = self.cv.calc_aggregated(_agg)
+        table = _df.to_latex(header=True, multirow=False, multicolumn=False, index=False, escape=False,
+                             index_names=False, column_format='clccccc')
+        table = table.replace('\\end{tabular}', '')
+        table = table.replace('predictor-agg', '\\multirow{{8}}{{*}}{}'.format(_agg))
+        print(table)
 
         for agg in AGGREGATE_FUNCTIONS[1:]:
             _df = self.cv.calc_aggregated(agg)
-            print(_df.to_latex(header=False, multirow=False, multicolumn=False, index=False, escape=False,
-                               index_names=False, column_format='clccccc'))
+            table = _df.to_latex(header=False, multirow=False, multicolumn=False, index=False, escape=False,
+                                 index_names=False, column_format='clccccc')
+            table = table.replace('\\begin{{tabular}}{{clccccc}}', '')
+            table = table.replace('\\end{{tabular}}', '')
+            table = table.replace('\\end{{tabular}}', '')
+            table = table.replace('\\toprule', '\\multirow{{8}}{{*}}{}'.format(agg))
+            print(table)
+        print('\\end{{tabular}}')
+        print('\\end{{center}}')
+        print('\\end{{table}}')
 
     def print_sing_latex_table(self):
         for sing in SINGLE_FUNCTIONS:
@@ -515,7 +531,7 @@ def main(args):
                     method(predict, predictor)
 
     cv = CrossVal(base_dir=base_dir, cv_map_file=cv_map_file, correlation_measure=corr_measure)
-    lat = GenerateTable(cv)
+    lat = GenerateTable(cv, corpus)
 
     if table == 'all':
         print('{} UQV aggregated predictions LaTeX table: \n'.format(corpus))
