@@ -422,7 +422,7 @@ class GenerateTable:
             table = table.replace('\\begin{{tabular}}{{clccccc}}', '')
             table = table.replace('\\end{{tabular}}', '')
             table = table.replace('\\end{{tabular}}', '')
-            table = table.replace('\\toprule', '\\multirow{{8}}{{*}}{ {} }'.format(agg))
+            table = table.replace('\\toprule', '\\multirow{{8}}{{*}}{{{}}}'.format(agg))
             print(table)
         print('\\end{{tabular}}')
         print('\\end{{center}}')
