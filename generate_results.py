@@ -154,7 +154,7 @@ class GeneratePredictions:
     def generate_wig(self, predictions_dir=None):
         print('\n -- WIG -- \n')
         predictor_exe = 'python3.6 ~/repos/IRQPP/wig.py'
-        ql_scores = '~/QppUqvProj/Results/{}/test/{}/CE.res'.format(self.corpus, self.qtype)
+        ql_scores = '~/QppUqvProj/Results/{}/test/{}/QL.res'.format(self.corpus, self.qtype)
         qlc_scores = '~/QppUqvProj/Results/{}/test/{}/logqlc.res'.format(self.corpus, self.qtype)
         parameters = '{} {}'.format(ql_scores, qlc_scores)
         running_param = '-d '
@@ -167,7 +167,7 @@ class GeneratePredictions:
     def generate_nqc(self, predictions_dir=None):
         print('\n -- NQC -- \n')
         predictor_exe = 'python3.6 ~/repos/IRQPP/nqc.py'
-        ql_scores = '~/QppUqvProj/Results/{}/test/{}/CE.res'.format(self.corpus, self.qtype)
+        ql_scores = '~/QppUqvProj/Results/{}/test/{}/QL.res'.format(self.corpus, self.qtype)
         qlc_scores = '~/QppUqvProj/Results/{}/test/{}/logqlc.res'.format(self.corpus, self.qtype)
         parameters = '{} {}'.format(ql_scores, qlc_scores)
         running_param = '-d '

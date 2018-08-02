@@ -75,7 +75,13 @@ class WIG:
     def _calc_docs_score(self, qid, qlen, num_docs):
         scores_ = list(self.res.loc[qid]['docScore'].head(num_docs))
         k = min(len(scores_), num_docs)
-        return (sum(scores_) * sqrt(qlen)) / k
+        return sum(scores_) / (k * sqrt(qlen))
+
+    # Version for -CE scores
+    # def _calc_docs_score(self, qid, qlen, num_docs):
+    #     scores_ = list(self.res.loc[qid]['docScore'].head(num_docs))
+    #     k = min(len(scores_), num_docs)
+    #     return (sum(scores_) * sqrt(qlen)) / k
 
     def calc_results(self, number_of_docs):
         for qid, qlen in self.qdb.query_length.items():
