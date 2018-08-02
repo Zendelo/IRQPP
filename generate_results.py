@@ -12,17 +12,9 @@ import pandas as pd
 from Timer.timer import Timer
 from crossval import CrossValidation
 
-# TODO: Add directories checks and creation
-# os.path.exists('file or dir')
-# os.path.isfile('file')
-# os.path.isdir('dir')
-# TODO: Create for UQV aggregations
-# TODO: Create for UQV singles
-
-# TODO: Create CV process and write the results to tables
 # TODO: Add a check that all necessary files exist on startup (to avoid later crash)
 
-PREDICTORS = ['clarity', 'nqc', 'wig']#, 'qf']
+PREDICTORS = ['clarity', 'nqc', 'wig']  # , 'qf']
 NUM_DOCS = [5, 10, 25, 50, 100, 250, 500, 1000]
 LIST_CUT_OFF = [5, 10, 25, 50, 100]
 AGGREGATE_FUNCTIONS = ['avg', 'max', 'med', 'min', 'std']
@@ -412,6 +404,7 @@ class GenerateTable:
         table = _df.to_latex(header=True, multirow=False, multicolumn=False, index=False, escape=False,
                              index_names=False, column_format='clccccc')
         table = table.replace('\\end{tabular}', '')
+        table = table.replace('\\toprule', '\\toprule \n & & \\multicolumn{5}{c}{AP-aggregations} \\\\')
         table = table.replace('predictor-agg', '\\multirow{{8}}{{*}}{{{}}}'.format(_agg))
         print(table)
 
