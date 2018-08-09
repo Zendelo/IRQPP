@@ -13,8 +13,11 @@ from Timer.timer import Timer
 from crossval import CrossValidation
 
 # TODO: Add a check that all necessary files exist on startup (to avoid later crash)
+# TODO: Add parallelization where possible
+# TODO: Go over all codes and make sure no implicit sorted files assumptions
+# TODO: Modify single + basic tables into single table
 
-PREDICTORS = ['clarity', 'nqc', 'wig']  # , 'qf']
+PREDICTORS = ['clarity', 'nqc', 'wig', 'qf']
 NUM_DOCS = [5, 10, 25, 50, 100, 250, 500, 1000]
 LIST_CUT_OFF = [5, 10, 25, 50, 100]
 AGGREGATE_FUNCTIONS = ['avg', 'max', 'med', 'min', 'std']

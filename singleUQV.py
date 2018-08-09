@@ -3,8 +3,7 @@
 import argparse
 import csv
 from collections import defaultdict
-from statistics import median_high
-from statistics import median_low
+from statistics import median_high, median_low
 
 import numpy as np
 import pandas as pd

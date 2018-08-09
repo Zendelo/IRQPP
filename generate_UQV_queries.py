@@ -6,6 +6,7 @@ import argparse
 from lxml import etree as etree
 from matplotlib import pyplot as plt
 from statistics import median_high, median_low
+
 import numpy as np
 import pandas as pd
 
