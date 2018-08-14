@@ -1,25 +1,94 @@
 #!/usr/bin/env python
 
 import csv
+import sys
 from collections import defaultdict
-import argparse
-from lxml import etree as etree
-from matplotlib import pyplot as plt
 
 import numpy as np
 import pandas as pd
+from lxml import etree
 
-parser = argparse.ArgumentParser(description='Queries UQV pre-processing',
-                                 usage='Create new UQV qrels file',
-                                 epilog='ROBUST version')
 
-parser.add_argument('-q', '--queries', default='data/ROBUST/queries.txt', help='path to queries.txt file')
-parser.add_argument('-u', '--UQV', default='data/ROBUST/queriesUQV.txt', help='path to queriesUQV.txt file')
-parser.add_argument('-r', '--qrels', default='data/ROBUST/qrels', help='path to qrels file')
-parser.add_argument('-x', '--queriestxt', default=None, help='path to txt file to convert to xml')
+class DataReader:
+    def __init__(self, data_file: str, file_type):
+        """
+        :param data_file: results file path
+        :param file_type: 'predictions' for predictor results or 'ap' for ap results or trec for trec format results
+        """
+        self.file_type = file_type
+        self.data = data_file
+        self.__number_of_col = self.__check_number_of_col()
+        if self.file_type == 'predictions':
+            assert self.__number_of_col == 2 or self.__number_of_col == 4, 'Wrong File format'
+            self.data_df = self.__read_results_data_2() if self.__number_of_col == 2 else self.__read_results_data_4()
+        elif self.file_type == 'ap':
+            self.data_df = self.__read_ap_data_2()
+        elif self.file_type == 'trec':
+            assert self.__number_of_col == 6, 'Wrong File format, trec format should have 6 columns'
+            self.data_df = self.__read_trec_data()
+        else:
+            sys.exit('Unknown file type, use ap, trec or predictions file type')
+        self.qid_vars, self.var_qid = self.__generate_qids_from_res()
+
+    def __check_number_of_col(self):
+        with open(self.data) as f:
+            reader = csv.reader(f, delimiter=' ', skipinitialspace=True)
+            first_row = next(reader)
+            num_cols = len(first_row)
+        return int(num_cols)
+
+    def __read_results_data_2(self):
+        """Assuming data is a res with 2 columns, 'Qid Score'"""
+        data_df = pd.read_table(self.data, delim_whitespace=True, header=None, index_col=0,
+                                names=['qid', 'score'],
+                                dtype={'qid': str, 'score': np.float64})
+        return data_df
+
+    def __read_ap_data_2(self):
+        """Assuming data is a res with 2 columns, 'Qid AP'"""
+        data_df = pd.read_table(self.data, delim_whitespace=True, header=None, index_col=0,
+                                names=['qid', 'ap'],
+                                dtype={'qid': str, 'ap': np.float64})
+        return data_df
+
+    def __read_results_data_4(self):
+        """Assuming data is a res with 4 columns, 'Qid entropy cross_entropy Score'"""
+        data_df = pd.read_table(self.data, delim_whitespace=True, header=None, index_col=0,
+                                names=['qid', 'entropy', 'cross_entropy', 'score'],
+                                dtype={'qid': str, 'score': np.float64, 'entropy': np.float64,
+                                       'cross_entropy': np.float64})
+        data_df = data_df.filter(['qid', 'score'], axis=1)
+        return data_df
+
+    def __read_trec_data(self):
+        """Assuming data is a trec format results file with 6 columns, 'Qid entropy cross_entropy Score'"""
+        data_df = pd.read_table(self.data, delim_whitespace=True, header=None, index_col=0,
+                                names=['qid', 'Q0', 'docID', 'docRank', 'docScore', 'ind'],
+                                dtype={'qid': str, 'Q0': str, 'docID': str, 'docRank': int, 'docScore': float,
+                                       'ind': str})
+        data_df = data_df.filter(['qid', 'docID', 'docRank', 'docScore'], axis=1)
+        return data_df
+
+    def __generate_qids_from_res(self):
+        qid_vars = defaultdict(list)
+        var_qid = defaultdict(str)
+        raw_qids = self.data_df.index.unique()
+        for _qid in raw_qids:
+            qid = _qid.split('-')[0]
+            qid_vars[qid].append(_qid)
+            var_qid[_qid] = qid
+        return qid_vars, var_qid
+
+    def get_qid_by_var(self, var):
+        return self.var_qid.get(var)
+
+    def get_vars_by_qid(self, qid):
+        return self.qid_vars.get(qid)
 
 
 class QueriesTextParser:
+    """For UQV queries file add kind='uqv' """
+
     def __init__(self, queries_file, kind: str = 'original'):
         self.queries_df = pd.read_table(queries_file, delim_whitespace=False, delimiter=':', header=None,
                                         names=['qid', 'text'])
@@ -132,25 +201,3 @@ class QueriesXMLParser:
 
     def print_queries_xml(self):
         print(etree.tostring(self.root, pretty_print=True, encoding='unicode'))
-
-
-def main(args: parser):
-    queries_file = args.queries
-    uqv_file = args.UQV
-    qrels_file = args.qrels
-    txt_file = args.queriestxt
-
-    if txt_file is not None:
-        queries_txt = QueriesTextParser(txt_file)
-        query_xml = QueriesXMLParser(queries_txt)
-        query_xml.print_queries_xml()
-    else:
-        original_queries = QueriesTextParser(queries_file, 'original')
-        uqv_queries = QueriesTextParser(uqv_file, 'uqv')
-        qrels_obj = QrelsParser(qrels_file, original_queries, uqv_queries)
-        qrels_obj.print_results()
-
-
-if __name__ == '__main__':
-    args = parser.parse_args()
-    main(args)

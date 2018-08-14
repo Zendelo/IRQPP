@@ -1,26 +1,22 @@
 #! /usr/bin/env python
 
 import argparse
+import sys
 import xml.etree.ElementTree as eT
 from collections import defaultdict
-from math import sqrt
-import numpy as np
-import glob
 
 import pandas as pd
 
-NUMBER_OF_DOCS = [5, 10, 25, 50, 100]
+# NUMBER_OF_DOCS = [5, 10, 25, 50, 100]
 
 parser = argparse.ArgumentParser(description='NQC predictor',
                                  usage='Input CE(q|d) scores and queries files',
                                  epilog='Prints the NQC predictor scores')
 
 parser.add_argument('list1', metavar='QL_results_file', help='The original QL results file for the documents scores')
-parser.add_argument('list2', metavar='RM1_results_dir', help='The directory with the RM1 lists')
-parser.add_argument('-d', '--docs', metavar='K', default=5, help='Number of k top documents')
+parser.add_argument('list2', metavar='RM1_results_file', help='The re-ranked RM1 list')
+parser.add_argument('-d', '--docs', metavar='K', type=int, default=5, help='Number of k top documents')
 
-
-# parser.add_argument('-d', '--docs', metavar='KDocs', default=20, help='Number of K top documents')
 
 class ResultsReader:
     def __init__(self, results_file):
@@ -78,22 +74,11 @@ class QueriesParser:
 
 
 class QF:
-    def __init__(self, original_list, modified_list, results_dir=None):
+    def __init__(self, original_list, modified_list):
         self.orig_list_df = ResultsReader(original_list).results_df
         self.mod_list_df = ResultsReader(modified_list).results_df
-        # self.res_dir = results_dir
-        # self.lists_dict = defaultdict()
-        # self.__read_lists()
         self.predictions = defaultdict(float)
         self.queries = self.__generate_queries()
-
-    def __read_lists(self):
-        """Assuming the results lists files are named : list-[0-9]"""
-        all_files = glob.glob(self.res_dir + "/*list*")
-        for file_ in all_files:
-            file_name = file_.split('-')[-1]
-            df = ResultsReader(file_).results_df
-            self.lists_dict[file_name] = df
 
     def __generate_queries(self):
         _qids = set(self.orig_list_df.index)
@@ -119,10 +104,9 @@ def main(args):
     qf = QF(list_file, mod_list_file)
     qf.calc_results(k)
 
-    # for k in NUMBER_OF_DOCS:
-    #     qf.calc_results(k)
-
 
 if __name__ == '__main__':
+    """Check that python version is at least 3.5"""
+    assert sys.version_info >= (3, 5)
     args = parser.parse_args()
     main(args)
