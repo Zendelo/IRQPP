@@ -8,11 +8,14 @@ import numpy as np
 
 import pandas as pd
 
+# TODO: remove the queries file, or implement an option to add it just for testing (ensure all queries are present)
+# TODO: switch the code to work with the global dataparser
+
 parser = argparse.ArgumentParser(description='NQC predictor',
                                  usage='Input CE(q|d) scores and queries files',
                                  epilog='Prints the NQC predictor scores')
 
-parser.add_argument('results', metavar='CE(q|d)_results_file', help='The CE results file for the documents scores')
+parser.add_argument('results', metavar='QL(q|d)_results_file', help='The QL results file for the documents scores')
 parser.add_argument('corp_scores', metavar='QLC', help='logqlc QL Corpus scores of the queries')
 parser.add_argument('queries', metavar='queries_xml_file', default='data/ROBUST/queries.xml',
                     help='The queries xml file')

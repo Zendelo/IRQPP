@@ -10,13 +10,16 @@ import argparse
 parser = argparse.ArgumentParser(description='Fusion script',
                                  usage='python3.6 fusion.py -r QL.res ',
                                  epilog='prints the fused QL result')
-parser.add_argument('QLresults', help="path to UQV QL results file")
+parser.add_argument('QLresults', default=None, help="path to UQV QL results file")
+parser.add_argument('QLCresults', default=None, help="path to  LogQLC results file")
 
 
 class CombSUM:
-    def __init__(self, raw_ql_res: str):
+    def __init__(self, raw_ql_res: str, raw_qlc_res: str):
         self.raw_ql_res = DataReader(raw_ql_res, 'trec')
-        self.data_df = self.raw_ql_res.data_df
+        self.raw_qlc_res = DataReader(raw_qlc_res, 'predictions')
+        self.ql_data_df = self.raw_ql_res.data_df
+        self.qlc_data_df = self.raw_qlc_res.data_df
 
     @staticmethod
     def _normalize_scores(df: pd.DataFrame):
@@ -28,9 +31,10 @@ class CombSUM:
         return df
 
     def calc_scores(self):
+        """Calculates and prints the fused list of top 1000 documents in trec format"""
         final_list = []
-        data_df = self.data_df.filter(['qid', 'docID', 'docScore'], axis=1)
-        for topic, vars in self.raw_ql_res.qid_vars.items():
+        data_df = self.ql_data_df.filter(['qid', 'docID', 'docScore'], axis=1)
+        for topic, vars in self.raw_ql_res.query_vars.items():
             number_of_vars = len(vars)
             _list = []
             for var in vars:
@@ -52,11 +56,24 @@ class CombSUM:
         print(result_df.to_string(header=False, index=False, index_names=False))
         return result_df
 
+    def average_qlc(self):
+        """Saves a new file with the average QLC scores for each topic"""
+        topic_qlc_dict = {}
+        for topic, vars in self.raw_ql_res.query_vars.items():
+            _score = self.qlc_data_df.loc[vars]['score'].mean()
+            topic_qlc_dict[topic] = _score
+        topic_df = pd.DataFrame.from_dict(topic_qlc_dict, orient='index')
+        # Also consider using %g as float format
+        topic_df.to_csv('fused-logqlc.res', header=False, index=True, sep=' ', float_format='%.4f')
+        return topic_df
+
 
 def main(args):
-    res_file = args.QLresults
-    x = CombSUM(res_file)
+    ql_res_file = args.QLresults
+    qlc_res_file = args.QLCresults
+    x = CombSUM(ql_res_file, qlc_res_file)
     x.calc_scores()
+    # x.average_qlc()
 
 
 if __name__ == '__main__':

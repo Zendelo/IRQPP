@@ -39,11 +39,11 @@ parser.add_argument('-q', '--queries', metavar='queries.xml', default='~/data/RO
 parser.add_argument('-c', '--corpus', default='ROBUST', type=str, help='corpus (index) to work with',
                     choices=['ROBUST', 'ClueWeb12B'])
 parser.add_argument('--qtype', default='basic', type=str, help='The type of queries to run',
-                    choices=['basic', 'single', 'aggregated'])
+                    choices=['basic', 'single', 'aggregated', 'fusion'])
 parser.add_argument('-m', '--measure', default='pearson', type=str,
                     help='default correlation measure type is pearson', choices=['pearson', 'spearman', 'kendall'], )
 parser.add_argument('-t', '--table', type=str, default='all', help='the LaTeX table to be printed',
-                    choices=['basic', 'single', 'aggregated', 'all'], )
+                    choices=['basic', 'single', 'aggregated', 'fusion', 'all'], )
 parser.add_argument('--generate', help="generate new predictions", action="store_true")
 parser.add_argument('--lists', help="generate new lists", action="store_true")
 parser.add_argument('--calc', help="calc new UQV predictions", action="store_true")
@@ -58,7 +58,7 @@ class GeneratePredictions:
         self.queries = queries
         self.predictions_dir = os.path.normpath(os.path.expanduser(predictions_dir)) + '/'
         self.corpus = corpus
-        self.qtype = qtype if qtype == 'basic' else 'raw'
+        self.qtype = qtype if (qtype == 'basic' or qtype == 'fusion') else 'raw'
         self.gen_lists = lists
         self.cpu_cores = max(multiprocessing.cpu_count() * 0.5, min(multiprocessing.cpu_count(), 16))
 
@@ -274,7 +274,7 @@ class CrossVal:
             _p_res = list()
             # list to save uef results
             _uef_p_res = list()
-            for agg in AGGREGATE_FUNCTIONS:
+            for agg in AGGREGATE_FUNCTIONS + ['combsum']:
                 ap_score = ensure_file('{}/map1000-{}'.format(test_dir, agg))
                 cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_predictions_dir,
                                          file_to_load=self.cv_map_f, load=True, test=self.corr_measure,
@@ -301,7 +301,51 @@ class CrossVal:
         res_df.index = res_df.index.str.upper()
         res_df.reset_index(inplace=True)
         res_df.insert(loc=0, column='pred-agg', value=aggregation)
-        res_df.columns = ['predictor-agg', 'predictor'] + AGGREGATE_FUNCTIONS
+        res_df.columns = ['predictor-agg', 'predictor'] + AGGREGATE_FUNCTIONS + ['combsum']
+        return res_df
+
+    def calc_fusion(self):
+        test_dir = os.path.normpath('{}/aggregated'.format(self.test_dir))
+        predictions_dir = '{}/uqvPredictions/fusion'.format(self.base_dir)
+        _results = defaultdict()
+
+        for p in ['nqc', 'wig']:
+            # dir of aggregated prediction results
+            _predictions_dir = os.path.normpath('{}/{}/predictions'.format(predictions_dir, p))
+            # dir of aggregated uef prediction results
+            _uef_predictions_dir = os.path.normpath('{}/uef/{}/predictions'.format(predictions_dir, p))
+            # list to save non uef results for a specific predictor with different AP files
+            _p_res = list()
+            # list to save uef results
+            _uef_p_res = list()
+            for agg in AGGREGATE_FUNCTIONS + ['combsum']:
+                ap_score = ensure_file('{}/map1000-{}'.format(test_dir, agg))
+                cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_predictions_dir,
+                                         file_to_load=self.cv_map_f, load=True, test=self.corr_measure,
+                                         ap_file=ap_score)
+                # uef_cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_uef_predictions_dir,
+                #                              file_to_load=self.cv_map_f, load=True, test=self.corr_measure,
+                #                              ap_file=ap_score)
+                mean = cv_obj.calc_test_results()
+                # uef_mean = uef_cv_obj.calc_test_results()
+                _p_res.append('${}$'.format(mean))
+                # _uef_p_res.append('${}$'.format(uef_mean))
+
+            sr = pd.Series(_p_res)
+            uef_sr = pd.Series(_uef_p_res)
+            sr.name = p
+            uef_p = 'uef({})'.format(p)
+            uef_sr.name = uef_p
+            _results[p] = sr
+            _results[uef_p] = uef_sr
+
+        res_df = pd.DataFrame.from_dict(_results, orient='index')
+        _uef_predictors = ['uef({})'.format(p) for p in PREDICTORS]
+        res_df = res_df.reindex(index=PREDICTORS + _uef_predictors)
+        res_df.index = res_df.index.str.upper()
+        res_df.reset_index(inplace=True)
+        res_df.insert(loc=0, column='pred-agg', value='combsum')
+        res_df.columns = ['predictor-agg', 'predictor'] + AGGREGATE_FUNCTIONS + ['combsum']
         return res_df
 
     def calc_single(self, single_f):
@@ -424,6 +468,11 @@ class GenerateTable:
         print('\\end{center}')
         print('\\end{table}')
 
+    def print_fused_latex_table(self):
+        _df = self.cv.calc_fusion()
+        print(_df.to_latex(header=True, multirow=False, multicolumn=False, index=False, escape=False,
+                           index_names=False, column_format='lccc'))
+
     def print_sing_latex_table(self):
         for sing in SINGLE_FUNCTIONS:
             print('\n*** Table for {} AP queries ***\n'.format(sing))
@@ -470,7 +519,8 @@ def main(args):
                       'aggregated': GeneratePredictions.calc_aggregations}
 
     table_functions = {'basic': GenerateTable.print_basic_latex_table, 'single': GenerateTable.print_sing_latex_table,
-                       'aggregated': GenerateTable.print_agg_latex_table}
+                       'aggregated': GenerateTable.print_agg_latex_table,
+                       'fusion': GenerateTable.print_fused_latex_table}
 
     queries = args.queries
     corpus = args.corpus
@@ -487,6 +537,8 @@ def main(args):
 
     if queries_type == 'aggregated' or queries_type == 'single':
         predictions_dir = '{}/uqvPredictions/raw'.format(base_dir)
+    elif queries_type == 'fusion':
+        predictions_dir = '{}/uqvPredictions/fusion'.format(base_dir)
     else:
         predictions_dir = '{}/basicPredictions'.format(base_dir)
 

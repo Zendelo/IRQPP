@@ -7,7 +7,10 @@ from collections import defaultdict
 import numpy as np
 import pandas as pd
 from lxml import etree
+import os
 
+
+# TODO: implement all necessary objects and functions, in order to switch all calculations to work with those classes
 
 class DataReader:
     def __init__(self, data_file: str, file_type):
@@ -15,7 +18,7 @@ class DataReader:
         :param data_file: results file path
         :param file_type: 'predictions' for predictor results or 'ap' for ap results or trec for trec format results
         """
-        self.file_type = file_type
+        self.file_type = file_type.lower()
         self.data = data_file
         self.__number_of_col = self.__check_number_of_col()
         if self.file_type == 'predictions':
@@ -28,7 +31,7 @@ class DataReader:
             self.data_df = self.__read_trec_data()
         else:
             sys.exit('Unknown file type, use ap, trec or predictions file type')
-        self.qid_vars, self.var_qid = self.__generate_qids_from_res()
+        self.query_vars, self.var_qid = self.__generate_qids_from_res()
 
     def __check_number_of_col(self):
         with open(self.data) as f:
@@ -42,6 +45,7 @@ class DataReader:
         data_df = pd.read_table(self.data, delim_whitespace=True, header=None, index_col=0,
                                 names=['qid', 'score'],
                                 dtype={'qid': str, 'score': np.float64})
+        data_df.sort_values(by=['qid', 'score'], ascending=[True, False], inplace=True)
         return data_df
 
     def __read_ap_data_2(self):
@@ -49,6 +53,7 @@ class DataReader:
         data_df = pd.read_table(self.data, delim_whitespace=True, header=None, index_col=0,
                                 names=['qid', 'ap'],
                                 dtype={'qid': str, 'ap': np.float64})
+        data_df.sort_values(by=['qid', 'ap'], ascending=[True, False], inplace=True)
         return data_df
 
     def __read_results_data_4(self):
@@ -58,6 +63,7 @@ class DataReader:
                                 dtype={'qid': str, 'score': np.float64, 'entropy': np.float64,
                                        'cross_entropy': np.float64})
         data_df = data_df.filter(['qid', 'score'], axis=1)
+        data_df.sort_values(by=['qid', 'score'], ascending=[True, False], inplace=True)
         return data_df
 
     def __read_trec_data(self):
@@ -67,6 +73,8 @@ class DataReader:
                                 dtype={'qid': str, 'Q0': str, 'docID': str, 'docRank': int, 'docScore': float,
                                        'ind': str})
         data_df = data_df.filter(['qid', 'docID', 'docRank', 'docScore'], axis=1)
+        data_df.index = data_df.index.astype(str)
+        data_df.sort_values(by=['qid', 'docRank'], ascending=True, inplace=True)
         return data_df
 
     def __generate_qids_from_res(self):
@@ -79,11 +87,23 @@ class DataReader:
             var_qid[_qid] = qid
         return qid_vars, var_qid
 
+    def get_res_dict_by_qid(self, qid, top=1000):
+        assert self.file_type == 'trec', '{} wrong file type'.format(self.file_type)
+        _df = self.data_df.loc[qid, ['docID', 'docScore']].head(top)
+        _df.reset_index(drop=True, inplace=True)
+        _df.set_index('docID', inplace=True)
+        _dict = _df.to_dict()['docScore']
+        return _dict
+
     def get_qid_by_var(self, var):
         return self.var_qid.get(var)
 
     def get_vars_by_qid(self, qid):
-        return self.qid_vars.get(qid)
+        return self.query_vars.get(qid)
+
+    def get_docs_by_qid(self, qid, top=1000):
+        assert self.file_type == 'trec', '{} wrong file type'.format(self.file_type)
+        return self.data_df.loc[qid, 'docID'].head(top).values
 
 
 class QueriesTextParser:
@@ -92,35 +112,35 @@ class QueriesTextParser:
     def __init__(self, queries_file, kind: str = 'original'):
         self.queries_df = pd.read_table(queries_file, delim_whitespace=False, delimiter=':', header=None,
                                         names=['qid', 'text'])
-        self.queries_dict = defaultdict(str)
-        self.__generate_queries_dict(queries_file)
-        self.kind = kind
-        if self.kind.lower() == 'uqv':
+        self.queries_dict = self.__generate_queries_dict()
+        self.kind = kind.lower()
+        if self.kind == 'uqv':
             # {qid: [qid-x-y]} list of all variations
-            self.query_var, self.var_qid = self.__generate_query_var()
+            self.query_vars, self.var_qid = self.__generate_query_var()
 
     def __generate_query_var(self):
         qid_vars_dict = defaultdict(list)
         vars_qid_dict = defaultdict(str)
-        for row in self.queries_df.values:
-            rawqid = row[0]
+        for rawqid in self.queries_dict.keys():
             qid = rawqid.split('-')[0]
             qid_vars_dict[qid].append(rawqid)
             vars_qid_dict[rawqid] = qid
         return qid_vars_dict, vars_qid_dict
 
-    def __generate_queries_dict(self, file):
-        with open(file, 'r') as f:
-            reader = csv.reader(f)
-            for row in reader:
-                row = row[0].split(':')
-                qid = row[0]
-                text = row[1]
-                self.queries_dict[qid] = text
-            f.close()
+    def __generate_queries_dict(self):
+        queries_dict = defaultdict(str)
+        for qid, text in self.queries_df.values:
+            queries_dict[qid] = text
+        return queries_dict
 
     def get_orig_qid(self, var_qid):
-        return self.var_qid[var_qid]
+        return self.var_qid.get(var_qid)
+
+    def get_vars(self, orig_qid):
+        return self.query_vars.get(orig_qid)
+
+    def get_qid_txt(self, qid):
+        return self.queries_dict.get(qid)
 
 
 class QrelsParser:
@@ -157,7 +177,7 @@ class QrelsParser:
         missing = self._find_missing_queries()
         pairs = list()
         for qid in missing:
-            qid, x, y = self.uqv.query_var[qid][-1].split('-')
+            qid, x, y = self.uqv.query_vars[qid][-1].split('-')
             x = int(x) + 1
             y = 1
             new_qid = '{}-{}-{}'.format(qid, x, y)
@@ -201,3 +221,11 @@ class QueriesXMLParser:
 
     def print_queries_xml(self):
         print(etree.tostring(self.root, pretty_print=True, encoding='unicode'))
+
+
+def ensure_file(file):
+    """Ensure a single file exists, returns the full path of the file if True"""
+    # tilde expansion
+    file_path = os.path.expanduser(file)
+    assert os.path.isfile(file_path), "The file {} doesn't exist. Please create the file first".format(file)
+    return file_path

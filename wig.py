@@ -7,6 +7,9 @@ from math import sqrt
 
 import pandas as pd
 
+# TODO: Add a calculation in the dataparser for fused query length
+# TODO: switch the code to work with the global dataparser
+
 parser = argparse.ArgumentParser(description='WIG predictor',
                                  usage='Input CE(q|d) scores and queries files',
                                  epilog='Prints the WIG predictor scores')
@@ -63,6 +66,9 @@ class QueriesParser:
 
 class WIG:
     def __init__(self, queries_obj, results_df, corpus_scores_df):
+        """Queries file - needed for the query length
+        Results file - The QL scores of the docs retrieved
+        Corpus scores file - QLC(q) the QL score of a q in the corpus"""
         self.qdb = queries_obj
         self.res = results_df
         self.corp = corpus_scores_df
