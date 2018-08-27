@@ -24,7 +24,10 @@ class FeatureFactory:
     def __init__(self, results_file, queries_file):
         self.res_data = DataReader(results_file, 'trec')
         self.queries_data = QueriesTextParser(queries_file, 'uqv')
-        assert self.res_data.query_vars == self.queries_data.query_vars, 'Results and Queries files don\'t match'
+        # A simple sanity check to make sure number of results and query variations is identical
+        _x = [len(i) for i in self.res_data.query_vars.values()]
+        _y = [len(i) for i in self.queries_data.query_vars.values()]
+        assert _x == _y, 'Results and Queries files don\'t match'
         self.query_vars = self.queries_data.query_vars
         self.features_index = self._create_feature_pairs()
 
