@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from Timer.timer import Timer
-from dataparser import DataReader
+from dataparser import ResultsReader
 import argparse
 
 parser = argparse.ArgumentParser(description='Fusion script',
@@ -16,8 +16,8 @@ parser.add_argument('QLCresults', default=None, help="path to  LogQLC results fi
 
 class CombSUM:
     def __init__(self, raw_ql_res: str, raw_qlc_res: str):
-        self.raw_ql_res = DataReader(raw_ql_res, 'trec')
-        self.raw_qlc_res = DataReader(raw_qlc_res, 'predictions')
+        self.raw_ql_res = ResultsReader(raw_ql_res, 'trec')
+        self.raw_qlc_res = ResultsReader(raw_qlc_res, 'predictions')
         self.ql_data_df = self.raw_ql_res.data_df
         self.qlc_data_df = self.raw_qlc_res.data_df
 

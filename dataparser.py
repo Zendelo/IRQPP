@@ -12,7 +12,7 @@ import os
 
 # TODO: implement all necessary objects and functions, in order to switch all calculations to work with those classes
 
-class DataReader:
+class ResultsReader:
     def __init__(self, data_file: str, file_type):
         """
         :param data_file: results file path
@@ -107,9 +107,12 @@ class DataReader:
 
 
 class QueriesTextParser:
-    """For UQV queries file add kind='uqv' """
 
     def __init__(self, queries_file, kind: str = 'original'):
+        """
+        :param queries_file: path to txt queries file
+        :param kind: 'original' or 'uqv'
+        """
         self.queries_df = pd.read_table(queries_file, delim_whitespace=False, delimiter=':', header=None,
                                         names=['qid', 'text'])
         self.queries_dict = self.__generate_queries_dict()
@@ -206,13 +209,13 @@ class QrelsParser:
 
 
 class QueriesXMLParser:
-    def __init__(self, queries):
-        self.queries = queries
+    def __init__(self, queries_df: pd.DataFrame):
+        self.queries_df = queries_df
         self.root = etree.Element('parameters')
         self._add_queries()
 
     def _add_queries(self):
-        for qid, text in self.queries.queries_dict.items():
+        for qid, text in self.queries_df.values:
             query = etree.SubElement(self.root, 'query')
             number = etree.SubElement(query, 'number')
             number.text = qid

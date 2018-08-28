@@ -1,8 +1,9 @@
-from dataparser import QueriesTextParser, DataReader, ensure_file
+from dataparser import QueriesTextParser, ResultsReader, ensure_file
 from itertools import combinations
 from collections import defaultdict
 from RBO import rbo_dict
 import pandas as pd
+import numpy as np
 
 import argparse
 from Timer.timer import Timer
@@ -15,32 +16,40 @@ parser.add_argument('-q', '--queries', metavar='queries.txt', help='path to UQV 
 parser.add_argument('-c', '--corpus', default='ROBUST', type=str, help='corpus (index) to work with',
                     choices=['ROBUST', 'ClueWeb12B'])
 parser.add_argument('-r', '--results', default=None, type=str, help='QL.res file of the queries')
+parser.add_argument('-f', '--fused', default=None, type=str, help='fusedQL.res file of the queries')
 parser.add_argument('-l', '--load', default=None, type=str, help='features file to load')
 
 parser.add_argument('--generate', help="generate new predictions", action="store_true")
 
 
 class FeatureFactory:
-    def __init__(self, results_file, queries_file):
-        self.res_data = DataReader(results_file, 'trec')
+    def __init__(self, queries_file, results_file, fused):
+        self.res_data = ResultsReader(results_file, 'trec')
         self.queries_data = QueriesTextParser(queries_file, 'uqv')
         # A simple sanity check to make sure number of results and query variations is identical
         _x = [len(i) for i in self.res_data.query_vars.values()]
-        _y = [len(i) for i in self.queries_data.query_vars.values()]
-        assert _x == _y, 'Results and Queries files don\'t match'
+        _z = [len(i) for i in self.queries_data.query_vars.values()]
+        assert _x == _z, 'Results and Queries files don\'t match'
+        self.fused_data = ResultsReader(fused, 'trec')
         self.query_vars = self.queries_data.query_vars
-        self.features_index = self._create_feature_pairs()
+        self.features_index = self._create_query_var_pairs()
+        self.writer = pd.ExcelWriter('test_output.xlsx')
 
-    def _create_feature_pairs(self):
+    def _create_query_var_pairs(self):
         feature_keys = defaultdict(list)
-        for qid, vars in self.query_vars.items():
-            feature_keys[qid] = list(combinations(vars, 2))
+        for qid, variations in self.query_vars.items():
+            feature_keys[qid] = list(combinations(variations, 2))
         return feature_keys
 
-    def generate_features(self):
-        _list = []
-        features_dict = defaultdict(dict)
+    def _calc_features(self):
+        _dict = {'topic': [], 'qid': [], 'Jac_coefficient': [], 'Top_10_Docs_overlap': [], 'RBO_MIN_1000': [],
+                 'RBO_RES_1000': [], 'RBO_EXT_1000': [], 'RBO_MIN_100': [], 'RBO_RES_100': [], 'RBO_EXT_100': [],
+                 'RBO_FUSED_MIN_100': [], 'RBO_FUSED_EXT_100': [], 'RBO_FUSED_RES_100': [], 'RBO_FUSED_MIN_1000': [],
+                 'RBO_FUSED_EXT_1000': [], 'RBO_FUSED_RES_1000': []}
         for topic, pairs in self.features_index.items():
+            _dict['topic'] += [topic] * 2 * len(pairs)
+            dt_100 = self.fused_data.get_res_dict_by_qid(topic, top=100)
+            dt_1000 = self.fused_data.get_res_dict_by_qid(topic, top=1000)
             for q1, q2 in pairs:
                 txt1 = self.queries_data.get_qid_txt(q1)
                 txt2 = self.queries_data.get_qid_txt(q2)
@@ -64,13 +73,66 @@ class FeatureFactory:
                 _res_100 = _rbo_scores_100['res']
                 _ext_100 = _rbo_scores_100['ext']
 
-                features_dict[topic, q1, q2] = {'Jac_coefficient': jc, 'Top_10_Docs_overlap': docs_overlap,
-                                                'RBO_MIN_1000': _min_1000, 'RBO_RES_1000': _res_1000,
-                                                'RBO_EXT_1000': _ext_1000, 'RBO_MIN_100': _min_100,
-                                                'RBO_RES_100': _res_100, 'RBO_EXT_100': _ext_100}
-        features_df = pd.DataFrame.from_dict(features_dict, orient='index')
-        features_df.index.rename(['topic', 'var-1', 'var-2'], inplace=True)
-        return features_df
+                _fused_rbo_scores_100 = rbo_dict(dt_100, d1, p=0.95)
+                _q1_fmin_100 = _fused_rbo_scores_100['min']
+                _q1_fres_100 = _fused_rbo_scores_100['res']
+                _q1_fext_100 = _fused_rbo_scores_100['ext']
+
+                _fused_rbo_scores_1000 = rbo_dict(dt_1000, d1, p=0.95)
+                _q1_fmin_1000 = _fused_rbo_scores_1000['min']
+                _q1_fres_1000 = _fused_rbo_scores_1000['res']
+                _q1_fext_1000 = _fused_rbo_scores_1000['ext']
+
+                _fused_rbo_scores_100 = rbo_dict(dt_100, d2, p=0.95)
+                _q2_fmin_100 = _fused_rbo_scores_100['min']
+                _q2_fres_100 = _fused_rbo_scores_100['res']
+                _q2_fext_100 = _fused_rbo_scores_100['ext']
+
+                _fused_rbo_scores_1000 = rbo_dict(dt_1000, d2, p=0.95)
+                _q2_fmin_1000 = _fused_rbo_scores_1000['min']
+                _q2_fres_1000 = _fused_rbo_scores_1000['res']
+                _q2_fext_1000 = _fused_rbo_scores_1000['ext']
+
+                _dict['qid'] += [q1, q2]
+                _dict['Jac_coefficient'] += [jc] * 2
+                _dict['Top_10_Docs_overlap'] += [docs_overlap] * 2
+                _dict['RBO_MIN_1000'] += [_min_1000] * 2
+                _dict['RBO_RES_1000'] += [_res_1000] * 2
+                _dict['RBO_EXT_1000'] += [_ext_1000] * 2
+                _dict['RBO_MIN_100'] += [_min_100] * 2
+                _dict['RBO_RES_100'] += [_res_100] * 2
+                _dict['RBO_EXT_100'] += [_ext_100] * 2
+                _dict['RBO_FUSED_MIN_1000'] += [_q1_fmin_1000, _q2_fmin_1000]
+                _dict['RBO_FUSED_RES_1000'] += [_q1_fres_1000, _q2_fres_1000]
+                _dict['RBO_FUSED_EXT_1000'] += [_q1_fext_1000, _q2_fext_1000]
+                _dict['RBO_FUSED_MIN_100'] += [_q1_fmin_100, _q2_fmin_100]
+                _dict['RBO_FUSED_RES_100'] += [_q1_fres_100, _q2_fres_100]
+                _dict['RBO_FUSED_EXT_100'] += [_q1_fext_100, _q2_fext_100]
+
+        _df = pd.DataFrame.from_dict(_dict)
+        _df.set_index(['topic', 'qid'], inplace=True)
+        return _df
+
+    def _sum_scores(self, df):
+        _exp_df = df.apply(np.exp)
+        # For debugging purposes
+        df.to_excel(self.writer, 'normal_scores')
+        _exp_df.to_excel(self.writer, 'exp_scores')
+
+        z_n = df.groupby(['topic']).sum()
+        z_e = _exp_df.groupby(['topic']).sum()
+
+        norm_df = (df.groupby(['topic', 'qid']).sum() / z_n)
+        softmax_df = (df.groupby(['topic', 'qid']).sum() / z_e)
+        # For debugging purposes
+        norm_df.to_excel(self.writer, 'zn_scores')
+        softmax_df.to_excel(self.writer, 'ze_scores')
+        self.writer.save()
+        return norm_df, softmax_df
+
+    def generate_features(self):
+        _df = self._calc_features()
+        return self._sum_scores(_df)
 
     @staticmethod
     def jaccard_coefficient(st1: str, st2: str):
@@ -91,15 +153,21 @@ def main(args):
     queries_file = args.queries
     corpus = args.corpus
     results_file = args.results
+    fused_res_file = args.fused
     file_to_load = args.load
     generate = args.generate
+
+    assert not queries_file.endswith('.xml'), 'Submit text queries file, not XML'
 
     if generate:
         queries_file = ensure_file(queries_file)
         results_file = ensure_file(results_file)
-        testing_feat = FeatureFactory(results_file, queries_file)
-        features_df = testing_feat.generate_features()
-        features_df.reset_index().to_json('features_{}_uqv.JSON'.format(corpus))
+        testing_feat = FeatureFactory(queries_file, results_file, fused_res_file)
+        norm_features_df, exp_features_df = testing_feat.generate_features()
+        norm_features_df.to_json('norm_features_{}_uqv_1.JSON'.format(corpus))
+        norm_features_df.to_json('exp_features_{}_uqv_1.JSON'.format(corpus))
+        norm_features_df.reset_index().to_json('norm_features_{}_uqv_2.JSON'.format(corpus))
+        norm_features_df.reset_index().to_json('exp_features_{}_uqv_2.JSON'.format(corpus))
     else:
         if file_to_load is None:
             file = ensure_file('features_{}_uqv.JSON'.format(corpus))
@@ -109,8 +177,6 @@ def main(args):
         features_df = pd.read_json(file, dtype={'topic': str, 'var-1': str, 'var-2': str})
         features_df.reset_index(drop=True, inplace=True)
         features_df.set_index(['topic', 'var-1', 'var-2'], inplace=True)
-
-    print(features_df)
 
 
 if __name__ == '__main__':
