@@ -43,9 +43,9 @@ class FeatureFactory:
 
     def _calc_features(self):
         _dict = {'topic': [], 'qid': [], 'Jac_coefficient': [], 'Top_10_Docs_overlap': [], 'RBO_MIN_1000': [],
-                 'RBO_RES_1000': [], 'RBO_EXT_1000': [], 'RBO_MIN_100': [], 'RBO_RES_100': [], 'RBO_EXT_100': [],
-                 'RBO_FUSED_MIN_100': [], 'RBO_FUSED_EXT_100': [], 'RBO_FUSED_RES_100': [], 'RBO_FUSED_MIN_1000': [],
-                 'RBO_FUSED_EXT_1000': [], 'RBO_FUSED_RES_1000': []}
+                 'RBO_EXT_1000': [], 'RBO_MIN_100': [], 'RBO_EXT_100': [],
+                 'RBO_FUSED_MIN_100': [], 'RBO_FUSED_EXT_100': [], 'RBO_FUSED_MIN_1000': [],
+                 'RBO_FUSED_EXT_1000': []}
         for topic, pairs in self.features_index.items():
             _dict['topic'] += [topic] * 2 * len(pairs)
             dt_100 = self.fused_data.get_res_dict_by_qid(topic, top=100)
@@ -59,54 +59,55 @@ class FeatureFactory:
                 l2 = self.res_data.get_docs_by_qid(q2, 10)
                 docs_overlap = self.list_overlap(l1, l2)
 
+                # All RBO values are rounded to 10 decimal digits, to avoid float overflow
                 d1 = self.res_data.get_res_dict_by_qid(q1, top=1000)
                 d2 = self.res_data.get_res_dict_by_qid(q2, top=1000)
                 _rbo_scores_1000 = rbo_dict(d1, d2, p=0.95)
-                _min_1000 = _rbo_scores_1000['min']
-                _res_1000 = _rbo_scores_1000['res']
-                _ext_1000 = _rbo_scores_1000['ext']
+                _min_1000 = np.around(_rbo_scores_1000['min'], 10)
+                # _res_1000 = np.around(_rbo_scores_1000['res'], 10)
+                _ext_1000 = np.around(_rbo_scores_1000['ext'], 10)
 
                 d1 = self.res_data.get_res_dict_by_qid(q1, top=100)
                 d2 = self.res_data.get_res_dict_by_qid(q2, top=100)
                 _rbo_scores_100 = rbo_dict(d1, d2, p=0.95)
-                _min_100 = _rbo_scores_100['min']
-                _res_100 = _rbo_scores_100['res']
-                _ext_100 = _rbo_scores_100['ext']
+                _min_100 = np.around(_rbo_scores_100['min'], 10)
+                # _res_100 = np.around(_rbo_scores_100['res'], 10)
+                _ext_100 = np.around(_rbo_scores_100['ext'], 10)
 
                 _fused_rbo_scores_100 = rbo_dict(dt_100, d1, p=0.95)
-                _q1_fmin_100 = _fused_rbo_scores_100['min']
-                _q1_fres_100 = _fused_rbo_scores_100['res']
-                _q1_fext_100 = _fused_rbo_scores_100['ext']
+                _q1_fmin_100 = np.around(_fused_rbo_scores_100['min'], 10)
+                # _q1_fres_100 = np.around(_fused_rbo_scores_100['res'], 10)
+                _q1_fext_100 = np.around(_fused_rbo_scores_100['ext'], 10)
 
                 _fused_rbo_scores_1000 = rbo_dict(dt_1000, d1, p=0.95)
-                _q1_fmin_1000 = _fused_rbo_scores_1000['min']
-                _q1_fres_1000 = _fused_rbo_scores_1000['res']
-                _q1_fext_1000 = _fused_rbo_scores_1000['ext']
+                _q1_fmin_1000 = np.around(_fused_rbo_scores_1000['min'], 10)
+                # _q1_fres_1000 = np.around(_fused_rbo_scores_1000['res'], 10)
+                _q1_fext_1000 = np.around(_fused_rbo_scores_1000['ext'], 10)
 
                 _fused_rbo_scores_100 = rbo_dict(dt_100, d2, p=0.95)
-                _q2_fmin_100 = _fused_rbo_scores_100['min']
-                _q2_fres_100 = _fused_rbo_scores_100['res']
-                _q2_fext_100 = _fused_rbo_scores_100['ext']
+                _q2_fmin_100 = np.around(_fused_rbo_scores_100['min'], 10)
+                # _q2_fres_100 = np.around(_fused_rbo_scores_100['res'], 10)
+                _q2_fext_100 = np.around(_fused_rbo_scores_100['ext'], 10)
 
                 _fused_rbo_scores_1000 = rbo_dict(dt_1000, d2, p=0.95)
-                _q2_fmin_1000 = _fused_rbo_scores_1000['min']
-                _q2_fres_1000 = _fused_rbo_scores_1000['res']
-                _q2_fext_1000 = _fused_rbo_scores_1000['ext']
+                _q2_fmin_1000 = np.around(_fused_rbo_scores_1000['min'], 10)
+                # _q2_fres_1000 = np.around(_fused_rbo_scores_1000['res'], 10)
+                _q2_fext_1000 = np.around(_fused_rbo_scores_1000['ext'], 10)
 
                 _dict['qid'] += [q1, q2]
                 _dict['Jac_coefficient'] += [jc] * 2
                 _dict['Top_10_Docs_overlap'] += [docs_overlap] * 2
                 _dict['RBO_MIN_1000'] += [_min_1000] * 2
-                _dict['RBO_RES_1000'] += [_res_1000] * 2
+                # _dict['RBO_RES_1000'] += [_res_1000] * 2
                 _dict['RBO_EXT_1000'] += [_ext_1000] * 2
                 _dict['RBO_MIN_100'] += [_min_100] * 2
-                _dict['RBO_RES_100'] += [_res_100] * 2
+                # _dict['RBO_RES_100'] += [_res_100] * 2
                 _dict['RBO_EXT_100'] += [_ext_100] * 2
                 _dict['RBO_FUSED_MIN_1000'] += [_q1_fmin_1000, _q2_fmin_1000]
-                _dict['RBO_FUSED_RES_1000'] += [_q1_fres_1000, _q2_fres_1000]
+                # _dict['RBO_FUSED_RES_1000'] += [_q1_fres_1000, _q2_fres_1000]
                 _dict['RBO_FUSED_EXT_1000'] += [_q1_fext_1000, _q2_fext_1000]
                 _dict['RBO_FUSED_MIN_100'] += [_q1_fmin_100, _q2_fmin_100]
-                _dict['RBO_FUSED_RES_100'] += [_q1_fres_100, _q2_fres_100]
+                # _dict['RBO_FUSED_RES_100'] += [_q1_fres_100, _q2_fres_100]
                 _dict['RBO_FUSED_EXT_100'] += [_q1_fext_100, _q2_fext_100]
 
         _df = pd.DataFrame.from_dict(_dict)
@@ -123,7 +124,7 @@ class FeatureFactory:
         z_e = _exp_df.groupby(['topic']).sum()
 
         norm_df = (df.groupby(['topic', 'qid']).sum() / z_n)
-        softmax_df = (df.groupby(['topic', 'qid']).sum() / z_e)
+        softmax_df = (_exp_df.groupby(['topic', 'qid']).sum() / z_e)
         # For debugging purposes
         norm_df.to_excel(self.writer, 'zn_scores')
         softmax_df.to_excel(self.writer, 'ze_scores')
@@ -164,19 +165,18 @@ def main(args):
         results_file = ensure_file(results_file)
         testing_feat = FeatureFactory(queries_file, results_file, fused_res_file)
         norm_features_df, exp_features_df = testing_feat.generate_features()
-        norm_features_df.to_json('norm_features_{}_uqv_1.JSON'.format(corpus))
-        norm_features_df.to_json('exp_features_{}_uqv_1.JSON'.format(corpus))
-        norm_features_df.reset_index().to_json('norm_features_{}_uqv_2.JSON'.format(corpus))
-        norm_features_df.reset_index().to_json('exp_features_{}_uqv_2.JSON'.format(corpus))
+        norm_features_df.reset_index().to_json('norm_features_{}_uqv.JSON'.format(corpus))
+        exp_features_df.reset_index().to_json('exp_features_{}_uqv.JSON'.format(corpus))
     else:
         if file_to_load is None:
             file = ensure_file('features_{}_uqv.JSON'.format(corpus))
         else:
             file = ensure_file(file_to_load)
 
-        features_df = pd.read_json(file, dtype={'topic': str, 'var-1': str, 'var-2': str})
+        features_df = pd.read_json(file, dtype={'topic': str, 'qid': str})
         features_df.reset_index(drop=True, inplace=True)
-        features_df.set_index(['topic', 'var-1', 'var-2'], inplace=True)
+        features_df.set_index(['topic', 'qid'], inplace=True)
+        features_df.sort_values(['topic', 'qid'], axis=0, inplace=True)
 
 
 if __name__ == '__main__':
