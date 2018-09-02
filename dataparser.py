@@ -45,6 +45,7 @@ class ResultsReader:
         data_df = pd.read_table(self.data, delim_whitespace=True, header=None, index_col=0,
                                 names=['qid', 'score'],
                                 dtype={'qid': str, 'score': np.float64})
+        data_df.index = data_df.index.astype(str)
         data_df.sort_values(by=['qid', 'score'], ascending=[True, False], inplace=True)
         return data_df
 
@@ -54,6 +55,7 @@ class ResultsReader:
                                 names=['qid', 'ap'],
                                 dtype={'qid': str, 'ap': np.float64})
         data_df.sort_values(by=['qid', 'ap'], ascending=[True, False], inplace=True)
+        data_df.index = data_df.index.astype(str)
         return data_df
 
     def __read_results_data_4(self):
@@ -63,6 +65,7 @@ class ResultsReader:
                                 dtype={'qid': str, 'score': np.float64, 'entropy': np.float64,
                                        'cross_entropy': np.float64})
         data_df = data_df.filter(['qid', 'score'], axis=1)
+        data_df.index = data_df.index.astype(str)
         data_df.sort_values(by=['qid', 'score'], ascending=[True, False], inplace=True)
         return data_df
 
@@ -232,3 +235,14 @@ def ensure_file(file):
     file_path = os.path.expanduser(file)
     assert os.path.isfile(file_path), "The file {} doesn't exist. Please create the file first".format(file)
     return file_path
+
+
+def ensure_dir(file_path):
+    # tilde expansion
+    file_path = os.path.expanduser(file_path)
+    if os.path.isfile(file_path):
+        directory = os.path.dirname(file_path)
+    else:
+        directory = file_path
+    if not os.path.exists(directory):
+        os.makedirs(directory)
