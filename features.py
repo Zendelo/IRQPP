@@ -33,7 +33,7 @@ class FeatureFactory:
         self.fused_data = ResultsReader(fused, 'trec')
         self.query_vars = self.queries_data.query_vars
         self.features_index = self._create_query_var_pairs()
-        self.writer = pd.ExcelWriter('test_output.xlsx')
+        self.writer = pd.ExcelWriter('test_ROBUST_output.xlsx')
 
     def _create_query_var_pairs(self):
         feature_keys = defaultdict(list)
@@ -150,6 +150,19 @@ class FeatureFactory:
         return len(intersection)
 
 
+def features_loader(file_to_load, corpus):
+    if file_to_load is None:
+        file = ensure_file('features_{}_uqv.JSON'.format(corpus))
+    else:
+        file = ensure_file(file_to_load)
+
+    features_df = pd.read_json(file, dtype={'topic': str, 'qid': str})
+    features_df.reset_index(drop=True, inplace=True)
+    features_df.set_index(['topic', 'qid'], inplace=True)
+    features_df.sort_values(['topic', 'qid'], axis=0, inplace=True)
+    return features_df
+
+
 def main(args):
     queries_file = args.queries
     corpus = args.corpus
@@ -168,15 +181,8 @@ def main(args):
         norm_features_df.reset_index().to_json('norm_features_{}_uqv.JSON'.format(corpus))
         exp_features_df.reset_index().to_json('exp_features_{}_uqv.JSON'.format(corpus))
     else:
-        if file_to_load is None:
-            file = ensure_file('features_{}_uqv.JSON'.format(corpus))
-        else:
-            file = ensure_file(file_to_load)
-
-        features_df = pd.read_json(file, dtype={'topic': str, 'qid': str})
-        features_df.reset_index(drop=True, inplace=True)
-        features_df.set_index(['topic', 'qid'], inplace=True)
-        features_df.sort_values(['topic', 'qid'], axis=0, inplace=True)
+        features_df = features_loader(file_to_load, corpus)
+        print(features_df)
 
 
 if __name__ == '__main__':

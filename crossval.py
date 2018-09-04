@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 
 import argparse
-import csv
 import glob
 import operator
-from collections import defaultdict
 import os
+from collections import defaultdict
 
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import RepeatedKFold
+
 from dataparser import ResultsReader, ensure_dir
 
 # TODO: change the functions to work with pandas methods such as idxmax
@@ -33,21 +33,23 @@ parser.add_argument('-l', "--load", metavar='CV_FILE_PATH', help="load existing 
 
 
 class CrossValidation:
-    def __init__(self, k, rep, file_to_load=None, predictions_dir=None, load=True, test='pearson', ap_file=None):
+    def __init__(self, k=2, rep=30, file_to_load=None, predictions_dir=None, load=True, test='pearson', ap_file=None):
         self.k = k
         self.rep = rep
         self.test = test
         self.file_name = file_to_load
-        assert ap_file is not None, 'Specify AP results res'
-        if '-' in ap_file:
-            self.ap_func = ap_file.split('-')[-1]
-        else:
-            self.ap_func = None
         assert predictions_dir is not None, 'Specify predictions dir'
         predictions_dir = os.path.abspath(os.path.normpath(os.path.expanduser(predictions_dir)))
         self.output_dir = predictions_dir.replace('predictions', 'evaluation')
         ensure_dir(self.output_dir)
-        self.full_set = self._build_full_set(predictions_dir, ap_file)
+        if ap_file:
+            self.full_set = self._build_full_set(predictions_dir, ap_file)
+            if '-' in ap_file:
+                self.ap_func = ap_file.split('-')[-1]
+            else:
+                self.ap_func = None
+        else:
+            self.full_set = self._build_full_set(predictions_dir)
         if load:
             assert file_to_load is not None, 'Specify k-folds file to load'
             self.__load_k_folds()
@@ -55,20 +57,22 @@ class CrossValidation:
             self.index = self.full_set.index
             self.file_name = self._generate_k_folds()
             self.__load_k_folds()
-        self.corrs_df = self.__calc_correlations()
+        if ap_file:
+            self.corrs_df = self.__calc_correlations()
 
     @staticmethod
-    def _build_full_set(pdir, ap_file):
+    def _build_full_set(predictions_dir, ap_file=None):
         """Assuming the predictions files are named : predictions-[*]"""
-        all_files = glob.glob(pdir + "/*predictions*")
+        all_files = glob.glob(predictions_dir + "/*predictions*")
         list_ = []
         for file_ in all_files:
             fname = file_.split('-')[-1]
             df = ResultsReader(file_, 'predictions').data_df
             df = df.rename(columns={"score": 'score_{}'.format(fname)})
             list_.append(df)
-        ap_df = ResultsReader(ap_file, 'ap').data_df
-        list_.append(ap_df)
+        if ap_file:
+            ap_df = ResultsReader(ap_file, 'ap').data_df
+            list_.append(ap_df)
         full_set = pd.concat(list_, axis=1)
         return full_set
 
@@ -95,6 +99,7 @@ class CrossValidation:
         self.data_sets_map = pd.read_json(self.file_name)
 
     def __calc_correlations(self):
+
         sets = self.data_sets_map.columns
         corr_results = defaultdict(dict)
         for set_id in sets:
@@ -150,6 +155,25 @@ class CrossValidation:
             else:
                 continue
         return dict_
+
+    @staticmethod
+    def read_eval_results(results_file):
+        temp_df = pd.read_json(results_file, orient='index')
+
+        # Split column of lists into several columns
+        res_df = pd.DataFrame(temp_df['best train a'].values.tolist(), index=temp_df.index.str.split().str[1],
+                              columns=['a', 'train_correlation_a'])
+        res_df.rename_axis('set', inplace=True)
+        res_df[['b', 'train_correlation_b']] = pd.DataFrame(temp_df['best train b'].values.tolist(),
+                                                                   index=temp_df.index.str.split().str[1])
+        return res_df
+
+
+def char_range(a, z):
+    """Creates a generator that iterates the characters from `c1` to `c2`, inclusive."""
+    # ord returns the ASCII value, chr returns the char of ASCII value
+    for c in range(ord(a), ord(z) + 1):
+        yield chr(c)
 
 
 def main(args):
