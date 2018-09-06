@@ -1,107 +1,60 @@
 # IRQPP
 
-The main 'pipe' script is `generate_results.py`
+
+The main script is `generate_results.py` \
+Usage: `python3.6 generate_results.py -h` \
 Before running the code you must ensure having the following files:
 
 _Results Files_
-1. ~/QppUqvProj/Results/{corpus}/test/{queries type}/QL.res
-2. ~/QppUqvProj/Results/{corpus}/test/{queries type}/logqlc.res
+1. ~/QppUqvProj/Results/{corpus}/test/{basic/raw/fused}/QL.res
+2. ~/QppUqvProj/Results/{corpus}/test/{basic/raw/fused}/logqlc.res
 
 _Parameters Files_
 1. ~/QppUqvProj/Results/{corpus}/test/indriRunQF.xml
 2. ~/QppUqvProj/Results/{corpus}/test/indriRunQL.xml
 3. ~/QppUqvProj/Results/{corpus}/test/clarityParam.xml
 
-LogQLC stands for QL of the query with the entire corpus
+_AP Results Files_
+1. ~/QppUqvProj/Results/{corpus}/test/aggregated/map1000-{agg function}
+2. ~/QppUqvProj/Results/{corpus}/test/single/map1000-{single selection function}
 
+_Cross Validation files_
+1. ~/QppUqvProj/Results/{corpus}/test/2_folds_30_repetitions.json
 
+LogQLC stands for log QL of the query with the entire corpus 
 
-The evaluation code is crosseval.py
-The code to add FB documents to a given query xml file is addFBdocs.py
+In general the code assumes the directories structure is as seen in the file 
+`FS-structure.pdf`
 
 
 **Help Files**
 
-Some of the help instructions still needs to be updated.
+Some of the help instructions still need to be updated.
 
 
 ```
-./crossval.py -h
-usage: Use CV to optimize correlation
+usage: python3.6 generate_results.py --predictor PREDICTOR -c CORPUS -q QUERIES 
 
-Cross Validation script
+Full Results Pipeline Automation Generator
 
 optional arguments:
   -h, --help            show this help message and exit
-  -p predictions_dir, --predictions predictions_dir
-                        path to prediction results files directory
-  --labeled LABELED     path to labeled list res
-  -r REPEATS, --repeats REPEATS
-                        number of repeats
-  -k SPLITS, --splits SPLITS
-                        number of k-fold
+  --predictor predictor_name
+                        predictor to run
+  -q queries.xml, --queries queries.xml
+                        path to queries xml res
+  -c {ROBUST,ClueWeb12B}, --corpus {ROBUST,ClueWeb12B}
+                        corpus (index) to work with
+  --qtype {basic,single,aggregated,fusion}
+                        The type of queries to run
   -m {pearson,spearman,kendall}, --measure {pearson,spearman,kendall}
                         default correlation measure type is pearson
-  -g, --generate        generate new CrossValidation sets
-  -l CV_FILE_PATH, --load CV_FILE_PATH
-                        load existing CrossValidation JSON res
+  -t {basic,single,aggregated,fusion,all}, --table {basic,single,aggregated,fusion,all}
+                        the LaTeX table to be printed
+  --generate            generate new predictions
+  --lists               generate new lists
+  --calc                calc new UQV predictions
 
-Prints the average correlation
-```
-```
-./wig.py -h
-usage: Input CE(q|d) scores and queries files
+Currently Beta Version
 
-WIG predictor
-
-positional arguments:
-  CE(q|d)_results_file  The CE results file for the documents scores
-  queries_xml_file      The queries xml file
-  QLC                   The queries xml file
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -t queries_txt_file, --textqueries queries_txt_file
-                        The queries txt file
-  -d fbDocs, --docs fbDocs
-                        Number of documents
-
-Prints the WIG predictor scores
-```
-```
-./nqc.py -h
-usage: Input CE(q|d) scores and queries files
-
-NQC predictor
-
-positional arguments:
-  CE(q|d)_results_file  The CE results file for the documents scores
-  queries_xml_file      The queries xml file
-  QLC                   The queries xml file
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -t queries_txt_file, --textqueries queries_txt_file
-                        The queries txt file
-  -d fbDocs, --docs fbDocs
-                        Number of documents
-
-Prints the NQC predictor scores
-```
-```
-./addFBdocs.py -h
-usage: Use CV to optimize correlation
-
-Cross Validation script
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -r results_file, --results results_file
-                        The results file for the Relevance Feedback
-  -q queries_xml_file, --queries queries_xml_file
-                        The queries xml file
-  -d fbDocs, --docs fbDocs
-                        Number of Feedback documents to add
-
-Prints the average correlation
 ```
