@@ -128,12 +128,14 @@ class LearningDataSets:
             _pair = []
             for subset in ['a', 'b']:
                 # set_id, subset = file_.split('_')[-2:]
-                _res_df = pd.read_csv(f'{classification_dir}/predictions_{set_id}_{subset}', header=None)
+                _res_df = pd.read_csv(f'{classification_dir}/predictions_{set_id}_{subset}', header=None,
+                                      names=['score'])
                 _test_topics = np.array(self.folds_df[set_id][subset]['test']).astype(str)
                 _res_df.insert(loc=0, column='qid', value=_test_topics)
                 _res_df.set_index('qid', inplace=True)
-                _ap_df = self.ap_obj.data_df.loc[_test_topics]['ap']
-                _correlation = _res_df.corrwith(_ap_df)[0]
+                _ap_df = self.ap_obj.data_df.loc[_test_topics]
+                _df = _res_df.merge(_ap_df, how='outer', on='qid')
+                _correlation = _df['score'].corr(_df['ap'], method=self.cv.test)
                 _pair.append(_correlation)
             _list.append(np.mean(_pair))
         print('mean: {:.4f}'.format(np.mean(_list)))
@@ -146,9 +148,9 @@ def main(args):
     uef = args.uef
     corr_measure = args.corr_measure
 
-    y = LearningDataSets(predictor, corpus)
-    y.generate_data_sets()
-    y.run_svm()
+    y = LearningDataSets(predictor, corpus, corr_measure=corr_measure)
+    # y.generate_data_sets()
+    # y.run_svm()
     y.cross_val()
 
 
