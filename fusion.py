@@ -14,6 +14,8 @@ parser.add_argument('QLresults', default=None, help="path to UQV QL results file
 parser.add_argument('QLCresults', default=None, help="path to  LogQLC results file")
 
 
+# TODO: add a version with only top 5 variations for topic
+
 class CombSUM:
     def __init__(self, raw_ql_res: str, raw_qlc_res: str):
         self.raw_ql_res = ResultsReader(raw_ql_res, 'trec')

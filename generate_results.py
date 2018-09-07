@@ -390,6 +390,7 @@ class CrossVal:
         res_df.index = res_df.index.str.upper()
         res_df.reset_index(inplace=True)
         res_df.columns = ['Predictor'] + CORR_MEASURES
+        res_df.insert(loc=0, column='Function', value=single_f)
         return res_df
 
     def calc_basic(self):
@@ -434,19 +435,22 @@ class CrossVal:
         res_df.index = res_df.index.str.upper()
         res_df.reset_index(inplace=True)
         res_df.columns = ['predictor'] + CORR_MEASURES
+        res_df.insert(loc=0, column='Function', value='basic')
         return res_df
 
 
 class GenerateTable:
+    """The class implements methods to print LaTeX tables"""
     def __init__(self, cv: CrossVal, corpus):
         self.cv = cv
         self.corpus = corpus
 
     def print_agg_latex_table(self):
-        _agg = AGGREGATE_FUNCTIONS[0]
         print('\\begin{table}[ht!]')
         print('\\begin{center}')
         print('\\caption{{ {} UQV aggregated {} Correlations}}'.format(self.corpus, self.cv.corr_measure.capitalize()))
+
+        _agg = AGGREGATE_FUNCTIONS[0]
         _df = self.cv.calc_aggregated(_agg)
         table = _df.to_latex(header=True, multirow=False, multicolumn=False, index=False, escape=False,
                              index_names=False, column_format='clccccc')
@@ -474,11 +478,47 @@ class GenerateTable:
                            index_names=False, column_format='lccc'))
 
     def print_sing_latex_table(self):
+        print('\\begin{table}[ht!]')
+        print('\\begin{center}')
+        print('\\caption{{ {} UQV single picked queries}}'.format(self.corpus))
+        # \begin{tabular}{llccc}
+        # \toprule
+        #   &  Predictor &   pearson &   kendall &  spearman \\
+        # \midrule
+        # \multirow{8}{*}{basic}
+        # &      CLARITY &  $0.0290$ &  $-0.0276$ &  $-0.0492$ \\
+
+        # \begin{tabular}{lccc}
+        # \toprule
+        #     Predictor &   pearson &   kendall &  spearman \\
+        # \midrule
+        #       CLARITY &  $0.3843$ &  $0.2607$ &  $0.3781$ \\
+
+        _df = self.cv.calc_basic()
+        table = _df.to_latex(header=True, multirow=False, multicolumn=False, index=False, escape=False,
+                             index_names=False, column_format='llccc')
+
+        table = table.replace('\\toprule', '\\toprule \n  &&  \\multicolumn{3}{c}{Correlation method} \\\\')
+        table = table.replace('Predictor', '& Predictor')
+        table = table.replace('basic', '')
+        table = table.replace('\\midrule', '\\midrule \n \\multirow{8}{*}{basic}')
+        table = table.replace('\\end{tabular}', '')
+        print(table)
+
         for sing in SINGLE_FUNCTIONS:
-            print('\n*** Table for {} AP queries ***\n'.format(sing))
+            # print('\n*** Table for {} AP queries ***\n'.format(sing))
             _df = self.cv.calc_single(sing)
-            print(_df.to_latex(header=True, multirow=False, multicolumn=False, index=False, escape=False,
-                               index_names=False, column_format='lccc'))
+            table = _df.to_latex(header=False, multirow=False, multicolumn=False, index=False, escape=False,
+                                 index_names=False, column_format='llccc')
+            table = table.replace('\\begin{tabular}{llccc}', '')
+            table = table.replace('\\end{tabular}', '')
+            table = table.replace('{}'.format(sing), '')
+            table = table.replace('\\toprule', '\\multirow{{8}}{{*}}{{{}}}'.format(sing))
+            print(table)
+
+        print('\\end{tabular}')
+        print('\\end{center}')
+        print('\\end{table}')
 
     def print_basic_latex_table(self):
         _df = self.cv.calc_basic()
@@ -561,6 +601,7 @@ def main(args):
             generation_timer.stop()
 
     if calc_predictions:
+        assert predictor is not None, 'No predictor was chosen for results calculation'
         if predictor == 'all':
             if queries_type == 'single' or queries_type == 'aggregated':
                 for pred in PREDICTORS:

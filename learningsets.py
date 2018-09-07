@@ -148,7 +148,7 @@ def main(args):
     uef = args.uef
     corr_measure = args.corr_measure
 
-    y = LearningDataSets(predictor, corpus, corr_measure=corr_measure)
+    y = LearningDataSets(predictor, corpus, corr_measure=corr_measure, aggregation=agg_func, uef=uef)
     # y.generate_data_sets()
     # y.run_svm()
     y.cross_val()
