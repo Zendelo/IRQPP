@@ -1,0 +1,402 @@
+<parameters>
+	<query>
+		<number>201</number>
+		<text>#combine( raspberry pi )</text>
+	</query>
+	<query>
+		<number>202</number>
+		<text>#combine( uss carl vinson )</text>
+	</query>
+	<query>
+		<number>203</number>
+		<text>#combine( reviews les miserables )</text>
+	</query>
+	<query>
+		<number>204</number>
+		<text>#combine( rules golf )</text>
+	</query>
+	<query>
+		<number>205</number>
+		<text>#combine( average charitable donation )</text>
+	</query>
+	<query>
+		<number>206</number>
+		<text>#combine( wind power )</text>
+	</query>
+	<query>
+		<number>207</number>
+		<text>#combine( bph treatment )</text>
+	</query>
+	<query>
+		<number>208</number>
+		<text>#combine( doctor zhivago )</text>
+	</query>
+	<query>
+		<number>209</number>
+		<text>#combine( land surveyor )</text>
+	</query>
+	<query>
+		<number>210</number>
+		<text>#combine( golf gps )</text>
+	</query>
+	<query>
+		<number>211</number>
+		<text>#combine( madagascar known )</text>
+	</query>
+	<query>
+		<number>212</number>
+		<text>#combine( home theater systems )</text>
+	</query>
+	<query>
+		<number>213</number>
+		<text>#combine( carpal tunnel syndrome )</text>
+	</query>
+	<query>
+		<number>214</number>
+		<text>#combine( capital gains tax rate )</text>
+	</query>
+	<query>
+		<number>215</number>
+		<text>#combine( maryland department natural resources )</text>
+	</query>
+	<query>
+		<number>216</number>
+		<text>#combine( nicolas cage movies )</text>
+	</query>
+	<query>
+		<number>217</number>
+		<text>#combine( kids earth activities )</text>
+	</query>
+	<query>
+		<number>218</number>
+		<text>#combine( solar water fountains )</text>
+	</query>
+	<query>
+		<number>219</number>
+		<text>#combine( name elvis presley s home )</text>
+	</query>
+	<query>
+		<number>220</number>
+		<text>#combine( nba records )</text>
+	</query>
+	<query>
+		<number>221</number>
+		<text>#combine( electoral college 2008 results )</text>
+	</query>
+	<query>
+		<number>222</number>
+		<text>#combine( male menopause )</text>
+	</query>
+	<query>
+		<number>223</number>
+		<text>#combine( usda food pyramid )</text>
+	</query>
+	<query>
+		<number>224</number>
+		<text>#combine( making chicken soup scratch )</text>
+	</query>
+	<query>
+		<number>225</number>
+		<text>#combine( black gold )</text>
+	</query>
+	<query>
+		<number>226</number>
+		<text>#combine( traverse city )</text>
+	</query>
+	<query>
+		<number>227</number>
+		<text>#combine( survive lyrics )</text>
+	</query>
+	<query>
+		<number>228</number>
+		<text>#combine( hawaiian volcano observatories )</text>
+	</query>
+	<query>
+		<number>229</number>
+		<text>#combine( beef stroganoff recipe )</text>
+	</query>
+	<query>
+		<number>230</number>
+		<text>#combine( world s biggest dog )</text>
+	</query>
+	<query>
+		<number>231</number>
+		<text>#combine( seven deadly sins )</text>
+	</query>
+	<query>
+		<number>232</number>
+		<text>#combine( hurricane irene flooding manville nj )</text>
+	</query>
+	<query>
+		<number>233</number>
+		<text>#combine( hair dye )</text>
+	</query>
+	<query>
+		<number>234</number>
+		<text>#combine( dark chocolate health benefits )</text>
+	</query>
+	<query>
+		<number>235</number>
+		<text>#combine( ham radio )</text>
+	</query>
+	<query>
+		<number>236</number>
+		<text>#combine( symptoms mad cow disease humans )</text>
+	</query>
+	<query>
+		<number>237</number>
+		<text>#combine( lump throat )</text>
+	</query>
+	<query>
+		<number>238</number>
+		<text>#combine( george bush sr bio )</text>
+	</query>
+	<query>
+		<number>239</number>
+		<text>#combine( frank lloyd wright biography )</text>
+	</query>
+	<query>
+		<number>240</number>
+		<text>#combine( presidential middle names )</text>
+	</query>
+	<query>
+		<number>241</number>
+		<text>#combine( wiki )</text>
+	</query>
+	<query>
+		<number>242</number>
+		<text>#combine( cannellini beans )</text>
+	</query>
+	<query>
+		<number>243</number>
+		<text>#combine( afghanistan flag )</text>
+	</query>
+	<query>
+		<number>244</number>
+		<text>#combine( old town scottsdale )</text>
+	</query>
+	<query>
+		<number>245</number>
+		<text>#combine( roosevelt island )</text>
+	</query>
+	<query>
+		<number>246</number>
+		<text>#combine( civil war battles south carolina )</text>
+	</query>
+	<query>
+		<number>247</number>
+		<text>#combine( rain man )</text>
+	</query>
+	<query>
+		<number>248</number>
+		<text>#combine( eggs shelf life )</text>
+	</query>
+	<query>
+		<number>249</number>
+		<text>#combine( occupational therapist )</text>
+	</query>
+	<query>
+		<number>250</number>
+		<text>#combine( ford edge problems )</text>
+	</query>
+	<query>
+		<number>251</number>
+		<text>#combine( identifying spider bites )</text>
+	</query>
+	<query>
+		<number>252</number>
+		<text>#combine( history orcas island )</text>
+	</query>
+	<query>
+		<number>253</number>
+		<text>#combine( tooth abscess )</text>
+	</query>
+	<query>
+		<number>254</number>
+		<text>#combine( barretts esophagus )</text>
+	</query>
+	<query>
+		<number>255</number>
+		<text>#combine( teddy bears )</text>
+	</query>
+	<query>
+		<number>256</number>
+		<text>#combine( patron saint mental illness )</text>
+	</query>
+	<query>
+		<number>257</number>
+		<text>#combine( holes louis sachar )</text>
+	</query>
+	<query>
+		<number>258</number>
+		<text>#combine( hip roof )</text>
+	</query>
+	<query>
+		<number>259</number>
+		<text>#combine( carpenter bee )</text>
+	</query>
+	<query>
+		<number>260</number>
+		<text>#combine( american revolutionary )</text>
+	</query>
+	<query>
+		<number>261</number>
+		<text>#combine( folk remedies sore throat )</text>
+	</query>
+	<query>
+		<number>262</number>
+		<text>#combine( balding cure )</text>
+	</query>
+	<query>
+		<number>263</number>
+		<text>#combine( evidence evolution )</text>
+	</query>
+	<query>
+		<number>264</number>
+		<text>#combine( tribe living alabama )</text>
+	</query>
+	<query>
+		<number>265</number>
+		<text>#combine( f5 tornado )</text>
+	</query>
+	<query>
+		<number>266</number>
+		<text>#combine( symptoms heart attack )</text>
+	</query>
+	<query>
+		<number>267</number>
+		<text>#combine( feliz navidad lyrics )</text>
+	</query>
+	<query>
+		<number>268</number>
+		<text>#combine( benefits running )</text>
+	</query>
+	<query>
+		<number>269</number>
+		<text>#combine( marshall county schools )</text>
+	</query>
+	<query>
+		<number>270</number>
+		<text>#combine( sun tzu )</text>
+	</query>
+	<query>
+		<number>271</number>
+		<text>#combine( halloween activities middle school )</text>
+	</query>
+	<query>
+		<number>272</number>
+		<text>#combine( dreams interpretation )</text>
+	</query>
+	<query>
+		<number>273</number>
+		<text>#combine( wilsons disease )</text>
+	</query>
+	<query>
+		<number>274</number>
+		<text>#combine( golf instruction )</text>
+	</query>
+	<query>
+		<number>275</number>
+		<text>#combine( uss cole )</text>
+	</query>
+	<query>
+		<number>276</number>
+		<text>#combine( african american music influence history )</text>
+	</query>
+	<query>
+		<number>277</number>
+		<text>#combine( bewitched cast )</text>
+	</query>
+	<query>
+		<number>278</number>
+		<text>#combine( mister rogers )</text>
+	</query>
+	<query>
+		<number>279</number>
+		<text>#combine( game theory )</text>
+	</query>
+	<query>
+		<number>280</number>
+		<text>#combine( view internet history )</text>
+	</query>
+	<query>
+		<number>281</number>
+		<text>#combine( ketogenic diet )</text>
+	</query>
+	<query>
+		<number>282</number>
+		<text>#combine( nasa interplanetary missions )</text>
+	</query>
+	<query>
+		<number>283</number>
+		<text>#combine( hayrides pa )</text>
+	</query>
+	<query>
+		<number>284</number>
+		<text>#combine( find morel mushrooms )</text>
+	</query>
+	<query>
+		<number>285</number>
+		<text>#combine( magnesium rich foods )</text>
+	</query>
+	<query>
+		<number>286</number>
+		<text>#combine( common schizophrenia drugs )</text>
+	</query>
+	<query>
+		<number>287</number>
+		<text>#combine( carotid cavernous fistula treatment )</text>
+	</query>
+	<query>
+		<number>288</number>
+		<text>#combine( fidel castro )</text>
+	</query>
+	<query>
+		<number>289</number>
+		<text>#combine( benefits yoga )</text>
+	</query>
+	<query>
+		<number>290</number>
+		<text>#combine( norway spruce )</text>
+	</query>
+	<query>
+		<number>291</number>
+		<text>#combine( sangre de cristo mountains )</text>
+	</query>
+	<query>
+		<number>292</number>
+		<text>#combine( history electronic medical record )</text>
+	</query>
+	<query>
+		<number>293</number>
+		<text>#combine( educational advantages social networking sites )</text>
+	</query>
+	<query>
+		<number>294</number>
+		<text>#combine( flowering plants )</text>
+	</query>
+	<query>
+		<number>295</number>
+		<text>#combine( tie windsor knot )</text>
+	</query>
+	<query>
+		<number>296</number>
+		<text>#combine( recycling lead acid batteries )</text>
+	</query>
+	<query>
+		<number>297</number>
+		<text>#combine( altitude sickness )</text>
+	</query>
+	<query>
+		<number>298</number>
+		<text>#combine( medical care jehovahs witnesses )</text>
+	</query>
+	<query>
+		<number>299</number>
+		<text>#combine( pink slime ground beef )</text>
+	</query>
+	<query>
+		<number>300</number>
+		<text>#combine( find mean )</text>
+	</query>
+</parameters>

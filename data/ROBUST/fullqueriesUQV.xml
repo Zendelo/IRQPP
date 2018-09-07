@@ -24,10 +24,6 @@
     <text>#combine( international smuggling group )</text>
   </query>
   <query>
-    <number>301-5-1</number>
-    <text>#combine( international criminal organizations )</text>
-  </query>
-  <query>
     <number>301-5-2</number>
     <text>#combine( international illegal drug trade organizations country )</text>
   </query>
@@ -250,10 +246,6 @@
   <query>
     <number>304-7-1</number>
     <text>#combine( endangered mammals habitat threat population decline extinction risk )</text>
-  </query>
-  <query>
-    <number>304-8-1</number>
-    <text>#combine( list endangered mammals )</text>
   </query>
   <query>
     <number>304-8-2</number>
@@ -560,10 +552,6 @@
     <text>#combine( hydroelectric dam power planned construction river electricity )</text>
   </query>
   <query>
-    <number>307-8-1</number>
-    <text>#combine( hydroelectric construction )</text>
-  </query>
-  <query>
     <number>307-8-10</number>
     <text>#combine( hydroelectric project purpose )</text>
   </query>
@@ -682,10 +670,6 @@
   <query>
     <number>309-1-3</number>
     <text>#combine( rap music suck )</text>
-  </query>
-  <query>
-    <number>309-2-1</number>
-    <text>#combine( negative effects rap music )</text>
   </query>
   <query>
     <number>309-3-1</number>
@@ -912,10 +896,6 @@
     <text>#combine( trade secrets theft )</text>
   </query>
   <query>
-    <number>311-5-1</number>
-    <text>#combine( theft trade secrets )</text>
-  </query>
-  <query>
     <number>311-5-2</number>
     <text>#combine( trade secrets leaked fashion industry designers )</text>
   </query>
@@ -958,10 +938,6 @@
   <query>
     <number>312-3-1</number>
     <text>#combine( science growing plants water )</text>
-  </query>
-  <query>
-    <number>312-5-1</number>
-    <text>#combine( growing plants water )</text>
   </query>
   <query>
     <number>312-5-2</number>
@@ -1169,10 +1145,6 @@
   </query>
   <query>
     <number>316-1-1</number>
-    <text>#combine( polygamy )</text>
-  </query>
-  <query>
-    <number>316-2-1</number>
     <text>#combine( polygamy )</text>
   </query>
   <query>
@@ -1672,10 +1644,6 @@
     <text>#combine( plagiarism literature journalism copyright theft copying unethical fraud )</text>
   </query>
   <query>
-    <number>323-8-1</number>
-    <text>#combine( literary plagiarism )</text>
-  </query>
-  <query>
     <number>323-8-2</number>
     <text>#combine( plagiarism doctorate )</text>
   </query>
@@ -1698,10 +1666,6 @@
   <query>
     <number>324-3-1</number>
     <text>#combine( define international relations argentine british )</text>
-  </query>
-  <query>
-    <number>324-5-1</number>
-    <text>#combine( argentina britain international relations )</text>
   </query>
   <query>
     <number>324-5-2</number>
@@ -1948,10 +1912,6 @@
     <text>#combine( modern human slavery )</text>
   </query>
   <query>
-    <number>327-2-1</number>
-    <text>#combine( human slavery )</text>
-  </query>
-  <query>
     <number>327-3-1</number>
     <text>#combine( global slavery index )</text>
   </query>
@@ -2144,10 +2104,6 @@
     <text>#combine( religious commonalities iran iraq )</text>
   </query>
   <query>
-    <number>330-5-1</number>
-    <text>#combine( iran iraq collaboration )</text>
-  </query>
-  <query>
     <number>330-5-10</number>
     <text>#combine( iran iraq friendship )</text>
   </query>
@@ -2184,18 +2140,6 @@
     <text>#combine( iran iraq treatment minorities )</text>
   </query>
   <query>
-    <number>330-6-1</number>
-    <text>#combine( iran iraq allies )</text>
-  </query>
-  <query>
-    <number>330-6-2</number>
-    <text>#combine( iran iraq cooperation )</text>
-  </query>
-  <query>
-    <number>330-6-3</number>
-    <text>#combine( iran iraq ties )</text>
-  </query>
-  <query>
     <number>330-6-4</number>
     <text>#combine( friendly iran iraq relations )</text>
   </query>
@@ -2213,10 +2157,6 @@
   </query>
   <query>
     <number>331-1-1</number>
-    <text>#combine( world bank criticism )</text>
-  </query>
-  <query>
-    <number>331-2-1</number>
     <text>#combine( world bank criticism )</text>
   </query>
   <query>
@@ -2504,10 +2444,6 @@
     <text>#combine( causes black bear human attack )</text>
   </query>
   <query>
-    <number>336-4-1</number>
-    <text>#combine( black bear attacks )</text>
-  </query>
-  <query>
     <number>336-4-2</number>
     <text>#combine( possible causes black bear attacks )</text>
   </query>
@@ -2610,10 +2546,6 @@
   <query>
     <number>337-7-1</number>
     <text>#combine( viral hepatitis treatment vaccines immune third world country )</text>
-  </query>
-  <query>
-    <number>337-8-1</number>
-    <text>#combine( viral hepatitis research )</text>
   </query>
   <query>
     <number>337-8-2</number>
@@ -3312,10 +3244,6 @@
     <text>#combine( agoraphobia )</text>
   </query>
   <query>
-    <number>348-3-1</number>
-    <text>#combine( agoraphobia )</text>
-  </query>
-  <query>
     <number>348-5-1</number>
     <text>#combine( agoraphobia prevalence )</text>
   </query>
@@ -3696,10 +3624,6 @@
     <text>#combine( journalist risk war zone )</text>
   </query>
   <query>
-    <number>354-5-1</number>
-    <text>#combine( journalist killed action )</text>
-  </query>
-  <query>
     <number>354-5-10</number>
     <text>#combine( journalist tortured work )</text>
   </query>
@@ -3776,10 +3700,6 @@
     <text>#combine( spaceborne ocean remote sensing application oceanography )</text>
   </query>
   <query>
-    <number>355-4-1</number>
-    <text>#combine( spaceborne ocean remote sensing )</text>
-  </query>
-  <query>
     <number>355-4-2</number>
     <text>#combine( satellite remote sensing oceanography )</text>
   </query>
@@ -3794,10 +3714,6 @@
   <query>
     <number>355-5-1</number>
     <text>#combine( ocean remote sensing satellites development )</text>
-  </query>
-  <query>
-    <number>355-5-10</number>
-    <text>#combine( spaceborne ocean remote sensing )</text>
   </query>
   <query>
     <number>355-5-2</number>
@@ -3892,10 +3808,6 @@
     <text>#combine( estrogen suppressing drugs united kingdom )</text>
   </query>
   <query>
-    <number>356-5-1</number>
-    <text>#combine( estrogen postmenopausal women britain )</text>
-  </query>
-  <query>
     <number>356-5-10</number>
     <text>#combine( estrogen suppressing drugs postmenopausal women britain )</text>
   </query>
@@ -3909,10 +3821,6 @@
   </query>
   <query>
     <number>356-5-4</number>
-    <text>#combine( estrogen postmenopausal women marketing britain )</text>
-  </query>
-  <query>
-    <number>356-5-5</number>
     <text>#combine( estrogen postmenopausal women marketing britain )</text>
   </query>
   <query>
@@ -4036,14 +3944,6 @@
     <text>#combine( mutual fund performance predictors )</text>
   </query>
   <query>
-    <number>359-2-1</number>
-    <text>#combine( mutual fund performance predictors )</text>
-  </query>
-  <query>
-    <number>359-3-1</number>
-    <text>#combine( mutual fund performance predictors )</text>
-  </query>
-  <query>
     <number>359-5-1</number>
     <text>#combine( mutual fund performance metrics )</text>
   </query>
@@ -4069,10 +3969,6 @@
   </query>
   <query>
     <number>360-1-1</number>
-    <text>#combine( drug legalization benefits )</text>
-  </query>
-  <query>
-    <number>360-2-1</number>
     <text>#combine( drug legalization benefits )</text>
   </query>
   <query>
@@ -4114,14 +4010,6 @@
   <query>
     <number>361-2-1</number>
     <text>#combine( clothing sweatshop )</text>
-  </query>
-  <query>
-    <number>361-3-1</number>
-    <text>#combine( clothing sweatshops )</text>
-  </query>
-  <query>
-    <number>361-5-1</number>
-    <text>#combine( clothing sweatshops )</text>
   </query>
   <query>
     <number>361-5-2</number>
@@ -4376,16 +4264,8 @@
     <text>#combine( el nino effects )</text>
   </query>
   <query>
-    <number>365-2-1</number>
-    <text>#combine( el nino effects )</text>
-  </query>
-  <query>
     <number>365-3-1</number>
     <text>#combine( el nino )</text>
-  </query>
-  <query>
-    <number>365-5-1</number>
-    <text>#combine( el nino effects )</text>
   </query>
   <query>
     <number>365-5-2</number>
@@ -4449,10 +4329,6 @@
   </query>
   <query>
     <number>367-1-2</number>
-    <text>#combine( boat piracy )</text>
-  </query>
-  <query>
-    <number>367-2-1</number>
     <text>#combine( boat piracy )</text>
   </query>
   <query>
@@ -4556,20 +4432,8 @@
     <text>#combine( vitro fertilization )</text>
   </query>
   <query>
-    <number>368-2-1</number>
-    <text>#combine( vitro fertilization )</text>
-  </query>
-  <query>
-    <number>368-3-1</number>
-    <text>#combine( vitro fertilization )</text>
-  </query>
-  <query>
     <number>368-3-2</number>
     <text>#combine( ivf )</text>
-  </query>
-  <query>
-    <number>368-5-1</number>
-    <text>#combine( vitro fertilization )</text>
   </query>
   <query>
     <number>368-5-2</number>
@@ -4594,10 +4458,6 @@
   <query>
     <number>369-2-1</number>
     <text>#combine( anorexia nervosa bulimia causes treatments )</text>
-  </query>
-  <query>
-    <number>369-3-1</number>
-    <text>#combine( anorexia nervosa bulimia )</text>
   </query>
   <query>
     <number>369-5-1</number>
@@ -4728,20 +4588,8 @@
     <text>#combine( tribe casino gambling )</text>
   </query>
   <query>
-    <number>372-4-3</number>
-    <text>#combine( native american casino gambling )</text>
-  </query>
-  <query>
-    <number>372-5-1</number>
-    <text>#combine( native american casino gambling )</text>
-  </query>
-  <query>
     <number>372-5-10</number>
     <text>#combine( indigenous americans casino gambling destruction community )</text>
-  </query>
-  <query>
-    <number>372-5-2</number>
-    <text>#combine( native american casino gambling social implications )</text>
   </query>
   <query>
     <number>372-5-3</number>
@@ -4872,10 +4720,6 @@
     <text>#combine( hydrogen energy source )</text>
   </query>
   <query>
-    <number>375-2-1</number>
-    <text>#combine( hydrogen energy source )</text>
-  </query>
-  <query>
     <number>375-3-1</number>
     <text>#combine( research hydrogen fuel )</text>
   </query>
@@ -4972,10 +4816,6 @@
     <text>#combine( international court justice case studies )</text>
   </query>
   <query>
-    <number>376-5-1</number>
-    <text>#combine( international court justice cases )</text>
-  </query>
-  <query>
     <number>376-5-2</number>
     <text>#combine( world court international court justice cases )</text>
   </query>
@@ -5040,10 +4880,6 @@
     <text>#combine( euro currency opposition )</text>
   </query>
   <query>
-    <number>378-3-1</number>
-    <text>#combine( euro opposition )</text>
-  </query>
-  <query>
     <number>378-4-1</number>
     <text>#combine( opposition euro )</text>
   </query>
@@ -5076,10 +4912,6 @@
     <text>#combine( retaliation euro currency )</text>
   </query>
   <query>
-    <number>378-5-6</number>
-    <text>#combine( euro currency opposition )</text>
-  </query>
-  <query>
     <number>378-5-7</number>
     <text>#combine( euro currency countries disliking )</text>
   </query>
@@ -5090,10 +4922,6 @@
   <query>
     <number>378-5-9</number>
     <text>#combine( euro currency backlash )</text>
-  </query>
-  <query>
-    <number>378-6-1</number>
-    <text>#combine( euro currency opposition )</text>
   </query>
   <query>
     <number>378-7-1</number>
@@ -5252,10 +5080,6 @@
     <text>#combine( alternative medicine treatment cancer psychology stress )</text>
   </query>
   <query>
-    <number>381-6-1</number>
-    <text>#combine( alternative medicine success )</text>
-  </query>
-  <query>
     <number>382-1-1</number>
     <text>#combine( hydrogen cars )</text>
   </query>
@@ -5308,10 +5132,6 @@
     <text>#combine( mental illness treatment drugs )</text>
   </query>
   <query>
-    <number>383-5-1</number>
-    <text>#combine( mental illness drugs )</text>
-  </query>
-  <query>
     <number>383-5-2</number>
     <text>#combine( drugs treat depression )</text>
   </query>
@@ -5341,10 +5161,6 @@
   </query>
   <query>
     <number>384-1-1</number>
-    <text>#combine( space station moon colonization )</text>
-  </query>
-  <query>
-    <number>384-2-1</number>
     <text>#combine( space station moon colonization )</text>
   </query>
   <query>
@@ -5390,14 +5206,6 @@
   <query>
     <number>385-2-2</number>
     <text>#combine( hybrid cars )</text>
-  </query>
-  <query>
-    <number>385-3-1</number>
-    <text>#combine( hybrid cars )</text>
-  </query>
-  <query>
-    <number>385-5-1</number>
-    <text>#combine( hybrid car engines )</text>
   </query>
   <query>
     <number>385-5-10</number>
@@ -5528,10 +5336,6 @@
     <text>#combine( organic fertilizer )</text>
   </query>
   <query>
-    <number>388-3-1</number>
-    <text>#combine( organic fertilizers )</text>
-  </query>
-  <query>
     <number>388-5-1</number>
     <text>#combine( organic safe fertilizers soil enhancers )</text>
   </query>
@@ -5632,10 +5436,6 @@
     <text>#combine( cryptography export control )</text>
   </query>
   <query>
-    <number>389-8-2</number>
-    <text>#combine( des nsa export control )</text>
-  </query>
-  <query>
     <number>389-8-3</number>
     <text>#combine( crypto wars )</text>
   </query>
@@ -5646,10 +5446,6 @@
   <query>
     <number>390-2-1</number>
     <text>#combine( orphan drug act )</text>
-  </query>
-  <query>
-    <number>390-3-1</number>
-    <text>#combine( orphan drugs )</text>
   </query>
   <query>
     <number>390-5-1</number>
@@ -5760,10 +5556,6 @@
     <text>#combine( mercy killing )</text>
   </query>
   <query>
-    <number>393-3-1</number>
-    <text>#combine( mercy killing )</text>
-  </query>
-  <query>
     <number>393-4-1</number>
     <text>#combine( mercy killing legal status )</text>
   </query>
@@ -5790,10 +5582,6 @@
   <query>
     <number>393-5-2</number>
     <text>#combine( mercy killings arguments )</text>
-  </query>
-  <query>
-    <number>393-5-3</number>
-    <text>#combine( mercy killings )</text>
   </query>
   <query>
     <number>393-5-4</number>
@@ -5936,24 +5724,8 @@
     <text>#combine( building related illnesses )</text>
   </query>
   <query>
-    <number>396-2-2</number>
-    <text>#combine( sick building syndrome )</text>
-  </query>
-  <query>
     <number>396-2-3</number>
     <text>#combine( asbestos )</text>
-  </query>
-  <query>
-    <number>396-3-1</number>
-    <text>#combine( sick building syndrome )</text>
-  </query>
-  <query>
-    <number>396-5-1</number>
-    <text>#combine( sick building syndrome )</text>
-  </query>
-  <query>
-    <number>396-5-2</number>
-    <text>#combine( building related illnesses )</text>
   </query>
   <query>
     <number>396-5-3</number>
@@ -5998,10 +5770,6 @@
   <query>
     <number>397-5-10</number>
     <text>#combine( typical reasons car recalls )</text>
-  </query>
-  <query>
-    <number>397-5-2</number>
-    <text>#combine( automobile recalls )</text>
   </query>
   <query>
     <number>397-5-3</number>
@@ -6057,10 +5825,6 @@
   </query>
   <query>
     <number>398-3-1</number>
-    <text>#combine( european conventional arms cut )</text>
-  </query>
-  <query>
-    <number>398-5-1</number>
     <text>#combine( european conventional arms cut )</text>
   </query>
   <query>
@@ -6348,10 +6112,6 @@
     <text>#combine( effects dietary intakes potassium magnesium fruits vegetables determinants bone mineral density elderly men women preventing osteoporosis bone decay )</text>
   </query>
   <query>
-    <number>403-3-1</number>
-    <text>#combine( osteoporosis )</text>
-  </query>
-  <query>
     <number>403-4-1</number>
     <text>#combine( dietary intakes potassium osteoporosis prevention )</text>
   </query>
@@ -6538,10 +6298,6 @@
   <query>
     <number>406-6-1</number>
     <text>#combine( parkinsons disease treatement )</text>
-  </query>
-  <query>
-    <number>406-8-1</number>
-    <text>#combine( parkinsons disease treatment )</text>
   </query>
   <query>
     <number>406-8-2</number>
@@ -6736,10 +6492,6 @@
     <text>#combine( schengen agreement )</text>
   </query>
   <query>
-    <number>410-3-1</number>
-    <text>#combine( schengen agreement )</text>
-  </query>
-  <query>
     <number>410-4-1</number>
     <text>#combine( schengen agreement western europe border control visa insurance )</text>
   </query>
@@ -6800,10 +6552,6 @@
     <text>#combine( airport security )</text>
   </query>
   <query>
-    <number>412-2-1</number>
-    <text>#combine( airport security )</text>
-  </query>
-  <query>
     <number>412-3-1</number>
     <text>#combine( airport measures )</text>
   </query>
@@ -6842,10 +6590,6 @@
   <query>
     <number>413-2-1</number>
     <text>#combine( steel production methodology )</text>
-  </query>
-  <query>
-    <number>413-3-1</number>
-    <text>#combine( new steel production methods )</text>
   </query>
   <query>
     <number>413-4-1</number>
@@ -6932,10 +6676,6 @@
     <text>#combine( tonnes sugar imported cuba )</text>
   </query>
   <query>
-    <number>414-6-1</number>
-    <text>#combine( cuba sugar export )</text>
-  </query>
-  <query>
     <number>414-7-1</number>
     <text>#combine( cuba sugar imports exports country origin trade )</text>
   </query>
@@ -6968,10 +6708,6 @@
     <text>#combine( drug trafficking )</text>
   </query>
   <query>
-    <number>415-3-2</number>
-    <text>#combine( golden triangle drug trafficking )</text>
-  </query>
-  <query>
     <number>415-4-1</number>
     <text>#combine( drug trafficking burma thailand laos golden triangle )</text>
   </query>
@@ -6992,10 +6728,6 @@
     <text>#combine( drug trafficking international organised crime groups golden triangle california hawaii )</text>
   </query>
   <query>
-    <number>415-6-1</number>
-    <text>#combine( golden triangle drug trafficking )</text>
-  </query>
-  <query>
     <number>415-7-1</number>
     <text>#combine( drugs golden triangle )</text>
   </query>
@@ -7012,15 +6744,7 @@
     <text>#combine( three gorges project completion )</text>
   </query>
   <query>
-    <number>416-2-1</number>
-    <text>#combine( three gorges project status )</text>
-  </query>
-  <query>
     <number>416-3-1</number>
-    <text>#combine( status three gorges project )</text>
-  </query>
-  <query>
-    <number>416-4-1</number>
     <text>#combine( status three gorges project )</text>
   </query>
   <query>
@@ -7068,16 +6792,8 @@
     <text>#combine( three gorges project status update )</text>
   </query>
   <query>
-    <number>416-6-1</number>
-    <text>#combine( three gorges project status )</text>
-  </query>
-  <query>
     <number>416-7-1</number>
     <text>#combine( three gorges dam project status cost electrical output china river )</text>
-  </query>
-  <query>
-    <number>416-8-1</number>
-    <text>#combine( three gorges project status )</text>
   </query>
   <query>
     <number>416-8-2</number>
@@ -7097,10 +6813,6 @@
   </query>
   <query>
     <number>417-1-1</number>
-    <text>#combine( measure creativity )</text>
-  </query>
-  <query>
-    <number>417-2-1</number>
     <text>#combine( measure creativity )</text>
   </query>
   <query>
@@ -7360,10 +7072,6 @@
     <text>#combine( art theft reports )</text>
   </query>
   <query>
-    <number>422-5-1</number>
-    <text>#combine( stolen art )</text>
-  </query>
-  <query>
     <number>422-5-10</number>
     <text>#combine( known art piece artist stolen )</text>
   </query>
@@ -7436,10 +7144,6 @@
     <text>#combine( mirjana markovic slobodan milosevic )</text>
   </query>
   <query>
-    <number>423-2-1</number>
-    <text>#combine( mirjana markovic )</text>
-  </query>
-  <query>
     <number>423-2-2</number>
     <text>#combine( mira markovic )</text>
   </query>
@@ -7454,10 +7158,6 @@
   <query>
     <number>423-3-2</number>
     <text>#combine( milosevics  wife mirjana markovic )</text>
-  </query>
-  <query>
-    <number>423-4-1</number>
-    <text>#combine( mirjana markovic )</text>
   </query>
   <query>
     <number>423-4-2</number>
@@ -7528,10 +7228,6 @@
     <text>#combine( mirjana markovic wife serbian president mira )</text>
   </query>
   <query>
-    <number>423-8-1</number>
-    <text>#combine( mirjana markovic )</text>
-  </query>
-  <query>
     <number>423-8-2</number>
     <text>#combine( mira serbian president wife )</text>
   </query>
@@ -7549,10 +7245,6 @@
   </query>
   <query>
     <number>424-1-1</number>
-    <text>#combine( alleged suicide murder )</text>
-  </query>
-  <query>
-    <number>424-2-1</number>
     <text>#combine( alleged suicide murder )</text>
   </query>
   <query>
@@ -7636,20 +7328,8 @@
     <text>#combine( police dog handlers )</text>
   </query>
   <query>
-    <number>426-2-1</number>
-    <text>#combine( police dogs )</text>
-  </query>
-  <query>
     <number>426-3-1</number>
     <text>#combine( dogs law enforcement )</text>
-  </query>
-  <query>
-    <number>426-3-2</number>
-    <text>#combine( police dogs )</text>
-  </query>
-  <query>
-    <number>426-4-1</number>
-    <text>#combine( law enforcement dogs )</text>
   </query>
   <query>
     <number>426-4-2</number>
@@ -7738,10 +7418,6 @@
   <query>
     <number>427-2-1</number>
     <text>#combine( uv damage eyesight )</text>
-  </query>
-  <query>
-    <number>427-3-1</number>
-    <text>#combine( uv damage eyes )</text>
   </query>
   <query>
     <number>427-4-1</number>
@@ -7860,10 +7536,6 @@
     <text>#combine( legionnaires disease outbreaks )</text>
   </query>
   <query>
-    <number>429-2-1</number>
-    <text>#combine( legionnaires disease outbreaks )</text>
-  </query>
-  <query>
     <number>429-3-1</number>
     <text>#combine( legionnaires outbreaks )</text>
   </query>
@@ -7882,10 +7554,6 @@
   <query>
     <number>429-5-3</number>
     <text>#combine( legionnaires disease outbreak worldwide )</text>
-  </query>
-  <query>
-    <number>429-6-1</number>
-    <text>#combine( legionnaires disease outbreak )</text>
   </query>
   <query>
     <number>429-7-1</number>
@@ -7914,10 +7582,6 @@
   <query>
     <number>430-5-1</number>
     <text>#combine( killer bees attacks humans )</text>
-  </query>
-  <query>
-    <number>430-5-2</number>
-    <text>#combine( africanized killer bee attacks humans )</text>
   </query>
   <query>
     <number>430-5-3</number>
@@ -7956,10 +7620,6 @@
     <text>#combine( recent advances robotic technology )</text>
   </query>
   <query>
-    <number>431-5-1</number>
-    <text>#combine( robotic technology developments )</text>
-  </query>
-  <query>
     <number>431-5-2</number>
     <text>#combine( latest developments robotic technology )</text>
   </query>
@@ -7986,10 +7646,6 @@
   <query>
     <number>432-3-1</number>
     <text>#combine( motorist profiling )</text>
-  </query>
-  <query>
-    <number>432-4-1</number>
-    <text>#combine( police profiling motorists )</text>
   </query>
   <query>
     <number>432-5-1</number>
@@ -8108,14 +7764,6 @@
     <text>#combine( estonia economy )</text>
   </query>
   <query>
-    <number>434-2-1</number>
-    <text>#combine( estonia economy )</text>
-  </query>
-  <query>
-    <number>434-3-1</number>
-    <text>#combine( estonia economy )</text>
-  </query>
-  <query>
     <number>434-4-1</number>
     <text>#combine( economy performance issues estonia )</text>
   </query>
@@ -8130,10 +7778,6 @@
   <query>
     <number>434-5-3</number>
     <text>#combine( estonia monetary performance )</text>
-  </query>
-  <query>
-    <number>434-6-1</number>
-    <text>#combine( estonia economy )</text>
   </query>
   <query>
     <number>435-1-1</number>
@@ -8548,10 +8192,6 @@
     <text>#combine( lyme disease prevention )</text>
   </query>
   <query>
-    <number>441-3-1</number>
-    <text>#combine( lyme disease prevention )</text>
-  </query>
-  <query>
     <number>441-3-2</number>
     <text>#combine( lyme disease treatment )</text>
   </query>
@@ -8570,10 +8210,6 @@
   <query>
     <number>441-5-3</number>
     <text>#combine( lyme disease insect spray )</text>
-  </query>
-  <query>
-    <number>441-6-1</number>
-    <text>#combine( lyme disease prevention treatment )</text>
   </query>
   <query>
     <number>441-7-1</number>
@@ -8802,10 +8438,6 @@
   <query>
     <number>445-2-1</number>
     <text>#combine( women clergy europe australia asia south america )</text>
-  </query>
-  <query>
-    <number>445-3-1</number>
-    <text>#combine( women clergy )</text>
   </query>
   <query>
     <number>445-4-1</number>
@@ -9144,10 +8776,6 @@
     <text>#combine( lawsuits tobacco industry )</text>
   </query>
   <query>
-    <number>603-2-1</number>
-    <text>#combine( lawsuits tobacco industry )</text>
-  </query>
-  <query>
     <number>603-4-1</number>
     <text>#combine( united states lawsuits tobacco industry cigarette health problems )</text>
   </query>
@@ -9177,10 +8805,6 @@
   </query>
   <query>
     <number>604-1-1</number>
-    <text>#combine( lyme disease arthritis )</text>
-  </query>
-  <query>
-    <number>604-2-1</number>
     <text>#combine( lyme disease arthritis )</text>
   </query>
   <query>
@@ -9254,10 +8878,6 @@
   <query>
     <number>606-2-1</number>
     <text>#combine( animal trap bans )</text>
-  </query>
-  <query>
-    <number>606-4-1</number>
-    <text>#combine( banning leg traps )</text>
   </query>
   <query>
     <number>606-4-2</number>
@@ -9604,14 +9224,6 @@
     <text>#combine( genetically modified flavor saver )</text>
   </query>
   <query>
-    <number>614-4-1</number>
-    <text>#combine( flavr savr tomato calgene )</text>
-  </query>
-  <query>
-    <number>614-4-2</number>
-    <text>#combine( flavr savr tomato calgene )</text>
-  </query>
-  <query>
     <number>614-4-3</number>
     <text>#combine( genetic modified food flavr savr tomato )</text>
   </query>
@@ -9664,14 +9276,6 @@
     <text>#combine( flavr savr flavor saver tomato calgene genetically modified gmo )</text>
   </query>
   <query>
-    <number>614-8-1</number>
-    <text>#combine( flavr savr tomato )</text>
-  </query>
-  <query>
-    <number>614-8-2</number>
-    <text>#combine( flavr savr tomato )</text>
-  </query>
-  <query>
     <number>614-8-3</number>
     <text>#combine( ge food flavr savr )</text>
   </query>
@@ -9716,16 +9320,8 @@
     <text>#combine( volkswagen production mexico )</text>
   </query>
   <query>
-    <number>616-2-1</number>
-    <text>#combine( volkswagen production mexico )</text>
-  </query>
-  <query>
     <number>616-4-1</number>
     <text>#combine( volkswagen mexico production history )</text>
-  </query>
-  <query>
-    <number>616-5-1</number>
-    <text>#combine( volkswagen production mexico )</text>
   </query>
   <query>
     <number>616-5-2</number>
@@ -9854,10 +9450,6 @@
   <query>
     <number>619-5-4</number>
     <text>#combine( winnie mandela personal involvement kidnapping charges conviction scandal )</text>
-  </query>
-  <query>
-    <number>619-6-1</number>
-    <text>#combine( winnie mandela kidnapping scandal south africa )</text>
   </query>
   <query>
     <number>619-7-1</number>
@@ -10062,10 +9654,6 @@
   <query>
     <number>623-5-5</number>
     <text>#combine( soman chemical weapon )</text>
-  </query>
-  <query>
-    <number>623-6-1</number>
-    <text>#combine( ricin sarin soman anthrax chemical weapon )</text>
   </query>
   <query>
     <number>623-7-1</number>
@@ -10348,10 +9936,6 @@
     <text>#combine( gulf war syndrome symptoms )</text>
   </query>
   <query>
-    <number>630-2-1</number>
-    <text>#combine( gulf war syndrome symptoms )</text>
-  </query>
-  <query>
     <number>630-4-1</number>
     <text>#combine( symptoms gulf war syndrome )</text>
   </query>
@@ -10362,10 +9946,6 @@
   <query>
     <number>630-4-3</number>
     <text>#combine( symptoms desert storm syndrome )</text>
-  </query>
-  <query>
-    <number>630-5-1</number>
-    <text>#combine( gulf war syndrome symptoms )</text>
   </query>
   <query>
     <number>630-5-2</number>
@@ -10416,19 +9996,11 @@
     <text>#combine( nelson mandela rsa south africa president election )</text>
   </query>
   <query>
-    <number>631-7-1</number>
-    <text>#combine( nelson mandela elected president south africa )</text>
-  </query>
-  <query>
     <number>631-8-1</number>
     <text>#combine( mandela south africa president )</text>
   </query>
   <query>
     <number>632-1-1</number>
-    <text>#combine( tin mining asia )</text>
-  </query>
-  <query>
-    <number>632-2-1</number>
     <text>#combine( tin mining asia )</text>
   </query>
   <query>
@@ -10438,10 +10010,6 @@
   <query>
     <number>632-4-1</number>
     <text>#combine( tin mining countries southeast asia )</text>
-  </query>
-  <query>
-    <number>632-4-2</number>
-    <text>#combine( tin mining china malaysia indonesia vietnam burma thailand laos )</text>
   </query>
   <query>
     <number>632-5-1</number>
@@ -10496,20 +10064,12 @@
     <text>#combine( welsh devolution movement historical record )</text>
   </query>
   <query>
-    <number>633-5-1</number>
-    <text>#combine( welsh devolution movement )</text>
-  </query>
-  <query>
     <number>633-5-2</number>
     <text>#combine( welsh devolution movement historical facts )</text>
   </query>
   <query>
     <number>633-5-3</number>
     <text>#combine( welsh devolution movement caused )</text>
-  </query>
-  <query>
-    <number>633-5-4</number>
-    <text>#combine( welsh devolution movement history )</text>
   </query>
   <query>
     <number>633-6-1</number>
@@ -10525,10 +10085,6 @@
   </query>
   <query>
     <number>634-1-1</number>
-    <text>#combine( l tryptophan dietary supplement deaths )</text>
-  </query>
-  <query>
-    <number>634-2-1</number>
     <text>#combine( l tryptophan dietary supplement deaths )</text>
   </query>
   <query>
@@ -10562,10 +10118,6 @@
   <query>
     <number>635-2-1</number>
     <text>#combine( doctor assisted suicide )</text>
-  </query>
-  <query>
-    <number>635-2-2</number>
-    <text>#combine( euthanasia )</text>
   </query>
   <query>
     <number>635-4-1</number>
@@ -10788,10 +10340,6 @@
     <text>#combine( exxon valdez oil spill marine life wildlife )</text>
   </query>
   <query>
-    <number>641-2-1</number>
-    <text>#combine( exxon valdez oil spill marine life wildlife )</text>
-  </query>
-  <query>
     <number>641-4-1</number>
     <text>#combine( exxon valdez oil spill impact marine life )</text>
   </query>
@@ -10954,10 +10502,6 @@
   <query>
     <number>645-5-3</number>
     <text>#combine( net loss incurred piracy pirates software companies statistics )</text>
-  </query>
-  <query>
-    <number>645-6-1</number>
-    <text>#combine( software piracy financial impact )</text>
   </query>
   <query>
     <number>645-7-1</number>
@@ -11316,10 +10860,6 @@
     <text>#combine( sex school advantages disadvantages )</text>
   </query>
   <query>
-    <number>654-5-1</number>
-    <text>#combine( sex schools advantages disadvantages )</text>
-  </query>
-  <query>
     <number>654-5-2</number>
     <text>#combine( benefits advantages debate girls schools girls )</text>
   </query>
@@ -11460,10 +11000,6 @@
     <text>#combine( teenage pregnancy )</text>
   </query>
   <query>
-    <number>658-2-1</number>
-    <text>#combine( teenage pregnancy )</text>
-  </query>
-  <query>
     <number>658-2-2</number>
     <text>#combine( birth rate teenage mothers )</text>
   </query>
@@ -11486,10 +11022,6 @@
   <query>
     <number>658-4-2</number>
     <text>#combine( teenage abortion united states )</text>
-  </query>
-  <query>
-    <number>658-5-1</number>
-    <text>#combine( teenage pregnancy united states )</text>
   </query>
   <query>
     <number>658-5-2</number>
@@ -11696,20 +11228,12 @@
     <text>#combine( national museum american indian )</text>
   </query>
   <query>
-    <number>664-2-1</number>
-    <text>#combine( national museum american indian )</text>
-  </query>
-  <query>
     <number>664-4-1</number>
     <text>#combine( national museum american indian location )</text>
   </query>
   <query>
     <number>664-4-2</number>
     <text>#combine( collections national museum american indian )</text>
-  </query>
-  <query>
-    <number>664-5-1</number>
-    <text>#combine( national museum american indian location )</text>
   </query>
   <query>
     <number>664-5-2</number>
@@ -12104,10 +11628,6 @@
     <text>#combine( olympic swim meets training requirements )</text>
   </query>
   <query>
-    <number>675-5-1</number>
-    <text>#combine( olympic swimming training )</text>
-  </query>
-  <query>
     <number>675-5-2</number>
     <text>#combine( training conditions sites requirements olympic swimming preparation )</text>
   </query>
@@ -12146,10 +11666,6 @@
   <query>
     <number>676-5-3</number>
     <text>#combine( cultivation poppy export morphine heroin opiate illegal narcotics history development early days )</text>
-  </query>
-  <query>
-    <number>676-6-1</number>
-    <text>#combine( poppy cultivation export )</text>
   </query>
   <query>
     <number>676-7-1</number>
@@ -12366,10 +11882,6 @@
   <query>
     <number>681-4-1</number>
     <text>#combine( location wind power stations )</text>
-  </query>
-  <query>
-    <number>681-5-1</number>
-    <text>#combine( wind power installation location )</text>
   </query>
   <query>
     <number>681-5-2</number>
@@ -12620,10 +12132,6 @@
     <text>#combine( international media bias )</text>
   </query>
   <query>
-    <number>688-2-1</number>
-    <text>#combine( international media bias )</text>
-  </query>
-  <query>
     <number>688-4-1</number>
     <text>#combine( media bias europe )</text>
   </query>
@@ -12856,10 +12364,6 @@
     <text>#combine( prostate cancer detection treatment )</text>
   </query>
   <query>
-    <number>692-2-1</number>
-    <text>#combine( prostate cancer detection treatment )</text>
-  </query>
-  <query>
     <number>692-4-1</number>
     <text>#combine( prostate cancer general treatment )</text>
   </query>
@@ -12878,10 +12382,6 @@
   <query>
     <number>692-5-3</number>
     <text>#combine( prostate cancer treatments different stages development )</text>
-  </query>
-  <query>
-    <number>692-6-1</number>
-    <text>#combine( prostate cancer detection treatment )</text>
   </query>
   <query>
     <number>693-1-1</number>
@@ -12992,10 +12492,6 @@
     <text>#combine( white collar crime sentence )</text>
   </query>
   <query>
-    <number>695-8-1</number>
-    <text>#combine( white collar crime sentence )</text>
-  </query>
-  <query>
     <number>696-1-1</number>
     <text>#combine( cosmetic plastic surgery hazards risks safety )</text>
   </query>
@@ -13030,10 +12526,6 @@
   <query>
     <number>696-8-1</number>
     <text>#combine( hazards cosmetic plastic surgery )</text>
-  </query>
-  <query>
-    <number>696-8-2</number>
-    <text>#combine( safety cosmetic plastic surgery )</text>
   </query>
   <query>
     <number>696-9-1</number>
@@ -13112,15 +12604,7 @@
     <text>#combine( african country literacy rate list )</text>
   </query>
   <query>
-    <number>698-8-1</number>
-    <text>#combine( literacy rates africa )</text>
-  </query>
-  <query>
     <number>699-1-1</number>
-    <text>#combine( term limits pros cons )</text>
-  </query>
-  <query>
-    <number>699-2-1</number>
     <text>#combine( term limits pros cons )</text>
   </query>
   <query>

@@ -4,7 +4,6 @@
 301-4-1:international crime groups
 301-4-2:international drug trades crime group south america
 301-4-3:international smuggling group
-301-5-1:international criminal organizations
 301-5-2:international illegal drug trade organizations country
 301-5-3:international terrorist groups illegal activity country
 301-5-4:international organizations benefiting crime country
@@ -61,7 +60,6 @@
 304-5-5:endangered mammals threatened predators natural selection
 304-6-1:endangered mammal threat list
 304-7-1:endangered mammals habitat threat population decline extinction risk
-304-8-1:list endangered mammals
 304-8-2:rhinoceros risk
 304-8-3:elephant poaching
 304-9-1:endangered species mammals
@@ -138,7 +136,6 @@
 307-6-5:hydro hydroelectric project problems
 307-6-6:construction hydroelectric power proposed
 307-7-1:hydroelectric dam power planned construction river electricity
-307-8-1:hydroelectric construction
 307-8-10:hydroelectric project purpose
 307-8-2:hydroelectric  geographical construction
 307-8-3:new construction hydroelectric
@@ -169,7 +166,6 @@
 309-1-1:rap music bad
 309-1-2:negative effects rap music
 309-1-3:rap music suck
-309-2-1:negative effects rap music
 309-3-1:evidence rap music consequence teenagers
 309-4-1:relation rap music lyrics suicidal tendencies
 309-4-2:rap music negative influence young people
@@ -226,7 +222,6 @@
 311-1-2:stolen trade secrets
 311-2-1:trade secret theft espionage
 311-3-1:trade secrets theft
-311-5-1:theft trade secrets
 311-5-2:trade secrets leaked fashion industry designers
 311-5-3:pharmaceutical companies incurring theft trade secrets
 311-5-4:freedom information act steal trade secrets
@@ -238,7 +233,6 @@
 312-1-1:growing plants water
 312-2-1:plant growth soil
 312-3-1:science growing plants water
-312-5-1:growing plants water
 312-5-2:science hydroponics
 312-5-3:advantages hydroponic installations rate plant development
 312-5-4:hydroponic installation cost benefit analysis
@@ -291,7 +285,6 @@
 315-8-1:unanswered fatal highway accidents
 315-9-1:unexplained highway accidents
 316-1-1:polygamy
-316-2-1:polygamy
 316-3-1:world polygamy
 316-5-1:polygamy polygyny polyandry world today
 316-5-2:polygamous relationships cultures worldwide recent years
@@ -416,14 +409,12 @@
 323-5-4:instances media outlet stolen work permission attribution
 323-6-1:journalistic plagiarism example instance
 323-7-1:plagiarism literature journalism copyright theft copying unethical fraud
-323-8-1:literary plagiarism
 323-8-2:plagiarism doctorate
 323-8-3:phd plagiarism
 323-9-1:literary journalistic plagiarism
 324-1-1:argentina britain international relations
 324-2-1:argentina united kingdom falkland islands
 324-3-1:define international relations argentine british
-324-5-1:argentina britain international relations
 324-5-2:falkland islands dispute argentina britain relations
 324-5-3:argentina britain contract relations negative relationship
 324-5-4:argentina britain contract relations positive relationship
@@ -485,7 +476,6 @@
 326-9-1:ferry sinkings
 327-1-1:human slavery
 327-1-2:modern human slavery
-327-2-1:human slavery
 327-3-1:global slavery index
 327-5-1:modern human slavery hot spots
 327-5-2:places human slavery currently practiced sweatshops hot spots
@@ -534,7 +524,6 @@
 330-4-1:cooperation iran iraq
 330-4-2:economic coalition iran iraq
 330-4-3:religious commonalities iran iraq
-330-5-1:iran iraq collaboration
 330-5-10:iran iraq friendship
 330-5-2:iran iraq joint partnership
 330-5-3:iran iraq allegiance
@@ -544,15 +533,11 @@
 330-5-7:iran iraq trade sanctions circumvention
 330-5-8:iran iraq helping
 330-5-9:iran iraq treatment minorities
-330-6-1:iran iraq allies
-330-6-2:iran iraq cooperation
-330-6-3:iran iraq ties
 330-6-4:friendly iran iraq relations
 330-6-5:relationship iran iraq positive
 330-7-1:cooperation iran iraq trade treaty allies border agreement
 330-8-1:restoring borders iraq iran
 331-1-1:world bank criticism
-331-2-1:world bank criticism
 331-3-1:world bank policy criticism
 331-5-1:criticisms world bank policies activities personnel
 331-5-2:world bank policies unresponsive needs countries
@@ -624,7 +609,6 @@
 336-2-1:black bear attack causes
 336-3-1:black bear attack
 336-3-2:causes black bear human attack
-336-4-1:black bear attacks
 336-4-2:possible causes black bear attacks
 336-5-1:reason black bear attacks
 336-5-10:black bear attacks calm
@@ -651,7 +635,6 @@
 337-5-3:viral hepatitis progress treatment
 337-6-1:viral hepatitis research progress treatment
 337-7-1:viral hepatitis treatment vaccines immune third world country
-337-8-1:viral hepatitis research
 337-8-2:hepatitis treatment research
 337-8-3:new vaccines hepatitis
 337-9-1:viral hepatitis
@@ -826,7 +809,6 @@
 347-9-1:wildlife extinction
 348-1-1:agoraphobia incidence
 348-2-1:agoraphobia
-348-3-1:agoraphobia
 348-5-1:agoraphobia prevalence
 348-5-2:fear open public places common underreported
 348-5-3:agoraphobia profession occupation story
@@ -922,7 +904,6 @@
 354-4-1:journalist killed action
 354-4-2:journalist hostage situation
 354-4-3:journalist risk war zone
-354-5-1:journalist killed action
 354-5-10:journalist tortured work
 354-5-2:journalist killed work
 354-5-3:journalist endangered work
@@ -942,12 +923,10 @@
 355-1-1:spaceborne ocean remote sensing
 355-2-1:oceanography space
 355-3-1:spaceborne ocean remote sensing application oceanography
-355-4-1:spaceborne ocean remote sensing
 355-4-2:satellite remote sensing oceanography
 355-4-3:remote sensing seabed prospecting
 355-4-4:marine science remote sensing
 355-5-1:ocean remote sensing satellites development
-355-5-10:spaceborne ocean remote sensing
 355-5-2:ocean remote sensing space seabed prospecting
 355-5-3:ocean remote sensing space mining study
 355-5-4:ocean remote sensing marine science space
@@ -971,12 +950,10 @@
 356-4-1:estrogen therapy postmenopausal women united kingdom
 356-4-2:estrogen therapy postmenopausal women britain
 356-4-3:estrogen suppressing drugs united kingdom
-356-5-1:estrogen postmenopausal women britain
 356-5-10:estrogen suppressing drugs postmenopausal women britain
 356-5-2:estrogen postmenopausal women uk
 356-5-3:estrogen postmenopausal women united kingdom
 356-5-4:estrogen postmenopausal women marketing britain
-356-5-5:estrogen postmenopausal women marketing britain
 356-5-6:estrogen postmenopausal women development britain
 356-5-7:estrogen postmenopausal women marketing uk
 356-5-8:estrogen postmenopausal women hormone replacement united kingdom
@@ -1007,8 +984,6 @@
 358-7-1:intoxication influence blood alcohol excess death fatality crash accident manslaughter alcohol booze
 358-8-1:blood alcohol fatalities
 359-1-1:mutual fund performance predictors
-359-2-1:mutual fund performance predictors
-359-3-1:mutual fund performance predictors
 359-5-1:mutual fund performance metrics
 359-5-2:mutual fund performance reliable indicators future performance
 359-5-3:mutual fund performance reliable indicators
@@ -1016,7 +991,6 @@
 359-7-1:predictors mutual fund performance leading trailing outperform invest manage aggressive
 359-8-1:mutual fund predictors
 360-1-1:drug legalization benefits
-360-2-1:drug legalization benefits
 360-3-1:drug legalization
 360-5-1:drug legalization positives
 360-5-2:drug legalization reduction overdoses injection centers
@@ -1027,8 +1001,6 @@
 360-7-1:drug legalization benefit crime reduction
 361-1-1:clothing sweatshops
 361-2-1:clothing sweatshop
-361-3-1:clothing sweatshops
-361-5-1:clothing sweatshops
 361-5-2:clothing sweatshops working conditions salary countries
 361-5-3:clothing sweatshop trade global asia africa
 361-6-1:sweatshop clothing
@@ -1092,9 +1064,7 @@
 364-6-1:rabies examples confirmed prevention
 364-7-1:rabies attack bite incidence recovery treatment rabid animal
 365-1-1:el nino effects
-365-2-1:el nino effects
 365-3-1:el nino
-365-5-1:el nino effects
 365-5-2:el nino effects flooding
 365-5-3:el nino effects droughts
 365-5-4:el nino effects global warming climate change
@@ -1111,7 +1081,6 @@
 366-8-1:commercial cyanide uses
 367-1-1:piracy
 367-1-2:boat piracy
-367-2-1:boat piracy
 367-3-1:modern instances piracy
 367-4-1:piracy incidents near africa
 367-4-2:pirates take board ships
@@ -1137,17 +1106,13 @@
 367-8-4:pirates destroyed boat
 367-8-5:pirate smugglers board
 368-1-1:vitro fertilization
-368-2-1:vitro fertilization
-368-3-1:vitro fertilization
 368-3-2:ivf
-368-5-1:vitro fertilization
 368-5-2:vitro fertilization sperm egg artificial environment
 368-5-3:vitro fertilization freezing eggs sperm embryos
 368-6-1:vitro fertilization ivf explained
 368-7-1:vitro vitro sperm egg ova frozen artificial embryo fertilization
 369-1-1:anorexia nervosa bulimia
 369-2-1:anorexia nervosa bulimia causes treatments
-369-3-1:anorexia nervosa bulimia
 369-5-1:anorexia nervosa bulimia causes
 369-5-2:anorexia nervosa bulimia treatments
 369-5-3:anorexia nervosa bulimia causes laxatives self induced vomiting excessive exercise
@@ -1180,10 +1145,7 @@
 372-3-1:socio economic impact native american casinos
 372-4-1:growth indian tribe casino
 372-4-2:tribe casino gambling
-372-4-3:native american casino gambling
-372-5-1:native american casino gambling
 372-5-10:indigenous americans casino gambling destruction community
-372-5-2:native american casino gambling social implications
 372-5-3:native american casino gambling effects economies
 372-5-4:native american casino gambling legal issues tribal autonomy
 372-5-5:indigenous peoples america casino gambling
@@ -1216,7 +1178,6 @@
 374-5-4:nobel prize winners award field study motivation work
 374-6-1:nobel prize winner list
 375-1-1:hydrogen energy source
-375-2-1:hydrogen energy source
 375-3-1:research hydrogen fuel
 375-4-1:hydrogen fusion fuel research
 375-5-1:hydrogen energy research status
@@ -1241,7 +1202,6 @@
 376-3-1:international court justice mandate
 376-3-2:international court justice case types
 376-3-3:international court justice case studies
-376-5-1:international court justice cases
 376-5-2:world court international court justice cases
 376-5-3:world court international court justice cases war tribunals
 376-6-1:world court international court justice icj cases
@@ -1258,7 +1218,6 @@
 378-1-2:euro currency dislike
 378-1-3:eurosceptic
 378-2-1:euro currency opposition
-378-3-1:euro opposition
 378-4-1:opposition euro
 378-4-2:currency policy euro
 378-5-1:opposition european currency
@@ -1267,11 +1226,9 @@
 378-5-3:countries euro reasons
 378-5-4:european currency criticism
 378-5-5:retaliation euro currency
-378-5-6:euro currency opposition
 378-5-7:euro currency countries disliking
 378-5-8:euro currency outcry
 378-5-9:euro currency backlash
-378-6-1:euro currency opposition
 378-7-1:euro currency opposition european union monetary shared economy
 378-8-1:alternative euro currency
 379-1-1:mainstreaming impaired children
@@ -1311,7 +1268,6 @@
 381-5-1:alternative medicine illnesses diseases success rates
 381-5-2:alternative medicine treatment disease success rate
 381-5-3:alternative medicine treatment cancer psychology stress
-381-6-1:alternative medicine success
 382-1-1:hydrogen cars
 382-2-1:hydrogen fuel piston driven automobiles hydrogen fuel cells
 382-3-1:hydrogen fuel
@@ -1325,7 +1281,6 @@
 383-1-2:mental illness medicine
 383-2-1:mental illness medication
 383-3-1:mental illness treatment drugs
-383-5-1:mental illness drugs
 383-5-2:drugs treat depression
 383-5-3:drugs treat anxiety
 383-5-4:drugs treat schizophrenia
@@ -1334,7 +1289,6 @@
 383-6-1:mental illness drug depression
 383-7-1:drugs treat mental illness health medication
 384-1-1:space station moon colonization
-384-2-1:space station moon colonization
 384-3-1:colonizing moon
 384-5-1:space station colonizing moon
 384-5-2:plans colonize moon
@@ -1346,8 +1300,6 @@
 385-1-1:hybrid car engines
 385-2-1:hybrid automobiles
 385-2-2:hybrid cars
-385-3-1:hybrid cars
-385-5-1:hybrid car engines
 385-5-10:current status hybrid automotive automobile car engines research study progress
 385-5-2:current status hybrid automotive automobile car engines
 385-5-3:current status hybrid automotive automobile car methanol engines
@@ -1380,7 +1332,6 @@
 387-7-1:radioactive waste
 388-1-1:organic fertilizers
 388-2-1:organic fertilizer
-388-3-1:organic fertilizers
 388-5-1:organic safe fertilizers soil enhancers
 388-5-2:composted sludge organic fertilizers safe soil enhancers
 388-5-3:soil enhancement organic safe fertilizers
@@ -1406,11 +1357,9 @@
 389-6-1:illegal technology transfer corruption
 389-7-1:illegal espionage technology transfer embargo boycott sale intellectual property
 389-8-1:cryptography export control
-389-8-2:des nsa export control
 389-8-3:crypto wars
 390-1-1:orphan drugs
 390-2-1:orphan drug act
-390-3-1:orphan drugs
 390-5-1:orphan drugs people
 390-5-2:drugs treating diseases affecting people orphan drugs
 390-5-3:orphan drug act orphan diseases conditions
@@ -1438,7 +1387,6 @@
 393-1-1:mercy killings
 393-1-2:euthanasia
 393-2-1:mercy killing
-393-3-1:mercy killing
 393-4-1:mercy killing legal status
 393-4-2:mercy killing europe
 393-4-3:mercy killing united states
@@ -1446,7 +1394,6 @@
 393-5-1:mercy killings discussion
 393-5-10:euthanasia legal issues
 393-5-2:mercy killings arguments
-393-5-3:mercy killings
 393-5-4:mercy killings case studies
 393-5-5:mercy killings euthanasia
 393-5-6:voluntary euthanasia
@@ -1482,11 +1429,7 @@
 395-8-1:tourism
 396-1-1:sick building syndrome
 396-2-1:building related illnesses
-396-2-2:sick building syndrome
 396-2-3:asbestos
-396-3-1:sick building syndrome
-396-5-1:sick building syndrome
-396-5-2:building related illnesses
 396-5-3:air conditioning sickness
 396-5-4:pollution controls buildings
 396-6-1:sick building syndrome asbestos
@@ -1498,7 +1441,6 @@
 397-4-3:major incident car vehicle recalls
 397-5-1:car recalls
 397-5-10:typical reasons car recalls
-397-5-2:automobile recalls
 397-5-3:car recalls manufacturer
 397-5-4:car recalls company
 397-5-5:car recalls worldwide
@@ -1513,7 +1455,6 @@
 397-8-3:automobile recall malfunction
 398-2-1:european conventional arms cut dismantling europes arsenal
 398-3-1:european conventional arms cut
-398-5-1:european conventional arms cut
 398-5-2:reducing forces europe cfe european conventional arms cut
 398-5-3:number weapons reduced european conventional arms cut
 398-5-4:number soldiers retrenched european conventional arms cut
@@ -1585,7 +1526,6 @@
 403-1-1:osteoporosis diet potassium magnesium fruits vegetables bone mineral density
 403-1-2:osteoporosis
 403-2-1:effects dietary intakes potassium magnesium fruits vegetables determinants bone mineral density elderly men women preventing osteoporosis bone decay
-403-3-1:osteoporosis
 403-4-1:dietary intakes potassium osteoporosis prevention
 403-5-1:potassium magnesium fruits vegetables bone mineral density osteoporosis
 403-5-2:fruits vegetables preventing osteoporosis elderly
@@ -1633,7 +1573,6 @@
 406-5-2:managing onset development parkinsons disease
 406-5-3:studies drugs programs patient care parkinsons disease success rates
 406-6-1:parkinsons disease treatement
-406-8-1:parkinsons disease treatment
 406-8-2:parkinsons quality life
 407-1-1:poaching wildlife preserves impact
 407-2-1:poaching wildlife preserves effects
@@ -1682,7 +1621,6 @@
 409-9-1:legal pan 103
 410-1-1:schengen agreement border controls
 410-2-1:schengen agreement
-410-3-1:schengen agreement
 410-4-1:schengen agreement western europe border control visa insurance
 410-5-1:schengen agreement signatures
 410-5-2:schengen border controls countries involved
@@ -1698,7 +1636,6 @@
 411-6-1:shipwreck salvage treasure recovery
 411-7-1:salvaging shipwreck treasure
 412-1-1:airport security
-412-2-1:airport security
 412-3-1:airport measures
 412-4-1:airport security measures guideline regulation
 412-5-1:airport security measures place
@@ -1709,7 +1646,6 @@
 412-6-1:security measures airport
 413-1-1:new steel production methods
 413-2-1:steel production methodology
-413-3-1:new steel production methods
 413-4-1:new steel production method
 413-4-2:mini mills steel production
 413-5-1:producing steel new methods
@@ -1731,7 +1667,6 @@
 414-5-7:cuba exports large sugar quantities
 414-5-8:pounds sugar exported cuba
 414-5-9:tonnes sugar imported cuba
-414-6-1:cuba sugar export
 414-7-1:cuba sugar imports exports country origin trade
 414-8-1:cuban sugar exports
 414-8-2:amount sugar exported cuba
@@ -1740,20 +1675,16 @@
 415-1-1:drug trafficking golden triangle
 415-2-1:golden triangle drug trafficking
 415-3-1:drug trafficking
-415-3-2:golden triangle drug trafficking
 415-4-1:drug trafficking burma thailand laos golden triangle
 415-4-2:drug issue golden triangle
 415-5-1:drug trafficking golden triangle burma thailand laos
 415-5-2:drug trafficking international organised crime groups golden triangle
 415-5-3:drug trafficking international organised crime groups golden triangle california hawaii
-415-6-1:golden triangle drug trafficking
 415-7-1:drugs golden triangle
 416-1-1:three gorges project
 416-1-2:three gorges project status
 416-1-3:three gorges project completion
-416-2-1:three gorges project status
 416-3-1:status three gorges project
-416-4-1:status three gorges project
 416-4-2:progress report three gorges project
 416-5-1:three gorges project completion status
 416-5-10:three gorges project scope creep status
@@ -1765,15 +1696,12 @@
 416-5-7:three gorges project estimated costs
 416-5-8:three gorges project current timeline events
 416-5-9:three gorges project status update
-416-6-1:three gorges project status
 416-7-1:three gorges dam project status cost electrical output china river
-416-8-1:three gorges project status
 416-8-2:cost estimate three gorges
 416-8-3:estimated electrical output three gorges
 416-8-4:completion date three gorges project
 416-8-5:three gorges
 417-1-1:measure creativity
-417-2-1:measure creativity
 417-3-1:measuring creativity
 417-4-1:creativity characterization measurement
 417-5-1:creativity measurements metrics
@@ -1838,7 +1766,6 @@
 422-4-1:stolen art pieces
 422-4-2:incidents forged artworks
 422-4-3:art theft reports
-422-5-1:stolen art
 422-5-10:known art piece artist stolen
 422-5-2:stolen art museums
 422-5-3:forged art museums
@@ -1857,12 +1784,10 @@
 422-9-1:art stolen forged
 423-1-1:mirjana markovic
 423-1-2:mirjana markovic slobodan milosevic
-423-2-1:mirjana markovic
 423-2-2:mira markovic
 423-2-3:milosevic markovic wife
 423-3-1:serbian presidents wife mirjana markovic
 423-3-2:milosevics  wife mirjana markovic
-423-4-1:mirjana markovic
 423-4-2:serbian presidents wife mira
 423-4-3:president milosevics wife mirjana markovic mira
 423-5-1:slobodan milosevic wife
@@ -1880,13 +1805,11 @@
 423-6-3:mirjana markovic mira president
 423-6-4:milosevic wife mirjana mira
 423-7-1:mirjana markovic wife serbian president mira
-423-8-1:mirjana markovic
 423-8-2:mira serbian president wife
 423-8-3:wife mira
 423-8-4:gathering mira markovic
 423-9-1:milosevic mirjana markovic
 424-1-1:alleged suicide murder
-424-2-1:alleged suicide murder
 424-3-1:suspicious suicide
 424-4-1:disguised murder crime suicide
 424-5-1:alleged suicide actually murdered
@@ -1907,10 +1830,7 @@
 426-1-2:law enforcement dogs
 426-1-3:police dog training
 426-1-4:police dog handlers
-426-2-1:police dogs
 426-3-1:dogs law enforcement
-426-3-2:police dogs
-426-4-1:law enforcement dogs
 426-4-2:police dogs training operations
 426-4-3:drug sniffing dogs training operations
 426-5-1:worldwide dog law enforcement
@@ -1933,7 +1853,6 @@
 427-1-1:uv damage eyes
 427-1-2:uv light harm eyes
 427-2-1:uv damage eyesight
-427-3-1:uv damage eyes
 427-4-1:eye problem caused excessive exposure sunlight
 427-4-2:uv light causes eye problems
 427-4-3:cataracts ocular melanoma caused sunlight
@@ -1963,13 +1882,11 @@
 428-6-1:countries declining birthrate
 428-7-1:declining birth rates
 429-1-1:legionnaires disease outbreaks
-429-2-1:legionnaires disease outbreaks
 429-3-1:legionnaires outbreaks
 429-4-1:legionnaires disease outbreak
 429-5-1:legionnaires disease outbreak locations
 429-5-2:legionnaires disease outbreak building air conditioning locations
 429-5-3:legionnaires disease outbreak worldwide
-429-6-1:legionnaires disease outbreak
 429-7-1:legionnaires disease outbreak cases
 429-8-1:legionnaires disease
 430-1-1:africanized killer bees human attacks
@@ -1977,7 +1894,6 @@
 430-3-1:africanized bee human attack
 430-4-1:killer bees human attack incidents
 430-5-1:killer bees attacks humans
-430-5-2:africanized killer bee attacks humans
 430-5-3:killer bees loss human life
 430-5-4:killer bees unsafe victim
 430-6-1:africanized killer bee attack
@@ -1987,7 +1903,6 @@
 431-3-1:robotic
 431-4-1:new development robotic technology
 431-4-2:recent advances robotic technology
-431-5-1:robotic technology developments
 431-5-2:latest developments robotic technology
 431-5-3:robotic technology recent trends developments
 431-6-1:robotic development application
@@ -1995,7 +1910,6 @@
 432-1-1:police profiling motorists
 432-2-1:police profiling traffic stops
 432-3-1:motorist profiling
-432-4-1:police profiling motorists
 432-5-1:police stop motorists race age sex gender
 432-5-2:police profiling stop cars race
 432-5-3:police profiling stop cars age
@@ -2025,13 +1939,10 @@
 433-8-2:greek stoic plays contemporary
 433-9-1:greek philosophy stoicism
 434-1-1:estonia economy
-434-2-1:estonia economy
-434-3-1:estonia economy
 434-4-1:economy performance issues estonia
 434-5-1:estonia economy statistics
 434-5-2:estonia unions treaties
 434-5-3:estonia monetary performance
-434-6-1:estonia economy
 435-1-1:curbing population growth
 435-1-2:population control
 435-2-1:reducing population growth
@@ -2135,13 +2046,11 @@
 440-6-1:child abuse labor labour prevention government corporation ngo
 441-1-1:lyme disease treatment prevention
 441-2-1:lyme disease prevention
-441-3-1:lyme disease prevention
 441-3-2:lyme disease treatment
 441-4-1:lyme disease prevention treatment
 441-5-1:lyme disease treatments
 441-5-2:preventing lyme disease
 441-5-3:lyme disease insect spray
-441-6-1:lyme disease prevention treatment
 441-7-1:lyme disease
 442-1-1:selfless heroic acts
 442-1-2:altruistic acts
@@ -2199,7 +2108,6 @@
 445-1-2:women clergy
 445-1-3:women pastors
 445-2-1:women clergy europe australia asia south america
-445-3-1:women clergy
 445-4-1:countries women clergy
 445-4-2:women church pastor europe
 445-4-3:women church pastor australia
@@ -2284,7 +2192,6 @@
 602-6-1:czech slovak czechoslovakia separation process
 602-7-1:czech slovak sovereignty
 603-1-1:lawsuits tobacco industry
-603-2-1:lawsuits tobacco industry
 603-4-1:united states lawsuits tobacco industry cigarette health problems
 603-5-1:united states lawsuits tobacco industry death cigarettes smokes
 603-5-2:united states lawsuits tobacco health problems smoking
@@ -2293,7 +2200,6 @@
 603-7-1:cigarette tobacco lobby litigation health cancer alleged lawsuit jury trial outcome settlement
 603-8-1:tobacco cigarette lawsuit
 604-1-1:lyme disease arthritis
-604-2-1:lyme disease arthritis
 604-4-1:tick borne lyme disease arthritis
 604-5-1:lyme disease arthritis link
 604-5-2:lyme disease inflammatory joint disorder arthritis
@@ -2312,7 +2218,6 @@
 605-7-1:great britain health care
 606-1-1:banning leg traps
 606-2-1:animal trap bans
-606-4-1:banning leg traps
 606-4-2:banning steel jawed traps
 606-5-1:leg trap capturing animals bans prohibited
 606-5-2:steel jawed traps capturing animals bans prohibited
@@ -2399,8 +2304,6 @@
 614-1-1:flavr savr
 614-2-1:flavr savr tomato calgene
 614-3-1:genetically modified flavor saver
-614-4-1:flavr savr tomato calgene
-614-4-2:flavr savr tomato calgene
 614-4-3:genetic modified food flavr savr tomato
 614-5-1:flavr savr information calgene genetically modified
 614-5-10:genetically modified food product taste tomato
@@ -2414,8 +2317,6 @@
 614-5-9:genetically modified food product color tomato
 614-6-1:calgene tomato flavr savr flavor saver genetically modified
 614-7-1:flavr savr flavor saver tomato calgene genetically modified gmo
-614-8-1:flavr savr tomato
-614-8-2:flavr savr tomato
 614-8-3:ge food flavr savr
 614-8-4:genetically engineered food tomato
 615-1-1:raw timber exports asia
@@ -2427,9 +2328,7 @@
 615-5-3:environmental concerns export raw timber asia united states
 615-6-1:usa united states raw timber export asia impact
 616-1-1:volkswagen production mexico
-616-2-1:volkswagen production mexico
 616-4-1:volkswagen mexico production history
-616-5-1:volkswagen production mexico
 616-5-2:volkswagen production mexico history
 616-5-3:amount volkswagen automobile cars automotive vehicles produced mexico
 616-6-1:mexico volkswagen production history
@@ -2462,7 +2361,6 @@
 619-5-2:winnie mandela role kidnapping murder
 619-5-3:winnie mandela personal involvement kidnapping
 619-5-4:winnie mandela personal involvement kidnapping charges conviction scandal
-619-6-1:winnie mandela kidnapping scandal south africa
 619-7-1:winnie mandela scandal
 620-1-1:south pacific nuclear testing protests france
 620-2-1:french protest nuclear testing
@@ -2514,7 +2412,6 @@
 623-5-3:ricin chemical weapon
 623-5-4:sarin nerve agent chemical weapon
 623-5-5:soman chemical weapon
-623-6-1:ricin sarin soman anthrax chemical weapon
 623-7-1:chemical weapon ricin sarin soman anthrax biological
 624-1-1:strategic defense initiative sdi star wars pros cons
 624-2-1:star wars strategic defense initiative
@@ -2585,11 +2482,9 @@
 629-6-1:abortion clinic attack violent anti protest
 629-7-1:abortion clinic attack
 630-1-1:gulf war syndrome symptoms
-630-2-1:gulf war syndrome symptoms
 630-4-1:symptoms gulf war syndrome
 630-4-2:illness gulf war veterans
 630-4-3:symptoms desert storm syndrome
-630-5-1:gulf war syndrome symptoms
 630-5-2:gulf war syndrome symptoms lawsuits
 630-5-3:gulf war syndrome symptoms lawsuits desert storm syndrome
 630-6-1:gulf war syndrome illness symptoms
@@ -2602,13 +2497,10 @@
 631-5-2:nelson mandela election campaign republic south africa
 631-5-3:nelson mandela election policies republic south africa
 631-6-1:nelson mandela rsa south africa president election
-631-7-1:nelson mandela elected president south africa
 631-8-1:mandela south africa president
 632-1-1:tin mining asia
-632-2-1:tin mining asia
 632-2-2:tin mining china malaysia indonesia vietnam burma thailand laos
 632-4-1:tin mining countries southeast asia
-632-4-2:tin mining china malaysia indonesia vietnam burma thailand laos
 632-5-1:major tin mining countries southeast asia
 632-5-2:major tin mining countries china
 632-5-3:major tin mining countries malaysia
@@ -2622,15 +2514,12 @@
 633-1-1:welsh devolution movement
 633-2-1:welsh devolution movement history
 633-4-1:welsh devolution movement historical record
-633-5-1:welsh devolution movement
 633-5-2:welsh devolution movement historical facts
 633-5-3:welsh devolution movement caused
-633-5-4:welsh devolution movement history
 633-6-1:welsh devolution history
 633-7-1:history welsh devolution movement wales background
 633-8-1:welsh devolution
 634-1-1:l tryptophan dietary supplement deaths
-634-2-1:l tryptophan dietary supplement deaths
 634-2-2:tainted l tryptophan dietary supplement deaths
 634-4-1:number deaths tainted l tryptophan dietary supplements
 634-5-1:l tryptophan dietary supplements deaths death toll
@@ -2639,7 +2528,6 @@
 634-7-1:l tryptophan deaths
 635-1-1:assisted suicide
 635-2-1:doctor assisted suicide
-635-2-2:euthanasia
 635-4-1:debates arguments doctor assisted suicide united states
 635-5-1:doctor assisted suicide united states debate
 635-5-2:united states doctor assisted suicide euthanasia united states debate
@@ -2695,7 +2583,6 @@
 640-6-1:maternity leave policy government
 640-7-1:maternity leave policies
 641-1-1:exxon valdez oil spill marine life wildlife
-641-2-1:exxon valdez oil spill marine life wildlife
 641-4-1:exxon valdez oil spill impact marine life
 641-5-1:exxon valdez oil spill marine wildlife
 641-5-2:exxon valdez oil spill problems issues challenges
@@ -2737,7 +2624,6 @@
 645-5-1:financial impact software piracy
 645-5-2:software piracy cost businesses annually
 645-5-3:net loss incurred piracy pirates software companies statistics
-645-6-1:software piracy financial impact
 645-7-1:software piracy cost impact economic intellectual property
 645-8-1:software piracy
 646-1-1:food stamp benefits increase
@@ -2827,7 +2713,6 @@
 654-2-1:sex schools pros cons
 654-4-1:sex school pros cons
 654-4-2:sex school advantages disadvantages
-654-5-1:sex schools advantages disadvantages
 654-5-2:benefits advantages debate girls schools girls
 654-5-3:benefits advantages debate boys schools boys
 654-5-4:socialization issues girls attending girls school
@@ -2863,14 +2748,12 @@
 657-7-1:prayer bans united states schools court rulings
 657-8-1:school prayer banned
 658-1-1:teenage pregnancy
-658-2-1:teenage pregnancy
 658-2-2:birth rate teenage mothers
 658-2-3:causes results teenage pregnancies
 658-2-4:teenage pregnancy reduction
 658-2-5:teenage abortions
 658-4-1:teenage pregnancy united states
 658-4-2:teenage abortion united states
-658-5-1:teenage pregnancy united states
 658-5-2:birth rate teenage mothers united states
 658-5-3:causes teenage pregnancy mothers united states
 658-5-4:reduction teenage pregnancies united states
@@ -2922,10 +2805,8 @@
 663-7-1:health effects danger illness long term agent orange vietnam veteran va affairs
 663-8-1:agent orange exposure
 664-1-1:national museum american indian
-664-2-1:national museum american indian
 664-4-1:national museum american indian location
 664-4-2:collections national museum american indian
-664-5-1:national museum american indian location
 664-5-2:national museum american indian collection art pieces works culture
 664-5-3:national museum american indian similarities museum exhibitions
 664-6-1:national museum american indian collection location
@@ -3024,7 +2905,6 @@
 675-2-1:olympic swimming training
 675-4-1:olympic swim meets training
 675-4-2:olympic swim meets training requirements
-675-5-1:olympic swimming training
 675-5-2:training conditions sites requirements olympic swimming preparation
 675-5-3:training conditions temperatures exercises olympic swimming preparation
 675-6-1:olympic swimming training conditions requirement
@@ -3035,7 +2915,6 @@
 676-5-1:cultivation poppy export morphine heroin opiate illegal narcotics
 676-5-2:cultivation poppy export morphine heroin opiate illegal narcotics worldwide distribution networks criminal
 676-5-3:cultivation poppy export morphine heroin opiate illegal narcotics history development early days
-676-6-1:poppy cultivation export
 676-7-1:poppy cultivation export industry illegal
 676-8-1:poppy cultivation
 677-1-1:leaning tower pisa stabilization
@@ -3090,7 +2969,6 @@
 681-1-1:wind power installation location
 681-2-1:wind power locations
 681-4-1:location wind power stations
-681-5-1:wind power installation location
 681-5-2:wind turbine installation location
 681-5-3:wind farm installations worldwide
 681-6-1:wind farm location
@@ -3153,7 +3031,6 @@
 687-8-1:northern ireland industry
 688-1-1:media bias
 688-1-2:international media bias
-688-2-1:international media bias
 688-4-1:media bias europe
 688-4-2:media bias australia
 688-4-3:media bias asian countries
@@ -3212,13 +3089,11 @@
 691-7-1:forest clear cutting disadvantage protest protest resistance timber tree logging
 691-8-1:clear cutting forests
 692-1-1:prostate cancer detection treatment
-692-2-1:prostate cancer detection treatment
 692-4-1:prostate cancer general treatment
 692-4-2:prostate cancer early detection
 692-5-1:prostate cancer detection
 692-5-2:prostate cancer treatments available
 692-5-3:prostate cancer treatments different stages development
-692-6-1:prostate cancer detection treatment
 693-1-1:electronic media newspaper industry
 693-2-1:effects electronic media newspapers
 693-4-1:impact electronic media newspaper industry
@@ -3246,7 +3121,6 @@
 695-5-2:judges bias white collar crimes sentencing legal
 695-5-3:white collar crimes fraud sentencing
 695-6-1:white collar crime sentence
-695-8-1:white collar crime sentence
 696-1-1:cosmetic plastic surgery hazards risks safety
 696-2-1:cosmetic plastic surgery safety
 696-4-1:cosmetic plastic surgery safety concerns
@@ -3256,7 +3130,6 @@
 696-5-3:health safety enhancement body plastic surgery
 696-6-1:plastic surgery cosmetic safety
 696-8-1:hazards cosmetic plastic surgery
-696-8-2:safety cosmetic plastic surgery
 696-9-1:safety plastic surgery
 697-1-1:working conditions air traffic controllers
 697-2-1:air traffic controller working conditions
@@ -3276,9 +3149,7 @@
 698-5-2:literacy rates sudan
 698-5-3:literacy rates south africa
 698-6-1:african country literacy rate list
-698-8-1:literacy rates africa
 699-1-1:term limits pros cons
-699-2-1:term limits pros cons
 699-4-1:pros cons term limits
 699-4-2:term limits legislative study
 699-5-1:debate term limit legislation pros cons positives negatives government
