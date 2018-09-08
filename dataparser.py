@@ -36,7 +36,10 @@ class ResultsReader:
     def __check_number_of_col(self):
         with open(self.data) as f:
             reader = csv.reader(f, delimiter=' ', skipinitialspace=True)
-            first_row = next(reader)
+            try:
+                first_row = next(reader)
+            except StopIteration:
+                sys.exit(f'The file {self.data} is empty')
             num_cols = len(first_row)
         return int(num_cols)
 

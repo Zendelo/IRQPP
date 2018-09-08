@@ -26,6 +26,18 @@ LogQLC stands for log QL of the query with the entire corpus
 In general the code assumes the directories structure is as seen in the file 
 `FS-structure.pdf`
 
+To create the files using indri:\
+Create QL.res example for ROBUST UQV will create QL scores retrieved results list: \
+`SetupFiles-indri-5.6/runqueryql/IndriRunQueryQL QppUqvProj/Results/ROBUST/test/indriRunQL.xml -threads=8 QppUqvProj/data/ROBUST/fullqueriesUQV.xml > QppUqvProj/Results/ROBUST/test/raw/QL.res`\
+Create logqlc.res example:\
+`SetupFiles-indri-5.6/logqlc/LogQlC QppUqvProj/Results/ROBUST/test/indriRunQL.xml QppUqvProj/data/ROBUST/fullqueriesUQV.xml > QppUqvProj/Results/ROBUST/test/raw/logqlc.res`\
+Create QLmap1000 (raw ap scores) example:\
+`trec_eval -qn -m map QppUqvProj/data/ROBUST/qrelsUQV QppUqvProj/Results/ROBUST/test/raw/QL.res | awk '{print $2, $3}' > QppUqvProj/Results/ROBUST/test/raw/QLmap1000`
+Create map1000-max file example (for single pick):
+`python3.6 repos/IRQPP/singleUQV.py QppUqvProj/Results/ROBUST/test/raw/QLmap1000 QppUqvProj/Results/ROBUST/test/raw/QLmap1000 -f max > QppUqvProj/Results/ROBUST/test/single/map1000-max`
+Create fused (CombSum) results file:\
+`python3.7 repos/IRQPP/fusion.py QppUqvProj/Results/ROBUST/test/raw/QL.res QppUqvProj/Results/ROBUST/test/raw/logqlc.res >  QppUqvProj/Results/ROBUST/test/fusion/QL.res`
+
 
 **Help Files**
 

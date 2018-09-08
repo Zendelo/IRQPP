@@ -18,7 +18,6 @@ parser.add_argument('-f', type=str, default='all', choices=['max', 'medh', 'medl
                     help='Single pick function')
 
 
-# TODO: Move the script to work with dataparser Classes
 # TODO: Fix this warning:
 # See the documentation here:
 # https://pandas.pydata.org/pandas-docs/stable/indexing.html#deprecate-loc-reindex-listlike

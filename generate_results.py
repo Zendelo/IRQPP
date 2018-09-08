@@ -327,6 +327,7 @@ class CrossVal:
                 # uef_cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_uef_predictions_dir,
                 #                              file_to_load=self.cv_map_f, load=True, test=self.corr_measure,
                 #                              ap_file=ap_score)
+    # TODO: the uef predictions for 5 and 10 documents yield results with var=0, it returns NAN for pearson correlation
                 mean = cv_obj.calc_test_results()
                 # uef_mean = uef_cv_obj.calc_test_results()
                 _p_res.append('${}$'.format(mean))
