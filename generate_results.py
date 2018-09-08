@@ -467,7 +467,7 @@ class GenerateTable:
             _df = self.cv.calc_aggregated(agg)
             table = _df.to_latex(header=False, multirow=False, multicolumn=False, index=False, escape=False,
                                  index_names=False, column_format='clcccccc')
-            table = table.replace('\\begin{tabular}{clccccc}', '')
+            table = table.replace('\\begin{tabular}{clcccccc}', '')
             table = table.replace('\\end{tabular}', '')
             table = table.replace('{}'.format(agg), '')
             table = table.replace('\\toprule', '\\multirow{{8}}{{*}}{{{}}}'.format(agg))
