@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
 import argparse
-import csv
 from collections import defaultdict
 from statistics import median_high, median_low
 
-import numpy as np
 import pandas as pd
+
+from dataparser import ResultsReader
 
 parser = argparse.ArgumentParser(description='UQV single query calculations script',
                                  usage='python3.6 singleUQV.py RAW_AP_FILE RAW_PREDICTIONS_FILE function',
@@ -18,50 +18,14 @@ parser.add_argument('-f', type=str, default='all', choices=['max', 'medh', 'medl
                     help='Single pick function')
 
 
-class DataReader:
-    def __init__(self, data_file: str, file_type):
-        """
-        :param data_file: results res
-        :param file_type: 'result' for predictor results res or 'ap' for ap results res
-        """
-        self.file_type = file_type
-        self.data = data_file
-        self.__number_of_col = self.__check_number_of_col()
-        if self.file_type == 'result':
-            assert self.__number_of_col == 2 or self.__number_of_col == 4, 'Wrong File format'
-            self.data_df = self.__read_results_data_2() if self.__number_of_col == 2 else self.__read_results_data_4()
-        elif self.file_type == 'ap':
-            self.data_df = self.__read_ap_data_2()
-
-    def __check_number_of_col(self):
-        with open(self.data) as f:
-            reader = csv.reader(f, delimiter=' ', skipinitialspace=True)
-            first_row = next(reader)
-            num_cols = len(first_row)
-        return int(num_cols)
-
-    def __read_results_data_2(self):
-        """Assuming data is a res with 2 columns, 'Qid Score'"""
-        data_df = pd.read_table(self.data, delim_whitespace=True, header=None, index_col=0,
-                                names=['qid', 'score'],
-                                dtype={'qid': str, 'score': np.float64})
-        return data_df
-
-    def __read_ap_data_2(self):
-        """Assuming data is a res with 2 columns, 'Qid AP'"""
-        data_df = pd.read_table(self.data, delim_whitespace=True, header=None, index_col=0,
-                                names=['qid', 'ap'],
-                                dtype={'qid': str, 'ap': np.float64})
-        return data_df
-
-    def __read_results_data_4(self):
-        """Assuming data is a res with 4 columns, 'Qid entropy cross_entropy Score'"""
-        data_df = pd.read_table(self.data, delim_whitespace=True, header=None, index_col=0,
-                                names=['qid', 'entropy', 'cross_entropy', 'score'],
-                                dtype={'qid': str, 'score': np.float64, 'entropy': np.float64,
-                                       'cross_entropy': np.float64})
-        data_df = data_df.filter(['qid', 'score'], axis=1)
-        return data_df
+# TODO: Move the script to work with dataparser Classes
+# TODO: Fix this warning:
+# See the documentation here:
+# https://pandas.pydata.org/pandas-docs/stable/indexing.html#deprecate-loc-reindex-listlike
+#   _df = self.raw_pred.loc[self.selected_queries[func]]
+# /home/olegzendel/repos/IRQPP/singleUQV.py:100: FutureWarning:
+# Passing list-likes to .loc or [] with any missing label will raise
+# KeyError in the future, you can use .reindex() as an alternative.
 
 
 class Single:
@@ -107,8 +71,8 @@ def main(args: parser):
     predictions_file = args.predictions
     pick_func = args.f
 
-    ap_scores = DataReader(map_file, 'ap')
-    prediction_scores = DataReader(predictions_file, 'result')
+    ap_scores = ResultsReader(map_file, 'ap')
+    prediction_scores = ResultsReader(predictions_file, 'predictions')
     single_scores = Single(ap_scores.data_df, prediction_scores.data_df, pick_func)
 
     if pick_func == 'all':

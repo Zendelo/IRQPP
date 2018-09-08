@@ -14,8 +14,9 @@ from crossval import CrossValidation
 
 # TODO: Add a check that all necessary files exist on startup (to avoid later crash)
 # TODO: Add parallelization where possible
-# TODO: Go over all codes and make sure no implicit sorted files assumptions
-# TODO: Modify single + basic tables into single table
+# TODO: Go over all codes and make sure no implicit sorted files assumptions exist
+# TODO: Create a single set_paths class method and replace all the paths with parameters
+# TODO: Replace the print functions with logger output
 
 PREDICTORS = ['clarity', 'nqc', 'wig', 'qf']
 NUM_DOCS = [5, 10, 25, 50, 100, 250, 500, 1000]
@@ -441,6 +442,7 @@ class CrossVal:
 
 class GenerateTable:
     """The class implements methods to print LaTeX tables"""
+
     def __init__(self, cv: CrossVal, corpus):
         self.cv = cv
         self.corpus = corpus
@@ -453,8 +455,10 @@ class GenerateTable:
         _agg = AGGREGATE_FUNCTIONS[0]
         _df = self.cv.calc_aggregated(_agg)
         table = _df.to_latex(header=True, multirow=False, multicolumn=False, index=False, escape=False,
-                             index_names=False, column_format='clccccc')
+                             index_names=False, column_format='clcccccc')
         table = table.replace('\\end{tabular}', '')
+        # This will replace the 8 last substrings, using Extended Slices with negative int to copy in reverse order
+        table = table[::-1].replace('{}'.format(_agg[::-1]), '', 8)[::-1]
         table = table.replace('\\toprule', '\\toprule \n & & \\multicolumn{5}{c}{AP-aggregations} \\\\')
         table = table.replace('predictor-agg', '\\multirow{{8}}{{*}}{{{}}}'.format(_agg))
         print(table)
@@ -462,7 +466,7 @@ class GenerateTable:
         for agg in AGGREGATE_FUNCTIONS[1:]:
             _df = self.cv.calc_aggregated(agg)
             table = _df.to_latex(header=False, multirow=False, multicolumn=False, index=False, escape=False,
-                                 index_names=False, column_format='clccccc')
+                                 index_names=False, column_format='clcccccc')
             table = table.replace('\\begin{tabular}{clccccc}', '')
             table = table.replace('\\end{tabular}', '')
             table = table.replace('{}'.format(agg), '')
@@ -481,18 +485,6 @@ class GenerateTable:
         print('\\begin{table}[ht!]')
         print('\\begin{center}')
         print('\\caption{{ {} UQV single picked queries}}'.format(self.corpus))
-        # \begin{tabular}{llccc}
-        # \toprule
-        #   &  Predictor &   pearson &   kendall &  spearman \\
-        # \midrule
-        # \multirow{8}{*}{basic}
-        # &      CLARITY &  $0.0290$ &  $-0.0276$ &  $-0.0492$ \\
-
-        # \begin{tabular}{lccc}
-        # \toprule
-        #     Predictor &   pearson &   kendall &  spearman \\
-        # \midrule
-        #       CLARITY &  $0.3843$ &  $0.2607$ &  $0.3781$ \\
 
         _df = self.cv.calc_basic()
         table = _df.to_latex(header=True, multirow=False, multicolumn=False, index=False, escape=False,
@@ -504,9 +496,7 @@ class GenerateTable:
         table = table.replace('\\midrule', '\\midrule \n \\multirow{8}{*}{basic}')
         table = table.replace('\\end{tabular}', '')
         print(table)
-
         for sing in SINGLE_FUNCTIONS:
-            # print('\n*** Table for {} AP queries ***\n'.format(sing))
             _df = self.cv.calc_single(sing)
             table = _df.to_latex(header=False, multirow=False, multicolumn=False, index=False, escape=False,
                                  index_names=False, column_format='llccc')
@@ -515,7 +505,6 @@ class GenerateTable:
             table = table.replace('{}'.format(sing), '')
             table = table.replace('\\toprule', '\\multirow{{8}}{{*}}{{{}}}'.format(sing))
             print(table)
-
         print('\\end{tabular}')
         print('\\end{center}')
         print('\\end{table}')
