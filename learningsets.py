@@ -90,7 +90,7 @@ class LearningDataSets:
                            float_format='%f', formatters=formatters)
         return _df
 
-    def generate_data_sets(self):
+    def generate_data_sets_fine_tune(self):
         """This method will create the data sets with all the available hyper parameters of the qpp predictions"""
         for set_id in self.parameters_df.index:
             for subset in ['a', 'b']:
@@ -103,7 +103,7 @@ class LearningDataSets:
                     self.write_str_to_file(train_str, f'train_{set_id}_{subset}-d_{h}.dat')
                     self.write_str_to_file(test_str, f'test_{set_id}_{subset}-d_{h}.dat')
 
-    def generate_data_sets_best_param(self):
+    def generate_data_sets(self):
         """This method will create the data sets with a single hyper parameter for the qpp predictions, which will be
         chosen based on the best result on the train set"""
         for set_id in self.parameters_df.index:
@@ -120,7 +120,7 @@ class LearningDataSets:
         with open(self.output_dir + file_name, "w") as text_file:
             print(string, file=text_file)
 
-    def run_svm_new(self):
+    def run_svm_fine_tune(self):
         svm_learn = 'svmRank/svm_rank_learn'
         svm_classify = '~/svmRank/svm_rank_classify'
         models_dir = self.output_dir.replace('datasets', 'models')
@@ -168,7 +168,7 @@ class LearningDataSets:
             _list.append(_df)
         return pd.concat(_list, axis=1)
 
-    def cross_val_new(self):
+    def cross_val_fine_tune(self):
         classification_dir = self.output_dir.replace('datasets', 'classifications')
         _list = []
         _dict = {}
@@ -230,9 +230,9 @@ def main(args):
         predictor = f'uef/{predictor}'
 
     y = LearningDataSets(predictor, corpus, corr_measure=corr_measure, aggregation=agg_func, uef=uef)
-    # y.generate_data_sets()
-    # y.run_svm()
-    y.cross_val_new()
+    # y.generate_data_sets_fine_tune()
+    # y.run_svm_fine_tune()
+    y.cross_val_fine_tune()
 
 
 if __name__ == '__main__':
