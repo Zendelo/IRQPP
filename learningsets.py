@@ -120,7 +120,7 @@ class LearningDataSets:
         with open(self.output_dir + file_name, "w") as text_file:
             print(string, file=text_file)
 
-    def run_svm(self):
+    def run_svm_new(self):
         svm_learn = 'svmRank/svm_rank_learn'
         svm_classify = '~/svmRank/svm_rank_classify'
         models_dir = self.output_dir.replace('datasets', 'models')
@@ -139,6 +139,24 @@ class LearningDataSets:
                 run('{0} -c {1} {2} {3}'.format(svm_learn, c, trainset, _model_path), shell=True)
                 run('{0} {1} {2} {3}'.format(svm_classify, trainset, _model_path, _cls_train_path), shell=True)
                 run('{0} {1} {2} {3}'.format(svm_classify, testset, _model_path, _cls_test_path), shell=True)
+
+    def run_svm(self):
+        c = '1'
+        svm_learn = 'svmRank/svm_rank_learn'
+        svm_classify = '~/svmRank/svm_rank_classify'
+        models_dir = self.output_dir.replace('datasets', 'models')
+        ensure_dir(models_dir)
+        classification_dir = self.output_dir.replace('datasets', 'classifications')
+        ensure_dir(classification_dir)
+        for set_id in range(1, 31):
+            for subset in ['a', 'b']:
+                run('{0} -c {1} {2}/train_{3}_{4}.dat {5}/model_{3}_{4}'.format(svm_learn, c, self.output_dir, set_id,
+                                                                                subset, models_dir), shell=True)
+                run('{0} {1}/test_{2}_{3}.dat {4}/model_{2}_{3} {5}/predictions_{2}_{3}'.format(svm_classify,
+                                                                                                self.output_dir, set_id,
+                                                                                                subset, models_dir,
+                                                                                                classification_dir),
+                    shell=True)
 
     @staticmethod
     def _df_from_files(files):
