@@ -28,9 +28,9 @@ In general the code assumes the directories structure is as seen in the file
 
 To create the files using indri:\
 Create QL.res example for ROBUST UQV will create QL scores retrieved results list: \
-`SetupFiles-indri-5.6/runqueryql/IndriRunQueryQL QppUqvProj/Results/ROBUST/test/indriRunQL.xml -threads=8 QppUqvProj/data/ROBUST/fullqueriesUQV.xml > QppUqvProj/Results/ROBUST/test/raw/QL.res`\
+`indri-5.6/runqueryql/IndriRunQueryQL QppUqvProj/Results/ROBUST/test/indriRunQL.xml -threads=8 QppUqvProj/data/ROBUST/fullqueriesUQV.xml > QppUqvProj/Results/ROBUST/test/raw/QL.res`\
 Create logqlc.res example:\
-`SetupFiles-indri-5.6/logqlc/LogQlC QppUqvProj/Results/ROBUST/test/indriRunQL.xml QppUqvProj/data/ROBUST/fullqueriesUQV.xml > QppUqvProj/Results/ROBUST/test/raw/logqlc.res`\
+`indri-5.6/logqlc/LogQlC QppUqvProj/Results/ROBUST/test/indriRunQL.xml QppUqvProj/data/ROBUST/fullqueriesUQV.xml > QppUqvProj/Results/ROBUST/test/raw/logqlc.res`\
 Create QLmap1000 (raw ap scores) example:\
 `trec_eval -qn -m map QppUqvProj/data/ROBUST/qrelsUQV QppUqvProj/Results/ROBUST/test/raw/QL.res | awk '{print $2, $3}' > QppUqvProj/Results/ROBUST/test/raw/QLmap1000`
 Create map1000-max file example (for single pick):

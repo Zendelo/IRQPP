@@ -47,6 +47,7 @@ parser.add_argument('-t', '--table', type=str, default='all', help='the LaTeX ta
                     choices=['basic', 'single', 'aggregated', 'fusion', 'all'], )
 parser.add_argument('--generate', help="generate new predictions", action="store_true")
 parser.add_argument('--lists', help="generate new lists", action="store_true")
+parser.add_argument('--svm', help="generate SVM predictions", action="store_true")
 parser.add_argument('--calc', help="calc new UQV predictions", action="store_true")
 
 
@@ -327,7 +328,7 @@ class CrossVal:
                 # uef_cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_uef_predictions_dir,
                 #                              file_to_load=self.cv_map_f, load=True, test=self.corr_measure,
                 #                              ap_file=ap_score)
-    # TODO: the uef predictions for 5 and 10 documents yield results with var=0, it returns NAN for pearson correlation
+                # TODO: the uef predictions for 5 and 10 documents yield results with var=0, it returns NAN for pearson correlation
                 mean = cv_obj.calc_test_results()
                 # uef_mean = uef_cv_obj.calc_test_results()
                 _p_res.append('${}$'.format(mean))
@@ -560,6 +561,7 @@ def main(args):
     predictor = args.predictor
     generate_lists = args.lists
     calc_predictions = args.calc
+    generate_svm = args.svm
     table = args.table
 
     base_dir = '~/QppUqvProj/Results/{}'.format(corpus)
@@ -576,6 +578,7 @@ def main(args):
 
     if generate:
         # Special case for generating results
+        assert predictor is not None, 'No predictor was chosen for results generation'
         if predictor == 'all':
             for pred in PREDICTORS + ['uef']:
                 generation_timer = Timer('{} generating'.format(pred))
@@ -611,6 +614,10 @@ def main(args):
 
     cv = CrossVal(base_dir=base_dir, cv_map_file=cv_map_file, correlation_measure=corr_measure)
     lat = GenerateTable(cv, corpus)
+
+    if generate_svm:
+        assert predictor is not None, 'No predictor was chosen for SVM prediction'
+        pass
 
     if table == 'all':
         print('{} UQV aggregated predictions LaTeX table: \n'.format(corpus))

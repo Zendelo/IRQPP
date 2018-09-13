@@ -18,52 +18,8 @@ parser.add_argument('-p', '--predictions', metavar='RAW_PREDICTIONS_FILE', help=
 parser.add_argument('-f', '--function', type=str, default='avg', choices=['max', 'std', 'min', 'avg', 'med'],
                     help='Aggregate function')
 
-# TODO: the uef predictions for 5 and 10 documents yield results with var=0, it returns NAN for pearson correlation
 
-# class ResultsReader:
-#     def __init__(self, data_file: str, file_type):
-#         """
-#         :param data_file: results res
-#         :param file_type: 'result' for predictor results res or 'ap' for ap results res
-#         """
-#         self.file_type = file_type
-#         self.data = data_file
-#         self.__number_of_col = self.__check_number_of_col()
-#         if self.file_type == 'result':
-#             assert self.__number_of_col == 2 or self.__number_of_col == 4, 'Wrong File format'
-#             self.data_df = self.__read_results_data_2() if self.__number_of_col == 2 else self.__read_results_data_4()
-#         elif self.file_type == 'ap':
-#             self.data_df = self.__read_ap_data_2()
-#
-#     def __check_number_of_col(self):
-#         with open(self.data) as f:
-#             reader = csv.reader(f, delimiter=' ', skipinitialspace=True)
-#             first_row = next(reader)
-#             num_cols = len(first_row)
-#         return int(num_cols)
-#
-#     def __read_results_data_2(self):
-#         """Assuming data is a res with 2 columns, 'Qid Score'"""
-#         data_df = pd.read_table(self.data, delim_whitespace=True, header=None, index_col=0,
-#                                 names=['qid', 'score'],
-#                                 dtype={'qid': str, 'score': np.float64})
-#         return data_df
-#
-#     def __read_ap_data_2(self):
-#         """Assuming data is a res with 2 columns, 'Qid AP'"""
-#         data_df = pd.read_table(self.data, delim_whitespace=True, header=None, index_col=0,
-#                                 names=['qid', 'ap'],
-#                                 dtype={'qid': str, 'ap': np.float64})
-#         return data_df
-#
-#     def __read_results_data_4(self):
-#         """Assuming data is a res with 4 columns, 'Qid entropy cross_entropy Score'"""
-#         data_df = pd.read_table(self.data, delim_whitespace=True, header=None, index_col=0,
-#                                 names=['qid', 'entropy', 'cross_entropy', 'score'],
-#                                 dtype={'qid': str, 'score': np.float64, 'entropy': np.float64,
-#                                        'cross_entropy': np.float64})
-#         data_df = data_df.filter(['qid', 'score'], axis=1)
-#         return data_df
+# TODO: the uef predictions for 5 and 10 documents yield results with var=0, it returns NAN for pearson correlation
 
 
 class Aggregate:
