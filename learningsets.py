@@ -2,6 +2,7 @@ import argparse
 import os
 import glob
 from subprocess import run
+from collections import defaultdict
 
 import numpy as np
 import pandas as pd
@@ -18,12 +19,14 @@ parser = argparse.ArgumentParser(description='LTR (SVMRank) data sets Generator'
                                  epilog='Unless --generate is given, will try loading the file')
 
 parser.add_argument('-c', '--corpus', type=str, help='corpus to work with', choices=['ROBUST', 'ClueWeb12B'])
-parser.add_argument('-a', '--aggregate', default=None, type=str, help='Aggregate function')
+parser.add_argument('-a', '--aggregate', default='avg', type=str, help='Aggregate function')
 parser.add_argument('-p', '--predictor', default=None, type=str, help='full CV results JSON file to load',
                     choices=['clarity', 'wig', 'nqc', 'qf'])
 parser.add_argument('--uef', help='Add this if the predictor is in uef framework', action="store_true")
 parser.add_argument('--corr_measure', default='pearson', type=str, choices=['pearson', 'spearman', 'kendall'],
                     help='features JSON file to load')
+
+C_list = [0.01, 0.1, 1, 10, 100]
 
 
 class LearningDataSets:
@@ -87,7 +90,22 @@ class LearningDataSets:
                            float_format='%f', formatters=formatters)
         return _df
 
+    def generate_data_sets_fine_tune(self):
+        """This method will create the data sets with all the available hyper parameters of the qpp predictions"""
+        for set_id in self.parameters_df.index:
+            for subset in ['a', 'b']:
+                for col in self.results_df.columns:
+                    h = col.split('_')[-1]
+                    features_df = self._create_data_set(h)
+                    train_df, test_df = self._split_data_set(features_df, set_id, subset)
+                    train_str = self._df_to_str(train_df)
+                    test_str = self._df_to_str(test_df)
+                    self.write_str_to_file(train_str, f'train_{set_id}_{subset}-d_{h}.dat')
+                    self.write_str_to_file(test_str, f'test_{set_id}_{subset}-d_{h}.dat')
+
     def generate_data_sets(self):
+        """This method will create the data sets with a single hyper parameter for the qpp predictions, which will be
+        chosen based on the best result on the train set"""
         for set_id in self.parameters_df.index:
             for subset in ['a', 'b']:
                 param = self.parameters_df.loc[set_id][subset]
@@ -101,6 +119,26 @@ class LearningDataSets:
     def write_str_to_file(self, string, file_name):
         with open(self.output_dir + file_name, "w") as text_file:
             print(string, file=text_file)
+
+    def run_svm_fine_tune(self):
+        svm_learn = 'svmRank/svm_rank_learn'
+        svm_classify = '~/svmRank/svm_rank_classify'
+        models_dir = self.output_dir.replace('datasets', 'models')
+        ensure_dir(models_dir)
+        classification_dir = self.output_dir.replace('datasets', 'classifications')
+        ensure_dir(classification_dir)
+        train_sets = glob.glob(f'{self.output_dir}/train*')
+        for c in C_list:
+            for trainset in train_sets:
+                testset = trainset.replace('train', 'test')
+                _model_params = trainset.strip('.dat').split('_', 1)[-1]
+                _model_path = f'{models_dir}model_{_model_params}_c_{c}'
+                _cls_train_path = f'{classification_dir}train_{_model_params}_c_{c}.cls'
+                _cls_test_path = f'{classification_dir}test_{_model_params}_c_{c}.cls'
+                # print(f'create model_{_model_params}')
+                run('{0} -c {1} {2} {3}'.format(svm_learn, c, trainset, _model_path), shell=True)
+                run('{0} {1} {2} {3}'.format(svm_classify, trainset, _model_path, _cls_train_path), shell=True)
+                run('{0} {1} {2} {3}'.format(svm_classify, testset, _model_path, _cls_test_path), shell=True)
 
     def run_svm(self):
         c = '1'
@@ -120,9 +158,48 @@ class LearningDataSets:
                                                                                                 classification_dir),
                     shell=True)
 
+    @staticmethod
+    def _df_from_files(files):
+        _list = []
+        for file in files:
+            _str = file.split('_', 1)[-1]
+            _params = _str.strip('.cls').split('-', 1)[-1]
+            _df = pd.read_csv(file, header=None, names=[_params])
+            _list.append(_df)
+        return pd.concat(_list, axis=1)
+
+    def cross_val_fine_tune(self):
+        classification_dir = self.output_dir.replace('datasets', 'classifications')
+        _list = []
+        _dict = {}
+        for set_id in range(1, 31):
+            _pair = []
+            for subset in ['a', 'b']:
+                train_files = glob.glob(classification_dir + f'train_{set_id}_{subset}-*')
+                _train_df = self._df_from_files(train_files)
+                _train_topics = np.array(self.folds_df[set_id][subset]['train']).astype(str)
+                _train_df.insert(loc=0, column='qid', value=_train_topics)
+                _train_df.set_index('qid', inplace=True)
+                _ap_df = self.ap_obj.data_df.loc[_train_topics]
+                _df = _train_df.merge(_ap_df, how='outer', on='qid')
+                _correlation_df = _df.corr(method=self.cv.test)
+                _corr = _correlation_df.drop('ap')['ap']
+                max_train_param = _corr.idxmax()
+                _test_file = classification_dir + f'test_{set_id}_{subset}-{max_train_param}.cls'
+                _test_df = pd.read_csv(_test_file, header=None, names=['score'])
+                _test_topics = np.array(self.folds_df[set_id][subset]['test']).astype(str)
+                _test_df.insert(loc=0, column='qid', value=_test_topics)
+                _test_df.set_index('qid', inplace=True)
+                _ap_df = self.ap_obj.data_df.loc[_test_topics]
+                _df = _test_df.merge(_ap_df, how='outer', on='qid')
+                _correlation = _df['score'].corr(_df['ap'], method=self.cv.test)
+                _pair.append(_correlation)
+            _list.append(np.mean(_pair))
+        print('mean: {:.4f}'.format(np.mean(_list)))
+
     def cross_val(self):
         classification_dir = self.output_dir.replace('datasets', 'classifications')
-        # all_files = glob.glob(classification_dir + "/*predictions*")
+        train_files = glob.glob(classification_dir + "/train*")
         _list = []
         for set_id in range(1, 31):
             _pair = []
@@ -148,10 +225,14 @@ def main(args):
     uef = args.uef
     corr_measure = args.corr_measure
 
+    assert predictor is not None, 'No predictor was chosen'
+    if uef:
+        predictor = f'uef/{predictor}'
+
     y = LearningDataSets(predictor, corpus, corr_measure=corr_measure, aggregation=agg_func, uef=uef)
-    # y.generate_data_sets()
-    # y.run_svm()
-    y.cross_val()
+    # y.generate_data_sets_fine_tune()
+    # y.run_svm_fine_tune()
+    y.cross_val_fine_tune()
 
 
 if __name__ == '__main__':
