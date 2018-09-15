@@ -13,6 +13,8 @@ from dataparser import ResultsReader, ensure_dir
 from features import features_loader
 
 # TODO: implement the UEF addition
+# TODO: Find the problem with the UEF on CW - and solve it
+# TODO: Add rm commands to generate function to make sure the results are clean
 
 parser = argparse.ArgumentParser(description='LTR (SVMRank) data sets Generator',
                                  usage='python3.6 learningsets.py -c CORPUS ... <parameter files>',
@@ -25,6 +27,8 @@ parser.add_argument('-p', '--predictor', default=None, type=str, help='full CV r
 parser.add_argument('--uef', help='Add this if the predictor is in uef framework', action="store_true")
 parser.add_argument('--corr_measure', default='pearson', type=str, choices=['pearson', 'spearman', 'kendall'],
                     help='features JSON file to load')
+parser.add_argument('--generate', help='Add this to generate new results, make sure to RM the previous results',
+                    action="store_true")
 
 C_list = [0.01, 0.1, 1, 10, 100]
 
@@ -195,7 +199,7 @@ class LearningDataSets:
                 _correlation = _df['score'].corr(_df['ap'], method=self.cv.test)
                 _pair.append(_correlation)
             _list.append(np.mean(_pair))
-        print('mean: {:.4f}'.format(np.mean(_list)))
+        print('mean: {:.3f}'.format(np.mean(_list)))
 
     def cross_val(self):
         classification_dir = self.output_dir.replace('datasets', 'classifications')
@@ -207,15 +211,19 @@ class LearningDataSets:
                 # set_id, subset = file_.split('_')[-2:]
                 _res_df = pd.read_csv(f'{classification_dir}/predictions_{set_id}_{subset}', header=None,
                                       names=['score'])
+                print(_res_df)
                 _test_topics = np.array(self.folds_df[set_id][subset]['test']).astype(str)
                 _res_df.insert(loc=0, column='qid', value=_test_topics)
                 _res_df.set_index('qid', inplace=True)
+                print(_res_df)
                 _ap_df = self.ap_obj.data_df.loc[_test_topics]
                 _df = _res_df.merge(_ap_df, how='outer', on='qid')
+                print(_df)
+                # exit()
                 _correlation = _df['score'].corr(_df['ap'], method=self.cv.test)
                 _pair.append(_correlation)
             _list.append(np.mean(_pair))
-        print('mean: {:.4f}'.format(np.mean(_list)))
+        print('mean: {:.3f}'.format(np.mean(_list)))
 
 
 def main(args):
@@ -224,15 +232,23 @@ def main(args):
     agg_func = args.aggregate
     uef = args.uef
     corr_measure = args.corr_measure
+    generate = args.generate
 
     assert predictor is not None, 'No predictor was chosen'
     if uef:
         predictor = f'uef/{predictor}'
 
     y = LearningDataSets(predictor, corpus, corr_measure=corr_measure, aggregation=agg_func, uef=uef)
-    # y.generate_data_sets_fine_tune()
-    # y.run_svm_fine_tune()
-    y.cross_val_fine_tune()
+
+    # if generate:
+    #     y.generate_data_sets_fine_tune()
+    #     y.run_svm_fine_tune()
+
+    if generate:
+        y.generate_data_sets()
+        y.run_svm()
+    # y.cross_val_fine_tune()
+    y.cross_val()
 
 
 if __name__ == '__main__':

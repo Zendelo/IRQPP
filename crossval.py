@@ -99,7 +99,6 @@ class CrossValidation:
         self.data_sets_map = pd.read_json(self.file_name)
 
     def __calc_correlations(self):
-
         sets = self.data_sets_map.columns
         corr_results = defaultdict(dict)
         for set_id in sets:
