@@ -14,7 +14,6 @@ from features import features_loader
 
 # TODO: implement the UEF addition
 # TODO: Find the problem with the UEF on CW - and solve it
-# TODO: Add rm commands to generate function to make sure the results are clean
 
 parser = argparse.ArgumentParser(description='LTR (SVMRank) data sets Generator',
                                  usage='python3.6 learningsets.py -c CORPUS ... <parameter files>',
@@ -96,6 +95,7 @@ class LearningDataSets:
 
     def generate_data_sets_fine_tune(self):
         """This method will create the data sets with all the available hyper parameters of the qpp predictions"""
+        run(f'rm -rfv {self.output_dir}*', shell=True)
         for set_id in self.parameters_df.index:
             for subset in ['a', 'b']:
                 for col in self.results_df.columns:
@@ -110,6 +110,7 @@ class LearningDataSets:
     def generate_data_sets(self):
         """This method will create the data sets with a single hyper parameter for the qpp predictions, which will be
         chosen based on the best result on the train set"""
+        run(f'rm -rfv {self.output_dir}*', shell=True)
         for set_id in self.parameters_df.index:
             for subset in ['a', 'b']:
                 param = self.parameters_df.loc[set_id][subset]
@@ -131,6 +132,8 @@ class LearningDataSets:
         ensure_dir(models_dir)
         classification_dir = self.output_dir.replace('datasets', 'classifications')
         ensure_dir(classification_dir)
+        run(f'rm -rfv {models_dir}*', shell=True)
+        run(f'rm -rfv {classification_dir}*', shell=True)
         train_sets = glob.glob(f'{self.output_dir}/train*')
         for c in C_list:
             for trainset in train_sets:
@@ -151,6 +154,8 @@ class LearningDataSets:
         models_dir = self.output_dir.replace('datasets', 'models')
         ensure_dir(models_dir)
         classification_dir = self.output_dir.replace('datasets', 'classifications')
+        run(f'rm -rfv {models_dir}*', shell=True)
+        run(f'rm -rfv {classification_dir}*', shell=True)
         ensure_dir(classification_dir)
         for set_id in range(1, 31):
             for subset in ['a', 'b']:
@@ -240,15 +245,16 @@ def main(args):
 
     y = LearningDataSets(predictor, corpus, corr_measure=corr_measure, aggregation=agg_func, uef=uef)
 
-    # if generate:
-    #     y.generate_data_sets_fine_tune()
-    #     y.run_svm_fine_tune()
-
     if generate:
-        y.generate_data_sets()
-        y.run_svm()
-    # y.cross_val_fine_tune()
-    y.cross_val()
+
+        y.generate_data_sets_fine_tune()
+        y.run_svm_fine_tune()
+
+    # if generate:
+    #     y.generate_data_sets()
+    #     y.run_svm()
+    y.cross_val_fine_tune()
+    # y.cross_val()
 
 
 if __name__ == '__main__':
