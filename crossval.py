@@ -64,6 +64,15 @@ class CrossValidation:
     def _build_full_set(predictions_dir, ap_file=None):
         """Assuming the predictions files are named : predictions-[*]"""
         all_files = glob.glob(predictions_dir + "/*predictions*")
+        if 'uef' in predictions_dir:
+            # Excluding all the 5 and 10 docs predictions
+            if 'qf' in predictions_dir:
+                all_files = [fn for fn in all_files if
+                             not os.path.basename(fn).endswith('-5+', 11, 14) and not os.path.basename(fn).endswith(
+                                 '-10+', 11, 15)]
+            else:
+                all_files = [fn for fn in all_files if
+                             not os.path.basename(fn).endswith('-5') and not os.path.basename(fn).endswith('-10')]
         list_ = []
         for file_ in all_files:
             fname = file_.split('-')[-1]
@@ -164,7 +173,7 @@ class CrossValidation:
                               columns=['a', 'train_correlation_a'])
         res_df.rename_axis('set', inplace=True)
         res_df[['b', 'train_correlation_b']] = pd.DataFrame(temp_df['best train b'].values.tolist(),
-                                                                   index=temp_df.index.str.split().str[1])
+                                                            index=temp_df.index.str.split().str[1])
         return res_df
 
 
