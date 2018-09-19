@@ -28,6 +28,9 @@ parser.add_argument('--corr_measure', default='pearson', type=str, choices=['pea
                     help='features JSON file to load')
 parser.add_argument('--generate', help='Add this to generate new results, make sure to RM the previous results',
                     action="store_true")
+parser.add_argument('--fine',
+                    help='Add this to generate new results, with fine tuning of parameters (may cause overfitting)',
+                    action="store_true")
 
 C_list = [0.01, 0.1, 1, 10, 100]
 
@@ -44,8 +47,8 @@ class LearningDataSets:
         self.parameters_df = self.cv.read_eval_results(_parameters)
         self.results_df = self.cv.full_set
         # self.feature_names = ['Jac_coefficient', 'Top_10_Docs_overlap', 'RBO_EXT_100', 'RBO_EXT_1000',
-        #                       'RBO_FUSED_EXT_100', 'RBO_FUSED_EXT_1000']
-        self.feature_names = ['Jac_coefficient', 'Top_10_Docs_overlap', 'RBO_EXT_100', 'RBO_FUSED_EXT_100']
+        #                       'RBO_FUSED_EXT_100', 'RBO_FUSED_EXT_1000'] # LTR-many
+        self.feature_names = ['Jac_coefficient', 'Top_10_Docs_overlap', 'RBO_EXT_100', 'RBO_FUSED_EXT_100']  # LTR-few
         features_df = features_loader(self.features, corpus)
         self.features_df = features_df.filter(items=self.feature_names)
 
@@ -71,7 +74,7 @@ class LearningDataSets:
         predictor_resutls = self.results_df[f'score_{param}']
         feat_df = self.features_df.multiply(predictor_resutls, axis=0, level='qid')
         feat_df = feat_df.groupby('topic').sum()
-        feat_df = feat_df.apply(np.log)
+        # feat_df = feat_df.apply(np.log)
         feat_df = feat_df.merge(self.ap_obj.data_df, left_index=True, right_index=True)
         feat_df.insert(0, 'qid', 'qid:1')
         return feat_df
@@ -208,23 +211,17 @@ class LearningDataSets:
 
     def cross_val(self):
         classification_dir = self.output_dir.replace('datasets', 'classifications')
-        train_files = glob.glob(classification_dir + "/train*")
         _list = []
         for set_id in range(1, 31):
             _pair = []
             for subset in ['a', 'b']:
-                # set_id, subset = file_.split('_')[-2:]
                 _res_df = pd.read_csv(f'{classification_dir}/predictions_{set_id}_{subset}', header=None,
                                       names=['score'])
-                print(_res_df)
                 _test_topics = np.array(self.folds_df[set_id][subset]['test']).astype(str)
                 _res_df.insert(loc=0, column='qid', value=_test_topics)
                 _res_df.set_index('qid', inplace=True)
-                print(_res_df)
                 _ap_df = self.ap_obj.data_df.loc[_test_topics]
                 _df = _res_df.merge(_ap_df, how='outer', on='qid')
-                print(_df)
-                # exit()
                 _correlation = _df['score'].corr(_df['ap'], method=self.cv.test)
                 _pair.append(_correlation)
             _list.append(np.mean(_pair))
@@ -238,6 +235,7 @@ def main(args):
     uef = args.uef
     corr_measure = args.corr_measure
     generate = args.generate
+    fine_tune = args.fine
 
     assert predictor is not None, 'No predictor was chosen'
     if uef:
@@ -245,16 +243,16 @@ def main(args):
 
     y = LearningDataSets(predictor, corpus, corr_measure=corr_measure, aggregation=agg_func, uef=uef)
 
-    if generate:
-
-        y.generate_data_sets_fine_tune()
-        y.run_svm_fine_tune()
-
-    # if generate:
-    #     y.generate_data_sets()
-    #     y.run_svm()
-    y.cross_val_fine_tune()
-    # y.cross_val()
+    if fine_tune:
+        if generate:
+            y.generate_data_sets_fine_tune()
+            y.run_svm_fine_tune()
+        y.cross_val_fine_tune()
+    else:
+        if generate:
+            y.generate_data_sets()
+            y.run_svm()
+        y.cross_val()
 
 
 if __name__ == '__main__':
