@@ -33,6 +33,7 @@ parser.add_argument('--fine',
                     action="store_true")
 
 C_list = [0.01, 0.1, 1, 10, 100]
+# C_list = [0.01, 0.1, 1, 10]
 
 
 class LearningDataSets:
@@ -145,7 +146,6 @@ class LearningDataSets:
                 _model_path = f'{models_dir}model_{_model_params}_c_{c}'
                 _cls_train_path = f'{classification_dir}train_{_model_params}_c_{c}.cls'
                 _cls_test_path = f'{classification_dir}test_{_model_params}_c_{c}.cls'
-                # print(f'create model_{_model_params}')
                 run('{0} -c {1} {2} {3}'.format(svm_learn, c, trainset, _model_path), shell=True)
                 run('{0} {1} {2} {3}'.format(svm_classify, trainset, _model_path, _cls_train_path), shell=True)
                 run('{0} {1} {2} {3}'.format(svm_classify, testset, _model_path, _cls_test_path), shell=True)
