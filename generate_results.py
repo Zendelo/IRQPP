@@ -21,7 +21,8 @@ from crossval import CrossValidation
 PREDICTORS = ['clarity', 'nqc', 'wig', 'qf']
 NUM_DOCS = [5, 10, 25, 50, 100, 250, 500, 1000]
 LIST_CUT_OFF = [5, 10, 25, 50, 100]
-AGGREGATE_FUNCTIONS = ['avg', 'max', 'med', 'min', 'std']
+# AGGREGATE_FUNCTIONS = ['avg', 'max', 'med', 'min', 'std', 'combsum']
+AGGREGATE_FUNCTIONS = ['avg', 'max', 'med', 'std']
 SINGLE_FUNCTIONS = ['max', 'min', 'medl', 'medh']
 CORR_MEASURES = ['pearson', 'kendall', 'spearman']
 SPLITS = 2
@@ -231,7 +232,7 @@ class GeneratePredictions:
         raw_dir = os.path.normpath('{}/{}/predictions'.format(self.predictions_dir, predictor))
         res_files = glob.glob('{}/*predictions*'.format(raw_dir))
         for file in res_files:
-            for func in AGGREGATE_FUNCTIONS:
+            for func in AGGREGATE_FUNCTIONS + ['min']:
                 predictions_dir = self.predictions_dir.replace('raw', 'aggregated')
                 n = file.split('-')[-1]
                 output = '{}/{}/{}/predictions/predictions-{}'.format(predictions_dir, func, predictor, n)
@@ -465,7 +466,7 @@ class GenerateTable:
         table = table.replace('predictor-agg', '\\multirow{{8}}{{*}}{{{}}}'.format(_agg))
         print(table)
 
-        for agg in AGGREGATE_FUNCTIONS[1:]:
+        for agg in AGGREGATE_FUNCTIONS[1:] + ['min']:
             _df = self.cv.calc_aggregated(agg)
             table = _df.to_latex(header=False, multirow=False, multicolumn=False, index=False, escape=False,
                                  index_names=False, column_format='clcccccc')
