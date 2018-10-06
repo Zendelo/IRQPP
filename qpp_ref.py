@@ -57,12 +57,15 @@ class QueryPredictionRef:
         _test_dir = f'~/QppUqvProj/Results/{corpus}/test/'
         _test_dir = os.path.normpath(os.path.expanduser(_test_dir))
         cls.folds = '{}/2_folds_30_repetitions.json'.format(_test_dir)
-        cls.features = '{}/raw/norm_features_{}_uqv.JSON'.format(_test_dir, corpus)
+        dp.ensure_file(cls.folds)
+        cls.features = '{}/raw/query_features_{}_uqv.JSON'.format(_test_dir, corpus)
+        dp.ensure_file(cls.features)
         _orig_dir = f'~/QppUqvProj/Results/{corpus}/basicPredictions/'
         _orig_dir = os.path.normpath(os.path.expanduser(_orig_dir))
         cls.base_results_dir = f'{_orig_dir}/{predictor}/predictions/'
         _query_vars = f'~/QppUqvProj/data/{corpus}/queries_ROBUST_UQV_only.txt'
         cls.query_vars_file = os.path.normpath(os.path.expanduser(_query_vars))
+        dp.ensure_file(cls.query_vars_file)
 
     def calc_queries(self):
         _topic_df = self.features_df.reset_index()[['topic', 'qid']]
@@ -75,6 +78,18 @@ class QueryPredictionRef:
             _jac_res_df = self.__calc_jac(_var_scores_df, _features_df[['topic', 'qid', 'Jac_coefficient']],
                                           lambda_param)
             self.write_results(_jac_res_df, 'jac', lambda_param)
+
+            _sim_res_df = self.__calc_top_sim(_var_scores_df, _features_df[['topic', 'qid', 'Top_10_Docs_overlap']],
+                                              lambda_param)
+            self.write_results(_sim_res_df, 'sim', lambda_param)
+
+            _rbo_res_df = self.__calc_rbo(_var_scores_df, _features_df[['topic', 'qid', 'RBO_EXT_100']], lambda_param)
+            self.write_results(_rbo_res_df, 'rbo', lambda_param)
+
+            _rbof_res_df = self.__calc_rbof(_var_scores_df, _features_df[['topic', 'qid', 'RBO_FUSED_EXT_100']],
+                                            lambda_param)
+            self.write_results(_rbo_res_df, 'rbof', lambda_param)
+
             _uni_res_df = self.__calc_uni(_var_scores_df, lambda_param)
             self.write_results(_uni_res_df, 'uni', lambda_param)
 
@@ -85,6 +100,27 @@ class QueryPredictionRef:
         _var_scores_df = var_scores_df.set_index(['topic', 'qid'])
         _features_df = features_df.set_index(['topic', 'qid'])
         _result_df = _var_scores_df.multiply(_features_df['Jac_coefficient'], axis=0, level='qid')
+        _result_df = _result_df.groupby('topic').sum()
+        return lambda_param * self.base_results_df + (1 - lambda_param) * _result_df
+
+    def __calc_top_sim(self, var_scores_df, features_df, lambda_param):
+        _var_scores_df = var_scores_df.set_index(['topic', 'qid'])
+        _features_df = features_df.set_index(['topic', 'qid'])
+        _result_df = _var_scores_df.multiply(_features_df['Top_10_Docs_overlap'], axis=0, level='qid')
+        _result_df = _result_df.groupby('topic').sum()
+        return lambda_param * self.base_results_df + (1 - lambda_param) * _result_df
+
+    def __calc_rbo(self, var_scores_df, features_df, lambda_param):
+        _var_scores_df = var_scores_df.set_index(['topic', 'qid'])
+        _features_df = features_df.set_index(['topic', 'qid'])
+        _result_df = _var_scores_df.multiply(_features_df['RBO_EXT_100'], axis=0, level='qid')
+        _result_df = _result_df.groupby('topic').sum()
+        return lambda_param * self.base_results_df + (1 - lambda_param) * _result_df
+
+    def __calc_rbof(self, var_scores_df, features_df, lambda_param):
+        _var_scores_df = var_scores_df.set_index(['topic', 'qid'])
+        _features_df = features_df.set_index(['topic', 'qid'])
+        _result_df = _var_scores_df.multiply(_features_df['RBO_FUSED_EXT_100'], axis=0, level='qid')
         _result_df = _result_df.groupby('topic').sum()
         return lambda_param * self.base_results_df + (1 - lambda_param) * _result_df
 
