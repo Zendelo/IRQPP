@@ -25,7 +25,7 @@ parser.add_argument('--generate', help='Add this to generate new results, make s
 #                     help='Add this to generate new results, with fine tuning of parameters (may cause overfitting)',
 #                     action="store_true")
 
-LAMBDA = np.linspace(start=0.1, stop=0.9, num=8)
+LAMBDA = np.linspace(start=0, stop=1, num=11)
 
 
 class QueryPredictionRef:
@@ -63,17 +63,18 @@ class QueryPredictionRef:
         _orig_dir = f'~/QppUqvProj/Results/{corpus}/basicPredictions/'
         _orig_dir = os.path.normpath(os.path.expanduser(_orig_dir))
         cls.base_results_dir = f'{_orig_dir}/{predictor}/predictions/'
-        _query_vars = f'~/QppUqvProj/data/{corpus}/queries_ROBUST_UQV_only.txt'
+        _query_vars = f'~/QppUqvProj/data/{corpus}/queries_{corpus}_UQV_only.txt'
         cls.query_vars_file = os.path.normpath(os.path.expanduser(_query_vars))
         dp.ensure_file(cls.query_vars_file)
 
     def calc_queries(self):
         _topic_df = self.features_df.reset_index()[['topic', 'qid']]
-        _vars_list = self.query_vars.queries_df['qid']
+        # _vars_list = self.query_vars.queries_df['qid']
         _var_scores_df = pd.merge(_topic_df, self.vars_results_df, on='qid')
         _features_df = self.features_df.reset_index()
-        _features_df = _features_df.loc[_features_df['qid'].isin(_vars_list)]
-        _var_scores_df = _var_scores_df.loc[_var_scores_df['qid'].isin(_vars_list)]
+        _var_scores_df = _var_scores_df.loc[_var_scores_df['qid'].isin(_features_df['qid'])]
+        # _features_df = _features_df.loc[_features_df['qid'].isin(_vars_list)]
+        # _var_scores_df = _var_scores_df.loc[_var_scores_df['qid'].isin(_vars_list)]
         for lambda_param in LAMBDA:
             _jac_res_df = self.__calc_jac(_var_scores_df, _features_df[['topic', 'qid', 'Jac_coefficient']],
                                           lambda_param)
@@ -141,6 +142,10 @@ def main(args):
     corr_measure = args.corr_measure
     # generate = args.generate
     # fine_tune = args.fine
+
+    # # Debug
+    # predictor = 'wig'
+    # corpus = 'ROBUST'
 
     assert predictor is not None, 'No predictor was chosen'
     assert corpus is not None, 'No corpus was chosen'

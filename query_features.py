@@ -9,6 +9,8 @@ import os
 import argparse
 from Timer.timer import Timer
 
+# TODO: fix the constructor of the class, to work only with the results for the chosen variations
+
 parser = argparse.ArgumentParser(description='Features for UQV query variations Generator',
                                  usage='python3.6 features.py -q queries.txt -c CORPUS -r QL.res ',
                                  epilog='Unless --generate is given, will try loading the file')
@@ -26,10 +28,15 @@ parser.add_argument('--generate', help="generate new predictions", action="store
 class QueryFeatureFactory:
     def __init__(self, corpus):
         self.__set_paths(corpus)
-        self.raw_res_data = dp.ResultsReader(self.results_file, 'trec')
-        self.title_res_data = dp.ResultsReader(self.title_res_file, 'trec')
+        _raw_res_data = dp.ResultsReader(self.results_file, 'trec')
+        _title_res_data = dp.ResultsReader(self.title_res_file, 'trec')
         self.queries_data = dp.QueriesTextParser(self.queries_full_file, 'uqv')
         self.topics_data = dp.QueriesTextParser(self.queries_topic_file)
+        self.variations_data = dp.QueriesTextParser(self.queries_variations_file, 'uqv')
+        _vars_list = self.variations_data.queries_df['qid']
+        # _var_scores_df.loc[_var_scores_df['qid'].isin(_vars_list)]
+        self.raw_res_data = _raw_res_data
+        self.title_res_data = _title_res_data
         # A simple sanity check to make sure number of results and query variations is identical
         _x = [len(i) for i in self.raw_res_data.query_vars.values()]
         _z = [len(i) for i in self.queries_data.query_vars.values()]
@@ -59,6 +66,10 @@ class QueryFeatureFactory:
         _queries_full_file = f'~/QppUqvProj/data/{corpus}/queries_{corpus}_UQV_full.txt'
         cls.queries_full_file = os.path.normpath(os.path.expanduser(_queries_full_file))
         dp.ensure_file(cls.queries_full_file)
+
+        _queries_variations_file = f'~/QppUqvProj/data/{corpus}/queries_{corpus}_UQV_only.txt'
+        cls.queries_variations_file = os.path.normpath(os.path.expanduser(_queries_variations_file))
+        dp.ensure_file(cls.queries_variations_file)
 
         _queries_topic_file = f'~/QppUqvProj/data/{corpus}/queries_{corpus}_title.txt'
         cls.queries_topic_file = os.path.normpath(os.path.expanduser(_queries_topic_file))
@@ -109,20 +120,13 @@ class QueryFeatureFactory:
         return _df
 
     def _sum_scores(self, df):
-        # _exp_df = df.apply(np.exp)
-        # For debugging purposes
-        # df.to_excel(self.writer, 'normal_scores')
-        # _exp_df.to_excel(self.writer, 'exp_scores')
 
-        z_n = df.groupby(['topic']).sum()
-        # z_e = _exp_df.groupby(['topic']).sum()
+        # filter only variations different from original query
+        _df = df[df['Jac_coefficient'] != 1]
+        z_n = _df.groupby(['topic']).sum()
+        # TODO: check this
+        norm_df = (_df.groupby(['topic', 'qid']).sum() / z_n).fillna(0)
 
-        norm_df = (df.groupby(['topic', 'qid']).sum() / z_n)
-        # softmax_df = (_exp_df.groupby(['topic', 'qid']).sum() / z_e)
-        # For debugging purposes
-        # norm_df.to_excel(self.writer, 'zn_scores')
-        # softmax_df.to_excel(self.writer, 'ze_scores')
-        # self.writer.save()
         return norm_df
 
     def generate_features(self):
@@ -166,6 +170,11 @@ def main(args):
     generate = args.generate
 
     # assert not queries_file.endswith('.xml'), 'Submit text queries file, not XML'
+
+    # # Debugging
+    # testing_feat = QueryFeatureFactory('ROBUST')
+    # norm_features_df = testing_feat.generate_features()
+    # norm_features_df.reset_index().to_json('query_features_{}_uqv.JSON'.format(corpus))
 
     if generate:
         # queries_file = dp.ensure_file(queries_file)
