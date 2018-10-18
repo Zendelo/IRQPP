@@ -28,6 +28,8 @@ parser.add_argument('--generate', help='Add this to generate new results, make s
 #                     action="store_true")
 
 LAMBDA = np.linspace(start=0, stop=1, num=11)
+MARKERS = ['-^', '-v', '-D', '-x', '-h', '-H', 'p-', 's-', '--v', '--1', '--2', '--D', '--x', '--h', '--H', '^-.',
+           '-.v', '1-.', '2-.', '-.D', '-.x', '-.h', '-.H', '3-.', '4-.', 's-.', 'p-.', '+-.', '*-.']
 
 
 class GenerateResults:
@@ -40,6 +42,8 @@ class GenerateResults:
         """This method sets the default paths of the files and the working directories, it assumes the standard naming
          convention of the project"""
         cls.predictor = predictor
+        cls.ref_feature = ref_feature
+        cls.corpus = corpus
         _base_dir = f'~/QppUqvProj/Results/{corpus}/uqvPredictions/'
         _base_dir = os.path.normpath(os.path.expanduser(_base_dir))
         cls.results_dir = f'{_base_dir}/referenceLists/{ref_feature}/{predictor}/predictions/'
@@ -66,8 +70,13 @@ class GenerateResults:
         plots_df = pd.DataFrame(plots_dict)
         plots_df.index.name = 'lambda'
         plots_df.rename(index=lambda x: f'{x.lstrip("lambda-")}', inplace=True)
-        plots_df.plot(title=f'{self.corr_measure} correlation with AP of full set', fontsize=10)
-        plt.ylabel('correlation')
+        plots_df.rename(index=float, inplace=True)
+        # plots_df.reindex_axis(sorted(plots_df.columns), axis=0)
+        plots_df.plot(
+            title=f'{self.corr_measure.title()} correlation {self.ref_feature} similarity on {self.corpus}',
+            grid=True, fontsize=10, style=MARKERS, markersize=10)
+        plots_df.to_csv(f'{self.predictor}_{self.corr_measure}_AP_fullset_{self.ref_feature}')
+        plt.ylabel(f'{self.corr_measure}')
         plt.xlabel('Lambda values')
         plt.show()
 
