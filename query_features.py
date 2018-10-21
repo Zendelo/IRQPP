@@ -1,3 +1,5 @@
+from reportlab.lib.pagesizes import elevenSeventeen
+
 import dataparser as dp
 from itertools import combinations
 from collections import defaultdict
@@ -15,11 +17,12 @@ parser = argparse.ArgumentParser(description='Features for UQV query variations 
                                  usage='python3.6 features.py -q queries.txt -c CORPUS -r QL.res ',
                                  epilog='Unless --generate is given, will try loading the file')
 
-parser.add_argument('-q', '--queries', metavar='queries.txt', help='path to UQV queries txt file')
 parser.add_argument('-c', '--corpus', default='ROBUST', type=str, help='corpus (index) to work with',
                     choices=['ROBUST', 'ClueWeb12B'])
-parser.add_argument('-r', '--results', default=None, type=str, help='QL.res file of the queries')
-parser.add_argument('-f', '--fused', default=None, type=str, help='fusedQL.res file of the queries')
+
+# parser.add_argument('-q', '--queries', metavar='queries.txt', help='path to UQV queries txt file')
+# parser.add_argument('-r', '--results', default=None, type=str, help='QL.res file of the queries')
+# parser.add_argument('-f', '--fused', default=None, type=str, help='fusedQL.res file of the queries')
 parser.add_argument('-l', '--load', default=None, type=str, help='features file to load')
 
 parser.add_argument('--generate', help="generate new predictions", action="store_true")
@@ -33,7 +36,6 @@ class QueryFeatureFactory:
         self.queries_data = dp.QueriesTextParser(self.queries_full_file, 'uqv')
         self.topics_data = dp.QueriesTextParser(self.queries_topic_file)
         self.variations_data = dp.QueriesTextParser(self.queries_variations_file, 'uqv')
-        _vars_list = self.variations_data.queries_df['qid']
         # _var_scores_df.loc[_var_scores_df['qid'].isin(_vars_list)]
         self.raw_res_data = _raw_res_data
         self.title_res_data = _title_res_data
@@ -43,12 +45,6 @@ class QueryFeatureFactory:
         assert _x == _z, 'Results and Queries files don\'t match'
         self.fused_data = dp.ResultsReader(self.fused_results_file, 'trec')
         self.query_vars = self.queries_data.query_vars
-
-    # def _create_query_var_pairs(self):
-    #     feature_keys = defaultdict(list)
-    #     for qid, variations in self.query_vars.items():
-    #         feature_keys[qid] = list(combinations(variations, 2))
-    #     return feature_keys
 
     @classmethod
     def __set_paths(cls, corpus):
@@ -92,6 +88,7 @@ class QueryFeatureFactory:
             dt_100 = self.fused_data.get_res_dict_by_qid(topic, top=100)
             topic_txt = self.topics_data.get_qid_txt(topic)
             topics_top_list = self.title_res_data.get_docs_by_qid(topic, 10)
+            # topics_top_list = self.title_res_data.get_docs_by_qid(topic, 25)
             topic_results_list = self.title_res_data.get_res_dict_by_qid(topic, top=100)
 
             for var in q_vars:
@@ -99,6 +96,7 @@ class QueryFeatureFactory:
                 jc = self.jaccard_coefficient(topic_txt, var_txt)
 
                 var_top_list = self.raw_res_data.get_docs_by_qid(var, 10)
+                # var_top_list = self.raw_res_data.get_docs_by_qid(var, 25)
                 docs_overlap = self.list_overlap(topics_top_list, var_top_list)
 
                 # All RBO values are rounded to 10 decimal digits, to avoid float overflow
@@ -116,22 +114,67 @@ class QueryFeatureFactory:
                 _dict['RBO_FUSED_EXT_100'] += [_var_fext_100]
 
         _df = pd.DataFrame.from_dict(_dict)
-        _df.set_index(['topic', 'qid'], inplace=True)
+        # _df.set_index(['topic', 'qid'], inplace=True)
         return _df
 
+    def _filter_queries(self, df):
+        # return df[df['Jac_coefficient'] != 1]
+        return df.loc[df['qid'].isin(self.variations_data.queries_df['qid'])]
+
+    def _soft_max_scores(self, df):
+        # _df = self._filter_queries(df)
+        _df = df
+        _df.set_index(['topic', 'qid'], inplace=True)
+        _exp_df = _df.apply(np.exp)
+        # For debugging purposes
+        z_e = _exp_df.groupby(['topic']).sum()
+
+        softmax_df = (_exp_df.groupby(['topic', 'qid']).sum() / z_e)
+        # _temp = softmax_df.dropna()
+        # For debugging purposes
+        return softmax_df
+
+    def _average_scores(self, df):
+        _df = self._filter_queries(df)
+        # _df = df
+        _df.set_index(['topic', 'qid'], inplace=True)
+        # _exp_df = _df.apply(np.exp)
+        # For debugging purposes
+        avg_df = _df.groupby(['topic']).mean()
+
+        # avg_df = (_df.groupby(['topic', 'qid']).mean())
+        # _temp = softmax_df.dropna()
+        # For debugging purposes
+        return avg_df
+
+    def _max_norm_scores(self, df):
+        # _df = self._filter_queries(df)
+        _df = df
+        _df.set_index(['topic', 'qid'], inplace=True)
+        # For debugging purposes
+        z_m = _df.groupby(['topic']).max()
+
+        max_norm_df = (_df.groupby(['topic', 'qid']).sum() / z_m).fillna(0)
+        # _temp = softmax_df.dropna()
+        # For debugging purposes
+        return max_norm_df
+
     def _sum_scores(self, df):
-
         # filter only variations different from original query
-        _df = df[df['Jac_coefficient'] != 1]
+        _df = df
+        # _df = self._filter_queries(df)
         z_n = _df.groupby(['topic']).sum()
-        # TODO: check this
+        # TODO: check this - filling nan with 0
         norm_df = (_df.groupby(['topic', 'qid']).sum() / z_n).fillna(0)
-
+        # _temp = norm_df.dropna()
         return norm_df
 
     def generate_features(self):
         _df = self._calc_features()
+        # return self._soft_max_scores(_df)
         return self._sum_scores(_df)
+        # return self._average_scores(_df)
+        # return self._max_norm_scores(_df)
 
     @staticmethod
     def jaccard_coefficient(st1: str, st2: str):
@@ -162,12 +205,12 @@ def features_loader(file_to_load, corpus):
 
 
 def main(args):
-    queries_file = args.queries
     corpus = args.corpus
-    results_file = args.results
-    fused_res_file = args.fused
-    file_to_load = args.load
     generate = args.generate
+    # queries_file = args.queries
+    # results_file = args.results
+    # fused_res_file = args.fused
+    file_to_load = args.load
 
     # assert not queries_file.endswith('.xml'), 'Submit text queries file, not XML'
 
@@ -182,7 +225,7 @@ def main(args):
         testing_feat = QueryFeatureFactory(corpus)
         norm_features_df = testing_feat.generate_features()
         norm_features_df.reset_index().to_json('query_features_{}_uqv.JSON'.format(corpus))
-    else:
+    elif file_to_load:
         features_df = features_loader(file_to_load, corpus)
         print(features_df)
 
