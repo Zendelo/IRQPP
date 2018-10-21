@@ -111,6 +111,9 @@ class ResultsReader:
         assert self.file_type == 'trec', '{} wrong file type'.format(self.file_type)
         return self.data_df.loc[qid, 'docID'].head(top).values
 
+    def filter_results_by_queries(self):
+        pass
+
 
 class QueriesTextParser:
 
@@ -120,7 +123,7 @@ class QueriesTextParser:
         :param kind: 'original' or 'uqv'
         """
         self.queries_df = pd.read_table(queries_file, delim_whitespace=False, delimiter=':', header=None,
-                                        names=['qid', 'text'])
+                                        names=['qid', 'text'], dtype={'qid': str, 'text': str})
         self.queries_dict = self.__generate_queries_dict()
         self.kind = kind.lower()
         if self.kind == 'uqv':
