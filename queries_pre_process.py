@@ -15,8 +15,23 @@ parser.add_argument('--remove', default=None, metavar='queries.txt',
                     help='path to queries txt file that will be removed from the final file NON UQV ONLY')
 
 
+def add_original_queries():
+    pass
+
+
 def remove_duplicates(qdb: dt.QueriesTextParser):
-    return qdb.queries_df.drop_duplicates('text')
+    _list = []
+    for topic, q_vars in qdb.query_vars.items():
+        _list.append(qdb.queries_df.loc[qdb.queries_df['qid'].isin(q_vars)].drop_duplicates('text'))
+    return pd.concat(_list)
+
+
+def alternate_remove_duplicates(qdb: dt.QueriesTextParser):
+    """Different commands, same result"""
+    _dup_list = []
+    for topic, q_vars in qdb.query_vars.items():
+        _dup_list.extend(qdb.queries_df.loc[qdb.queries_df['qid'].isin(q_vars)].duplicated('text'))
+    return qdb.queries_df[~qdb.queries_df['qid'].isin(qdb.queries_df.loc[_dup_list]['qid'])]
 
 
 def remove_q1_from_q2(qdf_1: pd.DataFrame, qdf_2: pd.DataFrame):
