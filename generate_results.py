@@ -25,6 +25,7 @@ LIST_CUT_OFF = [5, 10, 25, 50, 100]
 AGGREGATE_FUNCTIONS = ['avg', 'max', 'med', 'std']
 SINGLE_FUNCTIONS = ['max', 'min', 'medl', 'medh']
 CORR_MEASURES = ['pearson', 'kendall', 'spearman']
+REFERENCE_FUNCTIONS = ['uni', 'jac', 'sim', 'rbo', 'rbof']
 SPLITS = 2
 REPEATS = 30
 
@@ -45,7 +46,7 @@ parser.add_argument('--qtype', default='basic', type=str, help='The type of quer
 parser.add_argument('-m', '--measure', default='pearson', type=str,
                     help='default correlation measure type is pearson', choices=['pearson', 'spearman', 'kendall'], )
 parser.add_argument('-t', '--table', type=str, default='all', help='the LaTeX table to be printed',
-                    choices=['basic', 'single', 'aggregated', 'fusion', 'all'], )
+                    choices=['basic', 'single', 'aggregated', 'fusion', 'referenceLists', 'all'])
 parser.add_argument('--generate', help="generate new predictions", action="store_true")
 parser.add_argument('--lists', help="generate new lists", action="store_true")
 parser.add_argument('--svm', help="generate SVM predictions", action="store_true")
@@ -329,7 +330,6 @@ class CrossVal:
                 # uef_cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_uef_predictions_dir,
                 #                              file_to_load=self.cv_map_f, load=True, test=self.corr_measure,
                 #                              ap_file=ap_score)
-                # TODO: the uef predictions for 5 and 10 documents yield results with var=0, it returns NAN for pearson correlation
                 mean = cv_obj.calc_test_results()
                 # uef_mean = uef_cv_obj.calc_test_results()
                 _p_res.append('${}$'.format(mean))
@@ -395,6 +395,67 @@ class CrossVal:
         res_df.reset_index(inplace=True)
         res_df.columns = ['Predictor'] + CORR_MEASURES
         res_df.insert(loc=0, column='Function', value=single_f)
+        return res_df
+
+    def calc_reference(self):
+        ap_file = os.path.normpath(f'{self.test_dir}/basic/QLmap1000')
+        ensure_file(ap_file)
+        predictions_dir = f'{self.base_dir}/uqvPredictions/referenceLists'
+        base_pred_dir = f'{self.base_dir}/basicPredictions'
+        _results = defaultdict()
+
+        for p in PREDICTORS:
+            # list to save non uef results for a specific predictor with different AP files
+            _p_res = list()
+            # list to save uef results
+            _uef_p_res = list()
+            """This part calculates and adds title queries column"""
+            _base_predictions_dir = os.path.normpath('{}/{}/predictions'.format(base_pred_dir, p))
+            _base_uef_predictions_dir = os.path.normpath('{}/uef/{}/predictions'.format(base_pred_dir, p))
+            cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_base_predictions_dir,
+                                     file_to_load=self.cv_map_f, load=True, ap_file=ap_file, test=self.corr_measure)
+            uef_cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_base_uef_predictions_dir,
+                                         file_to_load=self.cv_map_f, load=True, ap_file=ap_file, test=self.corr_measure)
+            mean = cv_obj.calc_test_results()
+            uef_mean = uef_cv_obj.calc_test_results()
+            _p_res.append('${}$'.format(mean))
+            _uef_p_res.append('${}$'.format(uef_mean))
+            sr = pd.Series(_p_res)
+            uef_sr = pd.Series(_uef_p_res)
+            sr.name = p
+            uef_p = 'uef({})'.format(p)
+            uef_sr.name = uef_p
+            _results[p] = sr
+            _results[uef_p] = uef_sr
+
+            for ref_func in REFERENCE_FUNCTIONS:
+                _predictions_dir = os.path.normpath(f'{predictions_dir}/{ref_func}/{p}/predictions')
+                _uef_predictions_dir = os.path.normpath(f'{predictions_dir}/{ref_func}/uef/{p}/predictions')
+                cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_predictions_dir,
+                                         file_to_load=self.cv_map_f, load=True, ap_file=ap_file, test=self.corr_measure)
+                uef_cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_uef_predictions_dir,
+                                             file_to_load=self.cv_map_f, load=True, ap_file=ap_file,
+                                             test=self.corr_measure)
+                mean = cv_obj.calc_test_results()
+                uef_mean = uef_cv_obj.calc_test_results()
+                _p_res.append('${}$'.format(mean))
+                _uef_p_res.append('${}$'.format(uef_mean))
+
+            sr = pd.Series(_p_res)
+            uef_sr = pd.Series(_uef_p_res)
+            sr.name = p
+            uef_p = 'uef({})'.format(p)
+            uef_sr.name = uef_p
+            _results[p] = sr
+            _results[uef_p] = uef_sr
+
+        res_df = pd.DataFrame.from_dict(_results, orient='index')
+        _uef_predictors = ['uef({})'.format(p) for p in PREDICTORS]
+        res_df = res_df.reindex(index=PREDICTORS + _uef_predictors)
+        res_df.index = res_df.index.str.upper()
+        res_df.reset_index(inplace=True)
+        res_df.columns = ['Predictor', 'Title'] + REFERENCE_FUNCTIONS
+        # res_df.insert(loc=0, column='Function', value=single_f)
         return res_df
 
     def calc_basic(self):
@@ -517,6 +578,23 @@ class GenerateTable:
         print(_df.to_latex(header=True, multirow=False, multicolumn=False, index=False, escape=False,
                            index_names=False, column_format='lccc'))
 
+    def print_ref_latex_table(self):
+        print('\\begin{table}[ht!]')
+        print('\\begin{center}')
+        print('\\caption{{ {} QPP-Reference lists {} Correlations}}'.format(self.corpus,
+                                                                            self.cv.corr_measure.capitalize()))
+        _df = self.cv.calc_reference()
+        table = _df.to_latex(header=True, multirow=False, multicolumn=False, index=False, escape=False,
+                             index_names=False, column_format='lcccccc')
+        table = table.replace('\\end{tabular}', '')
+        # This will replace the 8 last substrings, using Extended Slices with negative int to copy in reverse order
+        # table = table[::-1].replace('{}'.format(_ref[::-1]), '', 8)[::-1]
+        table = table.replace('\\toprule', '\\toprule \n & & \\multicolumn{5}{c}{Similarity Functions} \\\\')
+        print(table)
+        print('\\end{tabular}')
+        print('\\end{center}')
+        print('\\end{table}')
+
 
 def ensure_dir(file_path):
     # tilde expansion
@@ -552,7 +630,8 @@ def main(args):
 
     table_functions = {'basic': GenerateTable.print_basic_latex_table, 'single': GenerateTable.print_sing_latex_table,
                        'aggregated': GenerateTable.print_agg_latex_table,
-                       'fusion': GenerateTable.print_fused_latex_table}
+                       'fusion': GenerateTable.print_fused_latex_table,
+                       'referenceLists': GenerateTable.print_ref_latex_table}
 
     queries = args.queries
     corpus = args.corpus
