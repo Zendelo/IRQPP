@@ -32,7 +32,7 @@ class QueryPredictionRef:
 
     def __init__(self, predictor, corpus, corr_measure='pearson'):
         self.__set_paths(corpus, predictor)
-        self.working_dir = self.vars_results_dir.replace('predictions', 'ltr')
+        # self.working_dir = self.vars_results_dir.replace('predictions', 'ltr')
         self.var_cv = CrossValidation(file_to_load=self.folds, predictions_dir=self.vars_results_dir, test=corr_measure)
         self.base_cv = CrossValidation(file_to_load=self.folds, predictions_dir=self.base_results_dir,
                                        test=corr_measure)
@@ -58,6 +58,7 @@ class QueryPredictionRef:
         _test_dir = os.path.normpath(os.path.expanduser(_test_dir))
         cls.folds = '{}/2_folds_30_repetitions.json'.format(_test_dir)
         dp.ensure_file(cls.folds)
+        # cls.features = '{}/raw/query_features_{}_uqv_legal.JSON'.format(_test_dir, corpus)
         cls.features = '{}/raw/query_features_{}_uqv.JSON'.format(_test_dir, corpus)
         dp.ensure_file(cls.features)
         _orig_dir = f'~/QppUqvProj/Results/{corpus}/basicPredictions/'
@@ -69,12 +70,12 @@ class QueryPredictionRef:
 
     def calc_queries(self):
         _topic_df = self.features_df.reset_index()[['topic', 'qid']]
-        # _vars_list = self.query_vars.queries_df['qid']
+        _vars_list = self.query_vars.queries_df['qid']
         _var_scores_df = pd.merge(_topic_df, self.vars_results_df, on='qid')
         _features_df = self.features_df.reset_index()
-        _var_scores_df = _var_scores_df.loc[_var_scores_df['qid'].isin(_features_df['qid'])]
-        # _features_df = _features_df.loc[_features_df['qid'].isin(_vars_list)]
+        _features_df = _features_df.loc[_features_df['qid'].isin(_vars_list)]
         # _var_scores_df = _var_scores_df.loc[_var_scores_df['qid'].isin(_vars_list)]
+        _var_scores_df = _var_scores_df.loc[_var_scores_df['qid'].isin(_features_df['qid'])]
         for lambda_param in LAMBDA:
             _jac_res_df = self.__calc_jac(_var_scores_df, _features_df[['topic', 'qid', 'Jac_coefficient']],
                                           lambda_param)
@@ -89,12 +90,13 @@ class QueryPredictionRef:
 
             _rbof_res_df = self.__calc_rbof(_var_scores_df, _features_df[['topic', 'qid', 'RBO_FUSED_EXT_100']],
                                             lambda_param)
-            self.write_results(_rbo_res_df, 'rbof', lambda_param)
+            self.write_results(_rbof_res_df, 'rbof', lambda_param)
 
             _uni_res_df = self.__calc_uni(_var_scores_df, lambda_param)
             self.write_results(_uni_res_df, 'uni', lambda_param)
 
     def __calc_uni(self, var_scores_df, lambda_param):
+        """Calculates with the mean of the variations W/O original queries"""
         return lambda_param * self.base_results_df + (1 - lambda_param) * var_scores_df.groupby('topic').mean()
 
     def __calc_jac(self, var_scores_df, features_df, lambda_param):
