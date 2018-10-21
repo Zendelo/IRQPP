@@ -129,6 +129,7 @@ class CrossValidation:
         simple_results = defaultdict()
         test_results = []
         for set_id in sets:
+            # Contains the str of the best parameter for trainset i.e. "score_10" - will split on "_"
             max_train_param_a = max(self.corrs_df[set_id]['a']['train'].items(), key=operator.itemgetter(1))[0]
             test_result_a = self.corrs_df[set_id]['a']['test'][max_train_param_a]
             max_train_param_b = max(self.corrs_df[set_id]['b']['train'].items(), key=operator.itemgetter(1))[0]
@@ -153,6 +154,7 @@ class CrossValidation:
             ('{}/simple_results_vector_for_{}_folds_{}_repetitions_{}.json'.format(self.output_dir, self.k, self.rep,
                                                                                    self.ap_func)))
         mean = np.mean(test_results)
+        # print('{:.3f}'.format(mean))
         return '{:.3f}'.format(mean)
 
     def calc_corr_df(self, df):
