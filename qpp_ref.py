@@ -17,6 +17,7 @@ parser.add_argument('-a', '--aggregate', default='avg', type=str, help='Aggregat
 parser.add_argument('-p', '--predictor', default=None, type=str, help='full CV results JSON file to load',
                     choices=['clarity', 'wig', 'nqc', 'qf'])
 parser.add_argument('--uef', help='Add this if the predictor is in uef framework', action="store_true")
+parser.add_argument('-g', '--group', help='group of queries to predict', choices=['top', 'low', 'title'])
 parser.add_argument('--corr_measure', default='pearson', type=str, choices=['pearson', 'spearman', 'kendall'],
                     help='features JSON file to load')
 parser.add_argument('--generate', help='Add this to generate new results, make sure to RM the previous results',
@@ -30,43 +31,60 @@ LAMBDA = np.linspace(start=0, stop=1, num=11)
 
 class QueryPredictionRef:
 
-    def __init__(self, predictor, corpus, corr_measure='pearson'):
-        self.__set_paths(corpus, predictor)
+    def __init__(self, predictor, corpus, qgroup, corr_measure='pearson'):
+        self.__set_paths(corpus, predictor, qgroup)
+        self.q2p_obj = dp.QueriesTextParser(self.queries2predict_file, 'uqv')
         # self.working_dir = self.vars_results_dir.replace('predictions', 'ltr')
         self.var_cv = CrossValidation(file_to_load=self.folds, predictions_dir=self.vars_results_dir, test=corr_measure)
-        self.base_cv = CrossValidation(file_to_load=self.folds, predictions_dir=self.base_results_dir,
-                                       test=corr_measure)
-        self.folds_df = self.base_cv.data_sets_map
+        # self.base_cv = CrossValidation(file_to_load=self.folds, predictions_dir=self.base_results_dir,
+        #                                test=corr_measure)
+        # self.folds_df = self.base_cv.data_sets_map
         self.vars_results_df = self.var_cv.full_set
-        self.base_results_df = self.base_cv.full_set.rename_axis('topic')
+        # self.base_results_df = self.base_cv.full_set.rename_axis('topic')
+        self.base_results_df = dp.convert_vid_to_qid(self.vars_results_df.loc[self.q2p_obj.queries_dict.keys()])
+        self.base_results_df.rename_axis('topic', inplace=True)
         self.feature_names = ['Jac_coefficient', 'Top_10_Docs_overlap', 'RBO_EXT_100', 'RBO_FUSED_EXT_100']  # LTR-few
         features_df = features_loader(self.features, corpus)
         self.features_df = features_df.filter(items=self.feature_names)
         self.query_vars = dp.QueriesTextParser(self.query_vars_file, 'uqv')
 
+        for col in self.base_results_df.columns:
+            'QppUqvProj/Results/ROBUST/basicPredictions/'
+            _file_path = f'QppUqvProj/Results/ROBUST/basicPredictions/{qgroup}/{self.predictor}/predictions/'
+            dp.ensure_dir(_file_path)
+            _file_name = col.replace('score_', 'predictions-')
+            file_name = f'{_file_path}{_file_name}'
+            self.base_results_df[col].to_csv(file_name, sep=" ", header=False, index=True)
+        exit()
+
     @classmethod
-    def __set_paths(cls, corpus, predictor):
+    def __set_paths(cls, corpus, predictor, qgroup):
         """This method sets the default paths of the files and the working directories, it assumes the standard naming
          convention of the project"""
         cls.predictor = predictor
         _base_dir = f'~/QppUqvProj/Results/{corpus}/uqvPredictions/'
         _base_dir = os.path.normpath(os.path.expanduser(_base_dir))
         cls.vars_results_dir = '{}/raw/{}/predictions/'.format(_base_dir, cls.predictor)
-        cls.output_dir = '{}/referenceLists/'.format(_base_dir)
+        if qgroup == 'title':
+            _orig_dir = f'~/QppUqvProj/Results/{corpus}/basicPredictions/'
+            _orig_dir = os.path.normpath(os.path.expanduser(_orig_dir))
+            cls.base_results_dir = f'{_orig_dir}/{predictor}/predictions/'
+        cls.output_dir = f'{_base_dir}/referenceLists/{qgroup}/'
         dp.ensure_dir(cls.output_dir)
         _test_dir = f'~/QppUqvProj/Results/{corpus}/test/'
         _test_dir = os.path.normpath(os.path.expanduser(_test_dir))
         cls.folds = '{}/2_folds_30_repetitions.json'.format(_test_dir)
         dp.ensure_file(cls.folds)
         # cls.features = '{}/raw/query_features_{}_uqv_legal.JSON'.format(_test_dir, corpus)
-        cls.features = '{}/raw/query_features_{}_uqv.JSON'.format(_test_dir, corpus)
+        cls.features = f'{_test_dir}/ref/{qgroup}_query_features_{corpus}_uqv.JSON'
         dp.ensure_file(cls.features)
-        _orig_dir = f'~/QppUqvProj/Results/{corpus}/basicPredictions/'
-        _orig_dir = os.path.normpath(os.path.expanduser(_orig_dir))
-        cls.base_results_dir = f'{_orig_dir}/{predictor}/predictions/'
-        _query_vars = f'~/QppUqvProj/data/{corpus}/queries_{corpus}_UQV_only.txt'
+        _query_vars = f'~/QppUqvProj/data/{corpus}/queries_{corpus}_UQV_wo_{qgroup}.txt'
         cls.query_vars_file = os.path.normpath(os.path.expanduser(_query_vars))
         dp.ensure_file(cls.query_vars_file)
+        # queries_ROBUST_top.txt
+        _queries2predict = f'~/QppUqvProj/data/{corpus}/queries_{corpus}_{qgroup}.txt'
+        cls.queries2predict_file = os.path.normpath(os.path.expanduser(_queries2predict))
+        dp.ensure_file(cls.queries2predict_file)
 
     def calc_queries(self):
         _topic_df = self.features_df.reset_index()[['topic', 'qid']]
@@ -139,6 +157,7 @@ class QueryPredictionRef:
 def main(args):
     corpus = args.corpus
     predictor = args.predictor
+    queries_group = args.group
     # agg_func = args.aggregate
     uef = args.uef
     corr_measure = args.corr_measure
@@ -155,7 +174,7 @@ def main(args):
     if uef:
         predictor = f'uef/{predictor}'
 
-    y = QueryPredictionRef(predictor, corpus, corr_measure=corr_measure)
+    y = QueryPredictionRef(predictor, corpus, queries_group, corr_measure=corr_measure)
     y.calc_queries()
 
 

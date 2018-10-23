@@ -397,11 +397,11 @@ class CrossVal:
         res_df.insert(loc=0, column='Function', value=single_f)
         return res_df
 
-    def calc_reference(self):
-        ap_file = os.path.normpath(f'{self.test_dir}/basic/QLmap1000')
+    def calc_reference(self, query_group='top'):
+        ap_file = os.path.normpath(f'{self.test_dir}/ref/QLmap1000-{query_group}')
         ensure_file(ap_file)
-        predictions_dir = f'{self.base_dir}/uqvPredictions/referenceLists'
-        base_pred_dir = f'{self.base_dir}/basicPredictions'
+        predictions_dir = f'{self.base_dir}/uqvPredictions/referenceLists/{query_group}/'
+        base_pred_dir = f'{self.base_dir}/basicPredictions/{query_group}'
         _results = defaultdict()
 
         for p in PREDICTORS:
@@ -460,7 +460,7 @@ class CrossVal:
 
     def calc_basic(self):
         test_dir = os.path.normpath('{}/basic'.format(self.test_dir))
-        predictions_dir = os.path.normpath('{}/basicPredictions'.format(self.base_dir))
+        predictions_dir = os.path.normpath('{}/basicPredictions/title/'.format(self.base_dir))
         ap_score = ensure_file('{}/QLmap1000'.format(test_dir))
 
         _results = defaultdict()
@@ -652,7 +652,7 @@ def main(args):
     elif queries_type == 'fusion':
         predictions_dir = '{}/uqvPredictions/fusion'.format(base_dir)
     else:
-        predictions_dir = '{}/basicPredictions'.format(base_dir)
+        predictions_dir = '{}/basicPredictions/title'.format(base_dir)
 
     predict = GeneratePredictions(queries, predictions_dir, corpus, queries_type, generate_lists)
 

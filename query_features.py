@@ -20,9 +20,7 @@ parser = argparse.ArgumentParser(description='Features for UQV query variations 
 parser.add_argument('-c', '--corpus', default='ROBUST', type=str, help='corpus (index) to work with',
                     choices=['ROBUST', 'ClueWeb12B'])
 
-# parser.add_argument('-q', '--queries', metavar='queries.txt', help='path to UQV queries txt file')
-# parser.add_argument('-r', '--results', default=None, type=str, help='QL.res file of the queries')
-# parser.add_argument('-f', '--fused', default=None, type=str, help='fusedQL.res file of the queries')
+parser.add_argument('-g', '--group', help='group of queries to predict', choices=['top', 'low', 'title'])
 parser.add_argument('-l', '--load', default=None, type=str, help='features file to load')
 
 parser.add_argument('--generate', help="generate new features file", action="store_true")
@@ -30,9 +28,9 @@ parser.add_argument('--predict', help="generate new predictions", action="store_
 
 
 class QueryFeatureFactory:
-    def __init__(self, corpus, rbo_top=100):
+    def __init__(self, corpus, queries_group='title', rbo_top=100):
         self.rbo_top = rbo_top
-        self.__set_paths(corpus)
+        self.__set_paths(corpus, queries_group)
         _raw_res_data = dp.ResultsReader(self.results_file, 'trec')
         _title_res_data = dp.ResultsReader(self.title_res_file, 'trec')
         self.queries_data = dp.QueriesTextParser(self.queries_full_file, 'uqv')
@@ -49,7 +47,7 @@ class QueryFeatureFactory:
         self.query_vars = self.queries_data.query_vars
 
     @classmethod
-    def __set_paths(cls, corpus):
+    def __set_paths(cls, corpus, qgroup):
         """This method sets the default paths of the files and the working directories, it assumes the standard naming
          convention of the project"""
         # cls.predictor = predictor
@@ -65,11 +63,11 @@ class QueryFeatureFactory:
         cls.queries_full_file = os.path.normpath(os.path.expanduser(_queries_full_file))
         dp.ensure_file(cls.queries_full_file)
 
-        _queries_variations_file = f'~/QppUqvProj/data/{corpus}/queries_{corpus}_UQV_only.txt'
+        _queries_variations_file = f'~/QppUqvProj/data/{corpus}/queries_{corpus}_UQV_wo_{qgroup}.txt'
         cls.queries_variations_file = os.path.normpath(os.path.expanduser(_queries_variations_file))
         dp.ensure_file(cls.queries_variations_file)
 
-        _queries_topic_file = f'~/QppUqvProj/data/{corpus}/queries_{corpus}_title.txt'
+        _queries_topic_file = f'~/QppUqvProj/data/{corpus}/queries_{corpus}_{qgroup}.txt'
         cls.queries_topic_file = os.path.normpath(os.path.expanduser(_queries_topic_file))
         dp.ensure_file(cls.queries_topic_file)
 
@@ -173,13 +171,13 @@ class QueryFeatureFactory:
         return norm_df
 
     def save_rbo_predictions(self, df: pd.DataFrame):
+        _df = self._filter_queries(df)
         _df = df.groupby('topic').mean()
         _df['RBO_EXT_100'].to_csv(f'RBO_predictions-{self.rbo_top}', sep=' ')
         _df['RBO_FUSED_EXT_100'].to_csv(f'Fused_predictions-{self.rbo_top}', sep=' ')
 
     def generate_features(self):
         _df = self._calc_features()
-        self.save_rbo_predictions(_df)
         # return self._soft_max_scores(_df)
         return self._sum_scores(_df)
         # return self._average_scores(_df)
@@ -221,12 +219,8 @@ def main(args):
     corpus = args.corpus
     generate = args.generate
     predict = args.predict
-    # queries_file = args.queries
-    # results_file = args.results
-    # fused_res_file = args.fused
+    queries_group = args.group
     file_to_load = args.load
-
-    # assert not queries_file.endswith('.xml'), 'Submit text queries file, not XML'
 
     # # Debugging
     # testing_feat = QueryFeatureFactory('ROBUST')
@@ -234,14 +228,12 @@ def main(args):
     # norm_features_df.reset_index().to_json('query_features_{}_uqv.JSON'.format(corpus))
 
     if generate:
-        # queries_file = dp.ensure_file(queries_file)
-        # results_file = dp.ensure_file(results_file)
         testing_feat = QueryFeatureFactory(corpus)
         norm_features_df = testing_feat.generate_features()
-        norm_features_df.reset_index().to_json('query_features_{}_uqv.JSON'.format(corpus))
+        norm_features_df.reset_index().to_json(f'{queries_group}_query_features_{corpus}_uqv.JSON')
     elif predict:
         for n in [5, 10, 25, 50, 100, 250, 500, 1000]:
-            rbo_pred = QueryFeatureFactory(corpus, n)
+            rbo_pred = QueryFeatureFactory(corpus, queries_group, n)
             rbo_pred.generate_rbo_predictions()
     elif file_to_load:
         features_df = features_loader(file_to_load, corpus)

@@ -5,7 +5,6 @@ import pandas as pd
 import dataparser as dt
 
 # TODO: add logging and qrels file generation for UQV
-# TODO: Change the remove duplicates function to remove only inter topic duplicates
 
 parser = argparse.ArgumentParser(description='Script for query files pre-processing',
                                  epilog='Use this script with Caution')
@@ -13,10 +12,44 @@ parser = argparse.ArgumentParser(description='Script for query files pre-process
 parser.add_argument('-t', '--queries', default=None, metavar='queries.txt', help='path to UQV queries txt file')
 parser.add_argument('--remove', default=None, metavar='queries.txt',
                     help='path to queries txt file that will be removed from the final file NON UQV ONLY')
+parser.add_argument('--top', action='store_true', help='Return only the best performing queries of each topic')
+parser.add_argument('--low', action='store_true', help='Return only the best performing queries of each topic')
+parser.add_argument('--ap', default=None, metavar='QLmap1000', help='path to queries AP results file')
 
 
 def add_original_queries():
     pass
+
+
+def convert_vid_to_qid(df: pd.DataFrame):
+    _df = df.set_index('qid')
+    _df.rename(index=lambda x: f'{x.split("-")[0]}', inplace=True)
+    return _df.reset_index()
+
+
+def filter_top_queries(qdf: pd.DataFrame, apdb: dt.ResultsReader):
+    _apdf = apdb.data_df
+    _list = []
+    for topic, q_vars in apdb.query_vars.items():
+        top_var = _apdf.loc[q_vars].idxmax()
+        _list.append(top_var[0])
+    _df = qdf.loc[qdf['qid'].isin(_list)]
+    return _df
+    # return convert_vid_to_qid(_df)
+
+
+def filter_low_queries(qdf: pd.DataFrame, apdb: dt.ResultsReader):
+    _apdf = apdb.data_df
+    _list = []
+    for topic, q_vars in apdb.query_vars.items():
+        _df = _apdf.loc[q_vars]
+        # remove 0 ap variants
+        _df = _df[_df['ap'] > 0]
+        low_var = _df.idxmin()
+        _list.append(low_var[0])
+    _df = qdf.loc[qdf['qid'].isin(_list)]
+    return _df
+    # return convert_vid_to_qid(_df)
 
 
 def remove_duplicates(qdb: dt.QueriesTextParser):
@@ -46,13 +79,23 @@ def save_txt_queries(q_df: pd.DataFrame):
 def main(args):
     queries_txt_file = args.queries
     queries_to_remove = args.remove
+    ap_file = args.ap
+    top_queries = args.top
+    low_queries = args.low
 
-    if queries_txt_file is not None:
+    if queries_txt_file:
         qdb = dt.QueriesTextParser(queries_txt_file, 'uqv')
         queries_df = remove_duplicates(qdb)
         if queries_to_remove:
             qdb_rm = dt.QueriesTextParser(queries_to_remove)
             queries_df = remove_q1_from_q2(qdb_rm.queries_df, queries_df)
+        if ap_file:
+            apdb = dt.ResultsReader(ap_file, 'ap')
+            if top_queries:
+                queries_df = filter_top_queries(queries_df, apdb)
+            elif low_queries:
+                queries_df = filter_low_queries(queries_df, apdb)
+
         save_txt_queries(queries_df)
         query_xml = dt.QueriesXMLParser(queries_df)
         query_xml.print_queries_xml()
