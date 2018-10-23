@@ -25,11 +25,13 @@ parser.add_argument('-c', '--corpus', default='ROBUST', type=str, help='corpus (
 # parser.add_argument('-f', '--fused', default=None, type=str, help='fusedQL.res file of the queries')
 parser.add_argument('-l', '--load', default=None, type=str, help='features file to load')
 
-parser.add_argument('--generate', help="generate new predictions", action="store_true")
+parser.add_argument('--generate', help="generate new features file", action="store_true")
+parser.add_argument('--predict', help="generate new predictions", action="store_true")
 
 
 class QueryFeatureFactory:
-    def __init__(self, corpus):
+    def __init__(self, corpus, rbo_top=100):
+        self.rbo_top = rbo_top
         self.__set_paths(corpus)
         _raw_res_data = dp.ResultsReader(self.results_file, 'trec')
         _title_res_data = dp.ResultsReader(self.title_res_file, 'trec')
@@ -85,11 +87,11 @@ class QueryFeatureFactory:
         for topic in self.topics_data.queries_dict.keys():
             q_vars = self.query_vars.get(topic)
             _dict['topic'] += [topic] * len(q_vars)
-            dt_100 = self.fused_data.get_res_dict_by_qid(topic, top=100)
+            dt_100 = self.fused_data.get_res_dict_by_qid(topic, top=self.rbo_top)
             topic_txt = self.topics_data.get_qid_txt(topic)
             topics_top_list = self.title_res_data.get_docs_by_qid(topic, 10)
             # topics_top_list = self.title_res_data.get_docs_by_qid(topic, 25)
-            topic_results_list = self.title_res_data.get_res_dict_by_qid(topic, top=100)
+            topic_results_list = self.title_res_data.get_res_dict_by_qid(topic, top=self.rbo_top)
 
             for var in q_vars:
                 var_txt = self.queries_data.get_qid_txt(var)
@@ -100,7 +102,7 @@ class QueryFeatureFactory:
                 docs_overlap = self.list_overlap(topics_top_list, var_top_list)
 
                 # All RBO values are rounded to 10 decimal digits, to avoid float overflow
-                var_results_list = self.raw_res_data.get_res_dict_by_qid(var, top=100)
+                var_results_list = self.raw_res_data.get_res_dict_by_qid(var, top=self.rbo_top)
                 _rbo_scores_100 = rbo_dict(topic_results_list, var_results_list, p=0.95)
                 _ext_100 = np.around(_rbo_scores_100['ext'], 10)
 
@@ -160,8 +162,9 @@ class QueryFeatureFactory:
         return max_norm_df
 
     def _sum_scores(self, df):
-        # filter only variations different from original query
+        # TODO: add save to rbo and rbof to a file here as predictions
         _df = df
+        # filter only variations different from original query
         # _df = self._filter_queries(df)
         z_n = _df.groupby(['topic']).sum()
         # TODO: check this - filling nan with 0
@@ -169,12 +172,22 @@ class QueryFeatureFactory:
         # _temp = norm_df.dropna()
         return norm_df
 
+    def save_rbo_predictions(self, df: pd.DataFrame):
+        _df = df.groupby('topic').mean()
+        _df['RBO_EXT_100'].to_csv(f'RBO_predictions-{self.rbo_top}', sep=' ')
+        _df['RBO_FUSED_EXT_100'].to_csv(f'Fused_predictions-{self.rbo_top}', sep=' ')
+
     def generate_features(self):
         _df = self._calc_features()
+        self.save_rbo_predictions(_df)
         # return self._soft_max_scores(_df)
         return self._sum_scores(_df)
         # return self._average_scores(_df)
         # return self._max_norm_scores(_df)
+
+    def generate_rbo_predictions(self):
+        _df = self._calc_features()
+        self.save_rbo_predictions(_df)
 
     @staticmethod
     def jaccard_coefficient(st1: str, st2: str):
@@ -207,6 +220,7 @@ def features_loader(file_to_load, corpus):
 def main(args):
     corpus = args.corpus
     generate = args.generate
+    predict = args.predict
     # queries_file = args.queries
     # results_file = args.results
     # fused_res_file = args.fused
@@ -225,6 +239,10 @@ def main(args):
         testing_feat = QueryFeatureFactory(corpus)
         norm_features_df = testing_feat.generate_features()
         norm_features_df.reset_index().to_json('query_features_{}_uqv.JSON'.format(corpus))
+    elif predict:
+        for n in [5, 10, 25, 50, 100, 250, 500, 1000]:
+            rbo_pred = QueryFeatureFactory(corpus, n)
+            rbo_pred.generate_rbo_predictions()
     elif file_to_load:
         features_df = features_loader(file_to_load, corpus)
         print(features_df)
