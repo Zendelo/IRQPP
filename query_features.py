@@ -20,25 +20,35 @@ parser = argparse.ArgumentParser(description='Features for UQV query variations 
 parser.add_argument('-c', '--corpus', default='ROBUST', type=str, help='corpus (index) to work with',
                     choices=['ROBUST', 'ClueWeb12B'])
 
-parser.add_argument('-g', '--group', help='group of queries to predict', choices=['top', 'low', 'title'])
+parser.add_argument('-g', '--group', help='group of queries to predict',
+                    choices=['top', 'low', 'medh', 'medl', 'title'])
+parser.add_argument('--quantile', help='quantile of query variants to use for prediction', default=None,
+                    choices=['all', 'low', 'med', 'top'])
 parser.add_argument('-l', '--load', default=None, type=str, help='features file to load')
-
 parser.add_argument('--generate', help="generate new features file", action="store_true")
 parser.add_argument('--predict', help="generate new predictions", action="store_true")
 
 
 class QueryFeatureFactory:
-    def __init__(self, corpus, queries_group='title', rbo_top=100):
+    def __init__(self, corpus, queries_group, vars_quantile='all', rbo_top=100):
         self.rbo_top = rbo_top
+        self.corpus = corpus
+        self.queries_group = queries_group
         self.__set_paths(corpus, queries_group)
         _raw_res_data = dp.ResultsReader(self.results_file, 'trec')
-        _title_res_data = dp.ResultsReader(self.title_res_file, 'trec')
+        if queries_group == 'title':
+            _title_res_data = dp.ResultsReader(self.title_res_file, 'trec')
+            self.prediction_queries_res_data = _title_res_data
+        else:
+            self.prediction_queries_res_data = _raw_res_data
         self.queries_data = dp.QueriesTextParser(self.queries_full_file, 'uqv')
         self.topics_data = dp.QueriesTextParser(self.queries_topic_file)
+        write_basic_results(self.prediction_queries_res_data.data_df.loc[self.topics_data.queries_df['qid']], corpus,
+                            queries_group)
         self.variations_data = dp.QueriesTextParser(self.queries_variations_file, 'uqv')
         # _var_scores_df.loc[_var_scores_df['qid'].isin(_vars_list)]
         self.raw_res_data = _raw_res_data
-        self.title_res_data = _title_res_data
+
         # A simple sanity check to make sure number of results and query variations is identical
         _x = [len(i) for i in self.raw_res_data.query_vars.values()]
         _z = [len(i) for i in self.queries_data.query_vars.values()]
@@ -83,13 +93,14 @@ class QueryFeatureFactory:
                  'RBO_FUSED_EXT_100': []}
 
         for topic in self.topics_data.queries_dict.keys():
-            q_vars = self.query_vars.get(topic)
+            _topic = topic.split('-')[0]
+            q_vars = self.query_vars.get(_topic)
             _dict['topic'] += [topic] * len(q_vars)
-            dt_100 = self.fused_data.get_res_dict_by_qid(topic, top=self.rbo_top)
+            dt_100 = self.fused_data.get_res_dict_by_qid(_topic, top=self.rbo_top)
             topic_txt = self.topics_data.get_qid_txt(topic)
-            topics_top_list = self.title_res_data.get_docs_by_qid(topic, 10)
+            topics_top_list = self.prediction_queries_res_data.get_docs_by_qid(topic, 10)
             # topics_top_list = self.title_res_data.get_docs_by_qid(topic, 25)
-            topic_results_list = self.title_res_data.get_res_dict_by_qid(topic, top=self.rbo_top)
+            topic_results_list = self.prediction_queries_res_data.get_res_dict_by_qid(topic, top=self.rbo_top)
 
             for var in q_vars:
                 var_txt = self.queries_data.get_qid_txt(var)
@@ -173,6 +184,9 @@ class QueryFeatureFactory:
     def save_rbo_predictions(self, df: pd.DataFrame):
         _df = self._filter_queries(df)
         _df = df.groupby('topic').mean()
+        _df = dp.convert_vid_to_qid(_df)
+        _file_path = f'~/QppUqvProj/Results/{self.corpus}/test/ref/{self.queries_group}.res'
+        dp.ensure_dir(os.path.normpath(os.path.expanduser(_file_path)))
         _df['RBO_EXT_100'].to_csv(f'RBO_predictions-{self.rbo_top}', sep=' ')
         _df['RBO_FUSED_EXT_100'].to_csv(f'Fused_predictions-{self.rbo_top}', sep=' ')
 
@@ -211,8 +225,19 @@ def features_loader(file_to_load, corpus):
     features_df = pd.read_json(file, dtype={'topic': str, 'qid': str})
     features_df.reset_index(drop=True, inplace=True)
     features_df.set_index(['topic', 'qid'], inplace=True)
+    features_df.rename(index=lambda x: x.split('-')[0], level=0, inplace=True)
     features_df.sort_values(['topic', 'qid'], axis=0, inplace=True)
     return features_df
+
+
+def write_basic_results(df: pd.DataFrame, corpus, qgroup):
+    """The function is used to save basic predictions of a given queries set"""
+    _df = dp.convert_vid_to_qid(df)
+    _df.insert(loc=0, column='trec_Q0', value='Q0')
+    _df.insert(loc=4, column='trec_indri', value='indri')
+    _file_path = f'~/QppUqvProj/Results/{corpus}/test/ref/QL_{qgroup}.res'
+    dp.ensure_dir(os.path.normpath(os.path.expanduser(_file_path)))
+    _df.to_csv(_file_path, sep=" ", header=False, index=True)
 
 
 def main(args):
@@ -221,6 +246,7 @@ def main(args):
     predict = args.predict
     queries_group = args.group
     file_to_load = args.load
+    quantile = args.quantile
 
     # # Debugging
     # testing_feat = QueryFeatureFactory('ROBUST')
@@ -228,12 +254,12 @@ def main(args):
     # norm_features_df.reset_index().to_json('query_features_{}_uqv.JSON'.format(corpus))
 
     if generate:
-        testing_feat = QueryFeatureFactory(corpus)
+        testing_feat = QueryFeatureFactory(corpus, queries_group)
         norm_features_df = testing_feat.generate_features()
         norm_features_df.reset_index().to_json(f'{queries_group}_query_features_{corpus}_uqv.JSON')
     elif predict:
         for n in [5, 10, 25, 50, 100, 250, 500, 1000]:
-            rbo_pred = QueryFeatureFactory(corpus, queries_group, n)
+            rbo_pred = QueryFeatureFactory(corpus, queries_group, rbo_top=n)
             rbo_pred.generate_rbo_predictions()
     elif file_to_load:
         features_df = features_loader(file_to_load, corpus)

@@ -397,10 +397,10 @@ class CrossVal:
         res_df.insert(loc=0, column='Function', value=single_f)
         return res_df
 
-    def calc_reference(self, query_group='top'):
+    def calc_reference(self, query_group, vars_quantile):
         ap_file = os.path.normpath(f'{self.test_dir}/ref/QLmap1000-{query_group}')
         ensure_file(ap_file)
-        predictions_dir = f'{self.base_dir}/uqvPredictions/referenceLists/{query_group}/'
+        predictions_dir = f'{self.base_dir}/uqvPredictions/referenceLists/{query_group}/{vars_quantile}_vars'
         base_pred_dir = f'{self.base_dir}/basicPredictions/{query_group}'
         _results = defaultdict()
 
@@ -579,21 +579,27 @@ class GenerateTable:
                            index_names=False, column_format='lccc'))
 
     def print_ref_latex_table(self):
-        print('\\begin{table}[ht!]')
-        print('\\begin{center}')
-        print('\\caption{{ {} QPP-Reference lists {} Correlations}}'.format(self.corpus,
-                                                                            self.cv.corr_measure.capitalize()))
-        _df = self.cv.calc_reference()
-        table = _df.to_latex(header=True, multirow=False, multicolumn=False, index=False, escape=False,
-                             index_names=False, column_format='lcccccc')
-        table = table.replace('\\end{tabular}', '')
-        # This will replace the 8 last substrings, using Extended Slices with negative int to copy in reverse order
-        # table = table[::-1].replace('{}'.format(_ref[::-1]), '', 8)[::-1]
-        table = table.replace('\\toprule', '\\toprule \n & & \\multicolumn{5}{c}{Similarity Functions} \\\\')
-        print(table)
-        print('\\end{tabular}')
-        print('\\end{center}')
-        print('\\end{table}')
+        corr_measure = self.cv.corr_measure.capitalize()
+        for vars_quantile in ['all', 'top', 'low', 'med']:
+            for qgroup, queries_group in {'title': 'Title', 'top': 'MaxAP', 'low': 'MinAP', 'medh': 'MedHiAP',
+                                          'medl': 'MedLiAP'}.items():
+                print('\\begin{table}[ht!]')
+                print('\\begin{center}')
+                print(
+                    '\\caption{{ {} QPP-Reference lists {} Correlations for {} queries with {} variations}}'.format(
+                        self.corpus, corr_measure,
+                        queries_group, vars_quantile))
+                _df = self.cv.calc_reference(qgroup, vars_quantile)
+                table = _df.to_latex(header=True, multirow=False, multicolumn=False, index=False, escape=False,
+                                     index_names=False, column_format='lcccccc')
+                table = table.replace('\\end{tabular}', '')
+                # This will replace the 8 last chars, using Extended Slices with negative int to copy in reverse order
+                # table = table[::-1].replace('{}'.format(_ref[::-1]), '', 8)[::-1]
+                table = table.replace('\\toprule', '\\toprule \n & & \\multicolumn{5}{c}{Similarity Functions} \\\\')
+                print(table)
+                print('\\end{tabular}')
+                print('\\end{center}')
+                print('\\end{table} \n')
 
 
 def ensure_dir(file_path):

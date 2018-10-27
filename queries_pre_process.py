@@ -1,4 +1,5 @@
 import argparse
+from statistics import median_high, median_low
 
 import pandas as pd
 
@@ -13,7 +14,11 @@ parser.add_argument('-t', '--queries', default=None, metavar='queries.txt', help
 parser.add_argument('--remove', default=None, metavar='queries.txt',
                     help='path to queries txt file that will be removed from the final file NON UQV ONLY')
 parser.add_argument('--top', action='store_true', help='Return only the best performing queries of each topic')
-parser.add_argument('--low', action='store_true', help='Return only the best performing queries of each topic')
+parser.add_argument('--low', action='store_true', help='Return only the worst performing queries of each topic')
+parser.add_argument('--medh', action='store_true', help='Return only the high median performing queries of each topic')
+parser.add_argument('--medl', action='store_true', help='Return only the low median performing queries of each topic')
+parser.add_argument('--quant', default=None, choices=['low', 'top', 'med'],
+                    help='Return a quantile of the variants for each topic')
 parser.add_argument('--ap', default=None, metavar='QLmap1000', help='path to queries AP results file')
 
 
@@ -27,6 +32,19 @@ def convert_vid_to_qid(df: pd.DataFrame):
     return _df.reset_index()
 
 
+def filter_quant_variants(qdf: pd.DataFrame, apdb: dt.ResultsReader, q):
+    """This function returns a df with QID: TEXT of the queries inside a quantile"""
+    _apdf = apdb.data_df
+    _list = []
+    for topic, q_vars in apdb.query_vars.items():
+        _df = _apdf.loc[q_vars]
+        q_vals = _df.quantile(q=q)
+        _qvars = _df.loc[(_df['ap'] >= q_vals['ap'].min()) & (_df['ap'] <= q_vals['ap'].max())]
+        _list.extend(_qvars.index.tolist())
+    _res_df = qdf.loc[qdf['qid'].isin(_list)]
+    return _res_df
+
+
 def filter_top_queries(qdf: pd.DataFrame, apdb: dt.ResultsReader):
     _apdf = apdb.data_df
     _list = []
@@ -35,7 +53,6 @@ def filter_top_queries(qdf: pd.DataFrame, apdb: dt.ResultsReader):
         _list.append(top_var[0])
     _df = qdf.loc[qdf['qid'].isin(_list)]
     return _df
-    # return convert_vid_to_qid(_df)
 
 
 def filter_low_queries(qdf: pd.DataFrame, apdb: dt.ResultsReader):
@@ -49,7 +66,30 @@ def filter_low_queries(qdf: pd.DataFrame, apdb: dt.ResultsReader):
         _list.append(low_var[0])
     _df = qdf.loc[qdf['qid'].isin(_list)]
     return _df
-    # return convert_vid_to_qid(_df)
+
+
+def filter_med_h_queries(qdf: pd.DataFrame, apdb: dt.ResultsReader):
+    _apdf = apdb.data_df
+    _list = []
+    for topic, q_vars in apdb.query_vars.items():
+        _df = _apdf.loc[q_vars]
+        _med = median_high(_df['ap'])
+        med_var = _df.loc[_df['ap'] == _med]
+        _list.append(med_var.index[0])
+    _df = qdf.loc[qdf['qid'].isin(_list)]
+    return _df
+
+
+def filter_med_l_queries(qdf: pd.DataFrame, apdb: dt.ResultsReader):
+    _apdf = apdb.data_df
+    _list = []
+    for topic, q_vars in apdb.query_vars.items():
+        _df = _apdf.loc[q_vars]
+        _med = median_low(_df['ap'])
+        med_var = _df.loc[_df['ap'] == _med]
+        _list.append(med_var.index[0])
+    _df = qdf.loc[qdf['qid'].isin(_list)]
+    return _df
 
 
 def remove_duplicates(qdb: dt.QueriesTextParser):
@@ -82,6 +122,13 @@ def main(args):
     ap_file = args.ap
     top_queries = args.top
     low_queries = args.low
+    medh_queries = args.medh
+    medl_queries = args.medl
+    quant_variants = args.quant
+
+    # quant_variants = 'low'
+    # ap_file = '../../QppUqvProj/Results/ROBUST/test/raw/QLmap1000'
+    # queries_txt_file = '../../QppUqvProj/data/ROBUST/queries_ROBUST_UQV_full.txt'
 
     if queries_txt_file:
         qdb = dt.QueriesTextParser(queries_txt_file, 'uqv')
@@ -95,7 +142,20 @@ def main(args):
                 queries_df = filter_top_queries(queries_df, apdb)
             elif low_queries:
                 queries_df = filter_low_queries(queries_df, apdb)
+            elif medh_queries:
+                queries_df = filter_med_h_queries(queries_df, apdb)
+            elif medl_queries:
+                queries_df = filter_med_l_queries(queries_df, apdb)
+            elif quant_variants:
+                if quant_variants == 'low':
+                    queries_df = filter_quant_variants(queries_df, apdb, [0, 0.3])
+                elif quant_variants == 'med':
+                    queries_df = filter_quant_variants(queries_df, apdb, [0.33, 0.6])
+                elif quant_variants == 'top':
+                    queries_df = filter_quant_variants(queries_df, apdb, [0.66, 1])
 
+        # # In order to convert the vid (variants ID) to qid, uncomment next line
+        # queries_df = convert_vid_to_qid(queries_df)
         save_txt_queries(queries_df)
         query_xml = dt.QueriesXMLParser(queries_df)
         query_xml.print_queries_xml()
