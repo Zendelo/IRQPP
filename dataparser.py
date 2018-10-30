@@ -94,6 +94,7 @@ class ResultsReader:
         return qid_vars, var_qid
 
     def get_res_dict_by_qid(self, qid, top=1000):
+        """The function receives a list of qids, and returns a dict of results in format: {'docID': 'docScore'} """
         assert self.file_type == 'trec', '{} wrong file type'.format(self.file_type)
         _df = self.data_df.loc[qid, ['docID', 'docScore']].head(top)
         _df.reset_index(drop=True, inplace=True)
@@ -244,11 +245,27 @@ def ensure_file(file):
 
 
 def ensure_dir(file_path):
+    """The function ensures the dir exists, if it doesn't it creates it and returns the path"""
     # tilde expansion
-    file_path = os.path.expanduser(file_path)
+    file_path = os.path.normpath(os.path.expanduser(file_path))
     if os.path.isfile(file_path):
         directory = os.path.dirname(file_path)
     else:
         directory = file_path
     if not os.path.exists(directory):
         os.makedirs(directory)
+    return directory
+
+
+def convert_vid_to_qid(df: pd.DataFrame):
+    if df.index.name != 'qid' and df.index.name != 'topic':
+        if 'qid' in df.columns:
+            _df = df.set_index('qid')
+        elif 'topic' in df.columns:
+            _df = df.set_index('topic')
+        else:
+            assert False, "The DF doesn't has qid or topic"
+    else:
+        _df = df
+    _df.rename(index=lambda x: f'{x.split("-")[0]}', inplace=True)
+    return _df
