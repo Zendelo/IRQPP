@@ -582,8 +582,8 @@ class GenerateTable:
         corr_measure = self.cv.corr_measure.capitalize()
         for vars_quantile in ['all', 'top', 'low', 'med']:
             for qgroup, queries_group in {'title': 'Title', 'top': 'MaxAP', 'low': 'MinAP', 'medh': 'MedHiAP',
-                                          'medl': 'MedLiAP'}.items():
-                print('\\begin{table}[ht!]')
+                                          'medl': 'MedLoAP'}.items():
+                print('\n\\begin{table}[ht!]')
                 print('\\begin{center}')
                 print(
                     '\\caption{{ {} QPP-Reference lists {} Correlations for {} queries with {} variations}}'.format(
