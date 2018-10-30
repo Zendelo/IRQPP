@@ -1,20 +1,15 @@
-from reportlab.lib.pagesizes import elevenSeventeen
-
-import dataparser as dp
-from itertools import combinations
-from collections import defaultdict
-from RBO import rbo_dict
-import pandas as pd
-import numpy as np
+import argparse
 import os
 
-import argparse
+import numpy as np
+import pandas as pd
+
+import dataparser as dp
+from RBO import rbo_dict
 from Timer.timer import Timer
 
-# TODO: fix the constructor of the class, to work only with the results for the chosen variations
-
 parser = argparse.ArgumentParser(description='Features for UQV query variations Generator',
-                                 usage='python3.6 features.py -q queries.txt -c CORPUS -r QL.res ',
+                                 usage='python3 features.py -q queries.txt -c CORPUS -r QL.res ',
                                  epilog='Unless --generate is given, will try loading the file')
 
 parser.add_argument('-c', '--corpus', default='ROBUST', type=str, help='corpus (index) to work with',
@@ -34,7 +29,7 @@ class QueryFeatureFactory:
         self.rbo_top = rbo_top
         self.corpus = corpus
         self.queries_group = queries_group
-        self.__set_paths(corpus, queries_group)
+        self.__set_paths(corpus, queries_group, vars_quantile)
         _raw_res_data = dp.ResultsReader(self.results_file, 'trec')
         if queries_group == 'title':
             _title_res_data = dp.ResultsReader(self.title_res_file, 'trec')
@@ -57,7 +52,7 @@ class QueryFeatureFactory:
         self.query_vars = self.queries_data.query_vars
 
     @classmethod
-    def __set_paths(cls, corpus, qgroup):
+    def __set_paths(cls, corpus, qgroup, vars_quantile):
         """This method sets the default paths of the files and the working directories, it assumes the standard naming
          convention of the project"""
         # cls.predictor = predictor
@@ -69,10 +64,15 @@ class QueryFeatureFactory:
         cls.title_res_file = os.path.normpath(os.path.expanduser(_title_results_file))
         dp.ensure_file(cls.title_res_file)
 
-        _queries_full_file = f'~/QppUqvProj/data/{corpus}/queries_{corpus}_UQV_full.txt'
+        if vars_quantile == 'all':
+            _queries_full_file = f'~/QppUqvProj/data/{corpus}/queries_{corpus}_UQV_full.txt'
+        else:
+            _queries_full_file = f'~/QppUqvProj/data/{corpus}/queries_{corpus}_UQV_{vars_quantile}_variants.txt'
+
         cls.queries_full_file = os.path.normpath(os.path.expanduser(_queries_full_file))
         dp.ensure_file(cls.queries_full_file)
 
+        # The variations file is used in the filter function - it consists of all the vars w/o the query at hand
         _queries_variations_file = f'~/QppUqvProj/data/{corpus}/queries_{corpus}_UQV_wo_{qgroup}.txt'
         cls.queries_variations_file = os.path.normpath(os.path.expanduser(_queries_variations_file))
         dp.ensure_file(cls.queries_variations_file)
@@ -171,14 +171,12 @@ class QueryFeatureFactory:
         return max_norm_df
 
     def _sum_scores(self, df):
-        # TODO: add save to rbo and rbof to a file here as predictions
         _df = df
         # filter only variations different from original query
         # _df = self._filter_queries(df)
         z_n = _df.groupby(['topic']).sum()
-        # TODO: check this - filling nan with 0
+        # All nan values will be filled with 0
         norm_df = (_df.groupby(['topic', 'qid']).sum() / z_n).fillna(0)
-        # _temp = norm_df.dropna()
         return norm_df
 
     def save_rbo_predictions(self, df: pd.DataFrame):
@@ -256,7 +254,10 @@ def main(args):
     if generate:
         testing_feat = QueryFeatureFactory(corpus, queries_group)
         norm_features_df = testing_feat.generate_features()
-        norm_features_df.reset_index().to_json(f'{queries_group}_query_features_{corpus}_uqv.JSON')
+        _path = f'~/QppUqvProj/Results/{corpus}/test/ref'
+        _path = dp.ensure_dir(_path)
+        norm_features_df.reset_index().to_json(
+            f'{_path}/{queries_group}_query_{quantile}_variations_features_{corpus}_uqv.JSON')
     elif predict:
         for n in [5, 10, 25, 50, 100, 250, 500, 1000]:
             rbo_pred = QueryFeatureFactory(corpus, queries_group, rbo_top=n)

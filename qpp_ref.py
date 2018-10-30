@@ -86,7 +86,8 @@ class QueryPredictionRef:
         cls.ap_file = f'{_test_dir}/ref/QLmap1000-{qgroup}'
 
         # cls.features = '{}/raw/query_features_{}_uqv_legal.JSON'.format(_test_dir, corpus)
-        cls.features = f'{_test_dir}/ref/{qgroup}_query_features_{corpus}_uqv.JSON'
+        # cls.features = f'{_test_dir}/ref/{qgroup}_query_features_{corpus}_uqv.JSON'
+        cls.features = f'{_test_dir}/ref/{qgroup}_query_{vars_quantile}_variations_features_{corpus}_uqv.JSON'
         dp.ensure_file(cls.features)
 
         _query_vars = f'~/QppUqvProj/data/{corpus}/queries_{corpus}_UQV_wo_{qgroup}.txt'
