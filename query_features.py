@@ -25,7 +25,7 @@ parser.add_argument('--predict', help="generate new predictions", action="store_
 
 
 class QueryFeatureFactory:
-    def __init__(self, corpus, queries_group, vars_quantile='all', rbo_top=100):
+    def __init__(self, corpus, queries_group, vars_quantile, rbo_top=100):
         self.rbo_top = rbo_top
         self.corpus = corpus
         self.queries_group = queries_group
@@ -44,10 +44,6 @@ class QueryFeatureFactory:
         # _var_scores_df.loc[_var_scores_df['qid'].isin(_vars_list)]
         self.raw_res_data = _raw_res_data
 
-        # A simple sanity check to make sure number of results and query variations is identical
-        _x = [len(i) for i in self.raw_res_data.query_vars.values()]
-        _z = [len(i) for i in self.queries_data.query_vars.values()]
-        assert _x == _z, 'Results and Queries files don\'t match'
         self.fused_data = dp.ResultsReader(self.fused_results_file, 'trec')
         self.query_vars = self.queries_data.query_vars
 
@@ -252,7 +248,7 @@ def main(args):
     # norm_features_df.reset_index().to_json('query_features_{}_uqv.JSON'.format(corpus))
 
     if generate:
-        testing_feat = QueryFeatureFactory(corpus, queries_group)
+        testing_feat = QueryFeatureFactory(corpus, queries_group, quantile)
         norm_features_df = testing_feat.generate_features()
         _path = f'~/QppUqvProj/Results/{corpus}/test/ref'
         _path = dp.ensure_dir(_path)
@@ -260,7 +256,7 @@ def main(args):
             f'{_path}/{queries_group}_query_{quantile}_variations_features_{corpus}_uqv.JSON')
     elif predict:
         for n in [5, 10, 25, 50, 100, 250, 500, 1000]:
-            rbo_pred = QueryFeatureFactory(corpus, queries_group, rbo_top=n)
+            rbo_pred = QueryFeatureFactory(corpus, queries_group, quantile, rbo_top=n)
             rbo_pred.generate_rbo_predictions()
     elif file_to_load:
         features_df = features_loader(file_to_load, corpus)
