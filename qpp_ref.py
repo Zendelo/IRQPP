@@ -270,9 +270,13 @@ class LearningSimFunctions:
         dp.empty_dir(classification_dir)
         train_sets = glob.glob(f'{self.output_dir}datasets/train*')
         args_list = list(itertools.product(C_PARAMETERS, train_sets))
-        with mp.Pool(processes=self.cpu_cores) as pool:
-            pool.starmap(partial(svm_sub_procedure, models_dir=models_dir, classification_dir=classification_dir),
-                         args_list)
+        if not mp.current_process().daemon:
+            with mp.Pool(processes=self.cpu_cores) as pool:
+                pool.starmap(partial(svm_sub_procedure, models_dir=models_dir, classification_dir=classification_dir),
+                             args_list)
+        else:
+            for c, train_sets in args_list:
+                svm_sub_procedure(c, train_sets, models_dir=models_dir, classification_dir=classification_dir)
 
     def run_svm(self):
         c = '1'
@@ -354,7 +358,6 @@ class LearningSimFunctions:
 
 
 def svm_sub_procedure(c, trainset, models_dir, classification_dir):
-    print('starterer')
     svm_learn = '~/svmRank/svm_rank_learn'
     svm_classify = '~/svmRank/svm_rank_classify'
     testset = trainset.replace('train', 'test')
@@ -375,6 +378,20 @@ def write_basic_predictions(df: pd.DataFrame, corpus, qgroup, predictor):
         _file_name = col.replace('score_', 'predictions-')
         file_name = f'{_file_path}{_file_name}'
         df[col].to_csv(file_name, sep=" ", header=False, index=True)
+
+
+def run_calc_process(pred, corpus, queries_group, quantile):
+    qpp_ref = QueryPredictionRef(pred, corpus, queries_group, quantile)
+    qpp_ref.calc_queries()
+    return qpp_ref
+
+
+def run_ltr_process(pred, corpus, queries_group, quantile, corr_measure):
+    qpp_ref = QueryPredictionRef(pred, corpus, queries_group, quantile)
+    qpp_ref_ltr = LearningSimFunctions(qpp_ref, corr_measure)
+    qpp_ref_ltr.generate_data_sets_fine_tune()
+    qpp_ref_ltr.run_svm_fine_tune()
+    return qpp_ref_ltr
 
 
 def main(args):
@@ -399,15 +416,19 @@ def main(args):
     assert corpus is not None, 'No corpus was chosen'
 
     if predictor == 'all':
-        for pred in ['clarity', 'wig', 'nqc', 'qf', 'uef/clarity', 'uef/wig', 'uef/nqc', 'uef/qf']:
-            qpp_ref = QueryPredictionRef(pred, corpus, queries_group, quantile)
-
-            if generate == 'calc':
-                qpp_ref.calc_queries()
-            elif generate == 'ltr':
-                qpp_ref_ltr = LearningSimFunctions(qpp_ref, corr_measure)
-                qpp_ref_ltr.generate_data_sets_fine_tune()
-                qpp_ref_ltr.run_svm_fine_tune()
+        cores = mp.cpu_count() - 1
+        if generate == 'calc':
+            with mp.Pool(processes=cores) as pool:
+                qpp_ref = pool.map(
+                    partial(run_calc_process, corpus=corpus, queries_group=queries_group, quantile=quantile),
+                    PREDICTORS)
+        elif generate == 'ltr':
+            with mp.Pool(processes=cores) as pool:
+                qpp_ref_ltr = pool.map(
+                    partial(run_ltr_process, corpus=corpus, queries_group=queries_group, quantile=quantile,
+                            corr_measure=corr_measure), PREDICTORS_WO_QF)
+            for pred in PREDICTORS_QF:
+                run_ltr_process(pred, corpus, queries_group, quantile, corr_measure)
     else:
         if uef:
             predictor = f'uef/{predictor}'
@@ -415,15 +436,17 @@ def main(args):
         qpp_ref = QueryPredictionRef(predictor, corpus, queries_group, quantile)
         qpp_ref_ltr = LearningSimFunctions(qpp_ref, corr_measure)
         if generate == 'calc':
-            qpp_ref.calc_queries()
+            run_calc_process(predictor, corpus, queries_group, quantile)
         elif generate == 'ltr':
-            qpp_ref_ltr.generate_data_sets_fine_tune()
-            qpp_ref_ltr.run_svm_fine_tune()
+            run_ltr_process(predictor, corpus, queries_group, quantile, corr_measure)
         qpp_ref_ltr.cross_val_fine_tune()
 
 
 if __name__ == '__main__':
     args = parser.parse_args()
     overall_timer = Timer('Total runtime')
+    PREDICTORS_WO_QF = ['clarity', 'wig', 'nqc', 'uef/clarity', 'uef/wig', 'uef/nqc']
+    PREDICTORS_QF = ['qf', 'uef/qf']
+    PREDICTORS = PREDICTORS_WO_QF + PREDICTORS_QF
     main(args)
     overall_timer.stop()
