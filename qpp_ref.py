@@ -1,7 +1,10 @@
 import argparse
 import glob
 import os
+import itertools
 from subprocess import run
+import multiprocessing as mp
+from functools import partial
 
 import numpy as np
 import pandas as pd
@@ -197,6 +200,7 @@ class LearningSimFunctions:
         dp.ensure_dir(self.output_dir)
         self.calc_features_df = qpp_ref.calc_integrated
         self.feature_names = self.features_df.columns.tolist()
+        self.cpu_cores = mp.cpu_count() - 1
 
     def _create_data_set(self, param):
         feat_df = self.calc_features_df(param)
@@ -224,7 +228,8 @@ class LearningSimFunctions:
 
     def generate_data_sets_fine_tune(self):
         """This method will create the data sets with all the available hyper parameters of the qpp predictions"""
-        run(f'rm -rfv {self.output_dir}*', shell=True)
+        # TODO: add prompt with list of files before delete
+        # run(f'rm -rfv {self.output_dir}*', shell=True)
         for set_id in self.folds_df.index:
             for subset in ['a', 'b']:
                 for col in self.results_df.columns:
@@ -257,25 +262,17 @@ class LearningSimFunctions:
             print(string, file=text_file)
 
     def run_svm_fine_tune(self):
-        svm_learn = '~/svmRank/svm_rank_learn'
-        svm_classify = '~/svmRank/svm_rank_classify'
         models_dir = f'{self.output_dir}models'
         dp.ensure_dir(models_dir)
         classification_dir = f'{self.output_dir}classifications'
         dp.ensure_dir(classification_dir)
-        run(f'rm -v {models_dir}/*', shell=True)
-        run(f'rm -v {classification_dir}/*', shell=True)
+        dp.empty_dir(models_dir)
+        dp.empty_dir(classification_dir)
         train_sets = glob.glob(f'{self.output_dir}datasets/train*')
-        for c in C_PARAMETERS:
-            for trainset in train_sets:
-                testset = trainset.replace('train', 'test')
-                _model_params = trainset.strip('.dat').split('train_', 1)[-1]
-                _model_path = f'{models_dir}/model_{_model_params}_c_{c}'
-                _cls_train_path = f'{classification_dir}/train_{_model_params}_c_{c}.cls'
-                _cls_test_path = f'{classification_dir}/test_{_model_params}_c_{c}.cls'
-                run('{0} -c {1} {2} {3}'.format(svm_learn, c, trainset, _model_path), shell=True)
-                run('{0} {1} {2} {3}'.format(svm_classify, trainset, _model_path, _cls_train_path), shell=True)
-                run('{0} {1} {2} {3}'.format(svm_classify, testset, _model_path, _cls_test_path), shell=True)
+        args_list = list(itertools.product(C_PARAMETERS, train_sets))
+        with mp.Pool(processes=self.cpu_cores) as pool:
+            pool.starmap(partial(svm_sub_procedure, models_dir=models_dir, classification_dir=classification_dir),
+                         args_list)
 
     def run_svm(self):
         c = '1'
@@ -356,6 +353,20 @@ class LearningSimFunctions:
         print('mean: {:.3f}'.format(np.mean(_list)))
 
 
+def svm_sub_procedure(c, trainset, models_dir, classification_dir):
+    print('starterer')
+    svm_learn = '~/svmRank/svm_rank_learn'
+    svm_classify = '~/svmRank/svm_rank_classify'
+    testset = trainset.replace('train', 'test')
+    _model_params = trainset.strip('.dat').split('train_', 1)[-1]
+    _model_path = f'{models_dir}/model_{_model_params}_c_{c}'
+    _cls_train_path = f'{classification_dir}/train_{_model_params}_c_{c}.cls'
+    _cls_test_path = f'{classification_dir}/test_{_model_params}_c_{c}.cls'
+    run('{0} -v 0 -c {1} {2} {3}'.format(svm_learn, c, trainset, _model_path), shell=True)
+    run('{0} -v 0 {1} {2} {3}'.format(svm_classify, trainset, _model_path, _cls_train_path), shell=True)
+    run('{0} -v 0 {1} {2} {3}'.format(svm_classify, testset, _model_path, _cls_test_path), shell=True)
+
+
 def write_basic_predictions(df: pd.DataFrame, corpus, qgroup, predictor):
     """The function is used to save basic predictions of a given queries set"""
     for col in df.columns:
@@ -378,7 +389,7 @@ def main(args):
     # fine_tune = args.fine
 
     # # Debug
-    # predictor = 'qf'
+    # predictor = 'wig'
     # corpus = 'ROBUST'
     # quantile = 'all'
     # queries_group = 'title'
