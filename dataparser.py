@@ -4,6 +4,7 @@ import csv
 import sys
 from collections import defaultdict
 from subprocess import run
+import multiprocessing as mp
 
 import numpy as np
 import pandas as pd
@@ -262,8 +263,12 @@ def empty_dir(dir_path, force=False):
     if force:
         run(f'rm -v {dir_path}/*', shell=True)
     else:
-        # TODO add prompt before deletion
-        pass
+        files = os.listdir(dir_path)
+        if len(files) and not mp.current_process().daemon:
+            answer = input(
+                f'The directory {dir_path} contains {len(files)} files, do you want to remove them?\n [yes\\No] ')
+            if answer.lower() == 'yes':
+                run(f'rm -v {dir_path}/*', shell=True)
 
 
 def convert_vid_to_qid(df: pd.DataFrame):
