@@ -3,6 +3,7 @@
 import csv
 import sys
 from collections import defaultdict
+from subprocess import run
 
 import numpy as np
 import pandas as pd
@@ -255,6 +256,14 @@ def ensure_dir(file_path):
     if not os.path.exists(directory):
         os.makedirs(directory)
     return directory
+
+
+def empty_dir(dir_path, force=False):
+    if force:
+        run(f'rm -v {dir_path}/*', shell=True)
+    else:
+        # TODO add prompt before deletion
+        pass
 
 
 def convert_vid_to_qid(df: pd.DataFrame):
