@@ -38,6 +38,9 @@ def filter_quant_variants(qdf: pd.DataFrame, apdb: dt.ResultsReader, q):
     _list = []
     for topic, q_vars in apdb.query_vars.items():
         _df = _apdf.loc[q_vars]
+        if 0 in q:
+            # For the low quantile, 0 AP variants are removed
+            _df = _df[_df['ap'] > 0]
         q_vals = _df.quantile(q=q)
         _qvars = _df.loc[(_df['ap'] >= q_vals['ap'].min()) & (_df['ap'] <= q_vals['ap'].max())]
         _list.extend(_qvars.index.tolist())
