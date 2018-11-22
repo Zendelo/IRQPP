@@ -255,8 +255,11 @@ def ensure_dir(file_path):
     else:
         directory = file_path
     if not os.path.exists(directory):
-        os.makedirs(directory)
-    return directory
+        try:
+            os.makedirs(directory)
+        except FileExistsError:
+            pass
+        return directory
 
 
 def empty_dir(dir_path, force=False):

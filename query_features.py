@@ -38,8 +38,9 @@ class QueryFeatureFactory:
             self.prediction_queries_res_data = _raw_res_data
         self.queries_data = dp.QueriesTextParser(self.queries_full_file, 'uqv')
         self.topics_data = dp.QueriesTextParser(self.queries_topic_file)
-        write_basic_results(self.prediction_queries_res_data.data_df.loc[self.topics_data.queries_df['qid']], corpus,
-                            queries_group)
+        # write_basic_results(self.prediction_queries_res_data.data_df.loc[self.topics_data.queries_df['qid']], corpus,
+        #                     queries_group)
+        # exit()
         self.variations_data = dp.QueriesTextParser(self.queries_variations_file, 'uqv')
         # _var_scores_df.loc[_var_scores_df['qid'].isin(_vars_list)]
         self.raw_res_data = _raw_res_data
@@ -180,7 +181,7 @@ class QueryFeatureFactory:
         _df = df.groupby('topic').mean()
         _df = dp.convert_vid_to_qid(_df)
         _file_path = f'~/QppUqvProj/Results/{self.corpus}/test/ref/{self.queries_group}.res'
-        dp.ensure_dir(os.path.normpath(os.path.expanduser(_file_path)))
+        dp.ensure_file(os.path.normpath(os.path.expanduser(_file_path)))
         _df['RBO_EXT_100'].to_csv(f'RBO_predictions-{self.rbo_top}', sep=' ')
         _df['RBO_FUSED_EXT_100'].to_csv(f'Fused_predictions-{self.rbo_top}', sep=' ')
 
@@ -230,7 +231,7 @@ def write_basic_results(df: pd.DataFrame, corpus, qgroup):
     _df.insert(loc=0, column='trec_Q0', value='Q0')
     _df.insert(loc=4, column='trec_indri', value='indri')
     _file_path = f'~/QppUqvProj/Results/{corpus}/test/ref/QL_{qgroup}.res'
-    dp.ensure_dir(os.path.normpath(os.path.expanduser(_file_path)))
+    # dp.ensure_dir(os.path.normpath(os.path.expanduser(_file_path)))
     _df.to_csv(_file_path, sep=" ", header=False, index=True)
 
 
