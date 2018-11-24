@@ -241,7 +241,7 @@ class QueriesXMLParser:
 def ensure_file(file):
     """Ensure a single file exists, returns the full path of the file if True"""
     # tilde expansion
-    file_path = os.path.expanduser(file)
+    file_path = os.path.normpath(os.path.expanduser(file))
     assert os.path.isfile(file_path), "The file {} doesn't exist. Please create the file first".format(file)
     return file_path
 
@@ -259,7 +259,7 @@ def ensure_dir(file_path):
             os.makedirs(directory)
         except FileExistsError:
             pass
-        return directory
+    return directory
 
 
 def empty_dir(dir_path, force=False):

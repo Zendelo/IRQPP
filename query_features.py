@@ -1,5 +1,7 @@
 import argparse
+import multiprocessing as mp
 import os
+from functools import partial
 
 import numpy as np
 import pandas as pd
@@ -23,9 +25,12 @@ parser.add_argument('-l', '--load', default=None, type=str, help='features file 
 parser.add_argument('--generate', help="generate new features file", action="store_true")
 parser.add_argument('--predict', help="generate new predictions", action="store_true")
 
+NUMBER_OF_DOCS = (5, 10, 25, 50, 100, 250, 500, 1000)
+
 
 class QueryFeatureFactory:
-    def __init__(self, corpus, queries_group, vars_quantile, rbo_top=100):
+    def __init__(self, corpus, queries_group, vars_quantile, rbo_top=100, top_docs_overlap=10):
+        self.top_docs_overlap = top_docs_overlap
         self.rbo_top = rbo_top
         self.corpus = corpus
         self.queries_group = queries_group
@@ -53,37 +58,38 @@ class QueryFeatureFactory:
         """This method sets the default paths of the files and the working directories, it assumes the standard naming
          convention of the project"""
         # cls.predictor = predictor
-        _results_file = f'~/QppUqvProj/Results/{corpus}/test/raw/QL.res'
-        cls.results_file = os.path.normpath(os.path.expanduser(_results_file))
+        _corpus_res_dir = dp.ensure_dir(f'~/QppUqvProj/Results/{corpus}')
+        _corpus_dat_dir = dp.ensure_dir(f'~/QppUqvProj/data/{corpus}')
+
+        _results_file = f'{_corpus_res_dir}/test/raw/QL.res'
+        cls.results_file = os.path.normpath(_results_file)
         dp.ensure_file(cls.results_file)
 
-        _title_results_file = f'~/QppUqvProj/Results/{corpus}/test/basic/QL.res'
-        cls.title_res_file = os.path.normpath(os.path.expanduser(_title_results_file))
+        _title_results_file = f'{_corpus_res_dir}/test/basic/QL.res'
+        cls.title_res_file = os.path.normpath(_title_results_file)
         dp.ensure_file(cls.title_res_file)
 
         if vars_quantile == 'all':
-            _queries_full_file = f'~/QppUqvProj/data/{corpus}/queries_{corpus}_UQV_full.txt'
+            _queries_full_file = f'{_corpus_dat_dir}/queries_{corpus}_UQV_full.txt'
         else:
-            _queries_full_file = f'~/QppUqvProj/data/{corpus}/queries_{corpus}_UQV_{vars_quantile}_variants.txt'
+            _queries_full_file = f'{_corpus_dat_dir}/queries_{corpus}_UQV_{vars_quantile}_variants.txt'
 
-        cls.queries_full_file = os.path.normpath(os.path.expanduser(_queries_full_file))
-        dp.ensure_file(cls.queries_full_file)
+        cls.queries_full_file = dp.ensure_file(_queries_full_file)
 
         # The variations file is used in the filter function - it consists of all the vars w/o the query at hand
-        _queries_variations_file = f'~/QppUqvProj/data/{corpus}/queries_{corpus}_UQV_wo_{qgroup}.txt'
-        cls.queries_variations_file = os.path.normpath(os.path.expanduser(_queries_variations_file))
-        dp.ensure_file(cls.queries_variations_file)
+        _queries_variations_file = f'{_corpus_dat_dir}/queries_{corpus}_UQV_wo_{qgroup}.txt'
+        cls.queries_variations_file = dp.ensure_file(_queries_variations_file)
 
-        _queries_topic_file = f'~/QppUqvProj/data/{corpus}/queries_{corpus}_{qgroup}.txt'
-        cls.queries_topic_file = os.path.normpath(os.path.expanduser(_queries_topic_file))
-        dp.ensure_file(cls.queries_topic_file)
+        _queries_topic_file = f'{_corpus_dat_dir}/queries_{corpus}_{qgroup}.txt'
+        cls.queries_topic_file = dp.ensure_file(_queries_topic_file)
 
-        _fused_results_file = f'~/QppUqvProj/Results/{corpus}/test/fusion/QL.res'
-        cls.fused_results_file = os.path.normpath(os.path.expanduser(_fused_results_file))
-        dp.ensure_file(cls.fused_results_file)
+        _fused_results_file = f'{_corpus_res_dir}/test/fusion/QL.res'
+        cls.fused_results_file = dp.ensure_file(_fused_results_file)
 
-        cls.output_dir = f'~/QppUqvProj/Results/{corpus}/test/raw/'
-        dp.ensure_dir(cls.output_dir)
+        cls.output_dir = dp.ensure_dir(f'{_corpus_res_dir}/test/raw/')
+
+        _predictions_out = f'{_corpus_res_dir}/uqvPredictions/referenceLists/{qgroup}/{vars_quantile}_vars/sim_as_pred/'
+        cls.predictions_output_dir = dp.ensure_dir(_predictions_out)
 
     def _calc_features(self):
         _dict = {'topic': [], 'qid': [], 'Jac_coefficient': [], 'Top_10_Docs_overlap': [], 'RBO_EXT_100': [],
@@ -93,9 +99,9 @@ class QueryFeatureFactory:
             _topic = topic.split('-')[0]
             q_vars = self.query_vars.get(_topic)
             _dict['topic'] += [topic] * len(q_vars)
-            dt_100 = self.fused_data.get_res_dict_by_qid(_topic, top=self.rbo_top)
+            res_dict = self.fused_data.get_res_dict_by_qid(_topic, top=self.rbo_top)
             topic_txt = self.topics_data.get_qid_txt(topic)
-            topics_top_list = self.prediction_queries_res_data.get_docs_by_qid(topic, 10)
+            topics_top_list = self.prediction_queries_res_data.get_docs_by_qid(topic, self.top_docs_overlap)
             # topics_top_list = self.title_res_data.get_docs_by_qid(topic, 25)
             topic_results_list = self.prediction_queries_res_data.get_res_dict_by_qid(topic, top=self.rbo_top)
 
@@ -103,23 +109,23 @@ class QueryFeatureFactory:
                 var_txt = self.queries_data.get_qid_txt(var)
                 jc = self.jaccard_coefficient(topic_txt, var_txt)
 
-                var_top_list = self.raw_res_data.get_docs_by_qid(var, 10)
+                var_top_list = self.raw_res_data.get_docs_by_qid(var, self.top_docs_overlap)
                 # var_top_list = self.raw_res_data.get_docs_by_qid(var, 25)
                 docs_overlap = self.list_overlap(topics_top_list, var_top_list)
 
                 # All RBO values are rounded to 10 decimal digits, to avoid float overflow
                 var_results_list = self.raw_res_data.get_res_dict_by_qid(var, top=self.rbo_top)
-                _rbo_scores_100 = rbo_dict(topic_results_list, var_results_list, p=0.95)
-                _ext_100 = np.around(_rbo_scores_100['ext'], 10)
+                _rbo_scores_dict = rbo_dict(topic_results_list, var_results_list, p=0.95)
+                rbo_ext_score = np.around(_rbo_scores_dict['ext'], 10)
 
-                _fused_rbo_scores_100 = rbo_dict(dt_100, var_results_list, p=0.95)
-                _var_fext_100 = np.around(_fused_rbo_scores_100['ext'], 10)
+                _fused_rbo_scores_dict = rbo_dict(res_dict, var_results_list, p=0.95)
+                _rbo_fused_ext_score = np.around(_fused_rbo_scores_dict['ext'], 10)
 
                 _dict['qid'] += [var]
                 _dict['Jac_coefficient'] += [jc]
                 _dict['Top_10_Docs_overlap'] += [docs_overlap]
-                _dict['RBO_EXT_100'] += [_ext_100]
-                _dict['RBO_FUSED_EXT_100'] += [_var_fext_100]
+                _dict['RBO_EXT_100'] += [rbo_ext_score]
+                _dict['RBO_FUSED_EXT_100'] += [_rbo_fused_ext_score]
 
         _df = pd.DataFrame.from_dict(_dict)
         # _df.set_index(['topic', 'qid'], inplace=True)
@@ -176,14 +182,19 @@ class QueryFeatureFactory:
         norm_df = (_df.groupby(['topic', 'qid']).sum() / z_n).fillna(0)
         return norm_df
 
-    def save_rbo_predictions(self, df: pd.DataFrame):
+    def save_predictions(self, df: pd.DataFrame):
         _df = self._filter_queries(df)
         _df = df.groupby('topic').mean()
         _df = dp.convert_vid_to_qid(_df)
-        _file_path = f'~/QppUqvProj/Results/{self.corpus}/test/ref/{self.queries_group}.res'
-        dp.ensure_file(os.path.normpath(os.path.expanduser(_file_path)))
-        _df['RBO_EXT_100'].to_csv(f'RBO_predictions-{self.rbo_top}', sep=' ')
-        _df['RBO_FUSED_EXT_100'].to_csv(f'Fused_predictions-{self.rbo_top}', sep=' ')
+        _rboP_dir = dp.ensure_dir(f'{self.predictions_output_dir}/rboP/predictions')
+        _FrboP_dir = dp.ensure_dir(f'{self.predictions_output_dir}/FrboP/predictions')
+        _topDocsP_dir = dp.ensure_dir(f'{self.predictions_output_dir}/topDocsP/predictions')
+        _jcP_dir = dp.ensure_dir(f'{self.predictions_output_dir}/jcP/predictions')
+
+        _df['RBO_EXT_100'].to_csv(f'{_rboP_dir}/predictions-{self.rbo_top}', sep=' ')
+        _df['RBO_FUSED_EXT_100'].to_csv(f'{_FrboP_dir}/predictions-{self.rbo_top}', sep=' ')
+        _df['Top_10_Docs_overlap'].to_csv(f'{_topDocsP_dir}/predictions-{self.top_docs_overlap}', sep=' ')
+        _df['Jac_coefficient'].to_csv(f'{_jcP_dir}/predictions-{self.rbo_top}', sep=' ')
 
     def generate_features(self):
         _df = self._calc_features()
@@ -192,9 +203,9 @@ class QueryFeatureFactory:
         # return self._average_scores(_df)
         # return self._max_norm_scores(_df)
 
-    def generate_rbo_predictions(self):
+    def generate_predictions(self):
         _df = self._calc_features()
-        self.save_rbo_predictions(_df)
+        self.save_predictions(_df)
 
     @staticmethod
     def jaccard_coefficient(st1: str, st2: str):
@@ -235,6 +246,12 @@ def write_basic_results(df: pd.DataFrame, corpus, qgroup):
     _df.to_csv(_file_path, sep=" ", header=False, index=True)
 
 
+def run_predictions_process(n, corpus, queries_group, quantile):
+    sim_ref_pred = QueryFeatureFactory(corpus, queries_group, quantile, rbo_top=n, top_docs_overlap=n)
+    sim_ref_pred.generate_predictions()
+    return sim_ref_pred
+
+
 def main(args):
     corpus = args.corpus
     generate = args.generate
@@ -248,6 +265,8 @@ def main(args):
     # norm_features_df = testing_feat.generate_features()
     # norm_features_df.reset_index().to_json('query_features_{}_uqv.JSON'.format(corpus))
 
+    cores = mp.cpu_count() - 1
+
     if generate:
         testing_feat = QueryFeatureFactory(corpus, queries_group, quantile)
         norm_features_df = testing_feat.generate_features()
@@ -256,9 +275,11 @@ def main(args):
         norm_features_df.reset_index().to_json(
             f'{_path}/{queries_group}_query_{quantile}_variations_features_{corpus}_uqv.JSON')
     elif predict:
-        for n in [5, 10, 25, 50, 100, 250, 500, 1000]:
-            rbo_pred = QueryFeatureFactory(corpus, queries_group, quantile, rbo_top=n)
-            rbo_pred.generate_rbo_predictions()
+        with mp.Pool(processes=cores) as pool:
+            sim_ref_pred = pool.map(
+                partial(run_predictions_process, corpus=corpus, queries_group=queries_group, quantile=quantile),
+                NUMBER_OF_DOCS)
+
     elif file_to_load:
         features_df = features_loader(file_to_load, corpus)
         print(features_df)
