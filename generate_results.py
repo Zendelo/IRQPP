@@ -421,8 +421,7 @@ class CrossVal:
         return res_df
 
     def calc_reference_per_predictor(self, predictor, query_group):
-        # TODO: generate a table for each predictor with all quant variants
-
+        max_list = []
         _results = defaultdict()
 
         for quant in ['all', 'med', 'top', 'low']:
@@ -439,6 +438,7 @@ class CrossVal:
             cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_base_predictions_dir,
                                      file_to_load=self.cv_map_f, load=True, ap_file=ap_file, test=self.corr_measure)
             mean = cv_obj.calc_test_results()
+            max_list.append(mean)
             _quant_res.append('${}$'.format(mean))
             _index.append(QUERY_GROUPS[query_group])
 
@@ -448,6 +448,7 @@ class CrossVal:
                 cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_predictions_dir,
                                          file_to_load=self.cv_map_f, load=True, ap_file=ap_file, test=self.corr_measure)
                 mean = cv_obj.calc_test_results()
+                max_list.append(mean)
                 _quant_res.append('${}$'.format(mean))
                 _index.append(func_name)
 
@@ -461,9 +462,9 @@ class CrossVal:
         res_df.index = res_df.index.str.title()
         res_df.index.name = 'Quantile'
         res_df.reset_index(inplace=True)
-        res_df = res_df.reindex(['Quantile', 'Title'] + REFERENCE_TITLES, axis='columns')
+        res_df = res_df.reindex(['Quantile', QUERY_GROUPS[query_group]] + REFERENCE_TITLES, axis='columns')
         res_df.insert(loc=0, column='Predictor', value=predictor.upper())
-        return res_df
+        return res_df, max(max_list)
 
     def calc_sim_ref_per_predictor(self, predictor):
         _results = defaultdict()
@@ -657,12 +658,14 @@ class GenerateTable:
         corr_measure = self.cv.corr_measure.capitalize()
         _predictor = PREDICTORS[0]
         for qgroup, queries_group in QUERY_GROUPS.items():
+            tables_max_vals = []
             print('\n\\begin{table}[ht!]')
             print('\\begin{center}')
             print(
                 '\\caption{{ {} QPP-Reference lists {} Correlations for {} queries}}'.format(self.corpus, corr_measure,
                                                                                              queries_group))
-            _df = self.cv.calc_reference_per_predictor(_predictor, qgroup)
+            _df, _max = self.cv.calc_reference_per_predictor(_predictor, qgroup)
+            tables_max_vals.append(_max)
             table = _df.to_latex(header=True, multirow=False, multicolumn=False, index=False, escape=False,
                                  index_names=False, column_format='lccccccc')
             table = table.replace('\\end{tabular}', '')
@@ -673,7 +676,8 @@ class GenerateTable:
             table = table.replace('\\toprule', f'\\toprule \n & & \\multicolumn{{5}}{{c}}{{Similarity Functions}} \\\\')
             print(table, end='')
             for predictor in PREDICTORS[1:] + ['uef/clarity', 'uef/nqc', 'uef/wig', 'uef/qf']:
-                _df = self.cv.calc_reference_per_predictor(predictor, qgroup)
+                _df, _max = self.cv.calc_reference_per_predictor(predictor, qgroup)
+                tables_max_vals.append(_max)
                 table = _df.to_latex(header=False, multirow=False, multicolumn=False, index=False, escape=False,
                                      index_names=False, column_format='lcccccc')
                 table = table.replace('\\begin{tabular}{lcccccc}', '')
@@ -684,6 +688,7 @@ class GenerateTable:
 
             print('\\end{tabular}')
             print('\\end{center}')
+            print(f'The maximum value in the table is: {max(tables_max_vals)}')
             print('\\end{table} \n')
 
 
