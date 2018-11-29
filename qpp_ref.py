@@ -1,10 +1,10 @@
 import argparse
 import glob
-import os
 import itertools
-from subprocess import run
 import multiprocessing as mp
+import os
 from functools import partial
+from subprocess import run
 
 import numpy as np
 import pandas as pd
@@ -37,7 +37,8 @@ C_PARAMETERS = [0.01, 0.1, 1, 10]
 
 
 class QueryPredictionRef:
-    """The class reads a queries intended for prediction, it's named inside the class as queries_group or qgroup
+    """The class reads a queries intended for prediction, it's named inside the class as queries_group or qgroup - e.g
+    "title" / "top" ..
     Also reads a file with the variations without the queries to be predicted, and a file with the features constructed
     for the relevant queries with the relevant variations"""
 
@@ -54,14 +55,15 @@ class QueryPredictionRef:
             self.base_results_df = dp.convert_vid_to_qid(_vars_results_df.loc[_q2p_obj.queries_dict.keys()])
 
         self.base_results_df.rename_axis('topic', inplace=True)
+        # # The next function is used to save results in basic predictions format of the given queries set
+        # write_basic_predictions(self.base_results_df, corpus, qgroup, predictor)
+        # exit()
         self.query_vars = dp.QueriesTextParser(self.query_vars_file, 'uqv')
         _quantile_vars = dp.QueriesTextParser(self.quantile_vars_file, 'uqv')
         _features_df = features_loader(self.features, corpus)
         self.features_df = self.__initialize_features_df(_quantile_vars, _features_df)
         self.var_scores_df = self.__initialize_var_scores_df(_features_df.reset_index()[['topic', 'qid']],
                                                              _vars_results_df)
-        # # The next function is used to save basic predictions of the given queries set
-        # write_basic_predictions(self.base_results_df, corpus, qgroup, predictor)
 
     @classmethod
     def __set_paths(cls, corpus, predictor, qgroup, vars_quantile):
@@ -78,7 +80,7 @@ class QueryPredictionRef:
             _orig_dir = os.path.normpath(os.path.expanduser(_orig_dir))
             cls.base_results_dir = f'{_orig_dir}/{predictor}/predictions/'
 
-        cls.output_dir = f'{_base_dir}/referenceLists/{qgroup}/{vars_quantile}_vars/'
+        cls.output_dir = f'{_base_dir}/referenceLists/{qgroup}/{vars_quantile}_vars/general/'
         dp.ensure_dir(cls.output_dir)
 
         _test_dir = f'~/QppUqvProj/Results/{corpus}/test/'
@@ -91,7 +93,7 @@ class QueryPredictionRef:
         # cls.features = '{}/raw/query_features_{}_uqv_legal.JSON'.format(_test_dir, corpus)
         # cls.features = f'{_test_dir}/ref/{qgroup}_query_features_{corpus}_uqv.JSON'
         cls.features = f'{_test_dir}/ref/{qgroup}_query_{vars_quantile}_variations_features_{corpus}_uqv.JSON'
-        dp.ensure_file(cls.features)
+        # dp.ensure_file(cls.features)
 
         _query_vars = f'~/QppUqvProj/data/{corpus}/queries_{corpus}_UQV_wo_{qgroup}.txt'
         cls.query_vars_file = os.path.normpath(os.path.expanduser(_query_vars))
@@ -371,7 +373,7 @@ def svm_sub_procedure(c, trainset, models_dir, classification_dir):
 
 
 def write_basic_predictions(df: pd.DataFrame, corpus, qgroup, predictor):
-    """The function is used to save basic predictions of a given queries set"""
+    """The function is used to save results in basic predictions format of a given queries set"""
     for col in df.columns:
         _file_path = f'~/QppUqvProj/Results/{corpus}/basicPredictions/{qgroup}/{predictor}/predictions/'
         dp.ensure_dir(os.path.normpath(os.path.expanduser(_file_path)))
