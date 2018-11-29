@@ -28,6 +28,20 @@ parser.add_argument('--predict', help="generate new predictions", action="store_
 NUMBER_OF_DOCS = (5, 10, 25, 50, 100, 250, 500, 1000)
 
 
+def jaccard_coefficient(st1: str, st2: str):
+    st1_set = set(st1.split())
+    st2_set = set(st2.split())
+    union = st1_set.union(st2_set)
+    intersect = st1_set.intersection(st2_set)
+    return float(len(intersect) / len(union))
+
+
+def list_overlap(x, y):
+    x_set = set(x)
+    intersection = x_set.intersection(y)
+    return len(intersection)
+
+
 class QueryFeatureFactory:
     def __init__(self, corpus, queries_group, vars_quantile, rbo_top=100, top_docs_overlap=10):
         self.top_docs_overlap = top_docs_overlap
@@ -43,6 +57,7 @@ class QueryFeatureFactory:
             self.prediction_queries_res_data = _raw_res_data
         self.queries_data = dp.QueriesTextParser(self.queries_full_file, 'uqv')
         self.topics_data = dp.QueriesTextParser(self.queries_topic_file)
+        # Uncomment the next lines if you want to write the basic results of the topic queries.
         # write_basic_results(self.prediction_queries_res_data.data_df.loc[self.topics_data.queries_df['qid']], corpus,
         #                     queries_group)
         # exit()
@@ -107,11 +122,11 @@ class QueryFeatureFactory:
 
             for var in q_vars:
                 var_txt = self.queries_data.get_qid_txt(var)
-                jc = self.jaccard_coefficient(topic_txt, var_txt)
+                jc = jaccard_coefficient(topic_txt, var_txt)
 
                 var_top_list = self.raw_res_data.get_docs_by_qid(var, self.top_docs_overlap)
                 # var_top_list = self.raw_res_data.get_docs_by_qid(var, 25)
-                docs_overlap = self.list_overlap(topics_top_list, var_top_list)
+                docs_overlap = list_overlap(topics_top_list, var_top_list)
 
                 # All RBO values are rounded to 10 decimal digits, to avoid float overflow
                 var_results_list = self.raw_res_data.get_res_dict_by_qid(var, top=self.rbo_top)
@@ -136,7 +151,7 @@ class QueryFeatureFactory:
         return df.loc[df['qid'].isin(self.variations_data.queries_df['qid'])]
 
     def _soft_max_scores(self, df):
-        # _df = self._filter_queries(df)
+        _df = self._filter_queries(df)
         _df = df
         _df.set_index(['topic', 'qid'], inplace=True)
         _exp_df = _df.apply(np.exp)
@@ -198,28 +213,15 @@ class QueryFeatureFactory:
 
     def generate_features(self):
         _df = self._calc_features()
+        return _df
         # return self._soft_max_scores(_df)
-        return self._sum_scores(_df)
+        # return self._sum_scores(_df)
         # return self._average_scores(_df)
         # return self._max_norm_scores(_df)
 
     def generate_predictions(self):
         _df = self._calc_features()
         self.save_predictions(_df)
-
-    @staticmethod
-    def jaccard_coefficient(st1: str, st2: str):
-        st1_set = set(st1.split())
-        st2_set = set(st2.split())
-        union = st1_set.union(st2_set)
-        intersect = st1_set.intersection(st2_set)
-        return float(len(intersect) / len(union))
-
-    @staticmethod
-    def list_overlap(x, y):
-        x_set = set(x)
-        intersection = x_set.intersection(y)
-        return len(intersection)
 
 
 def features_loader(file_to_load, corpus):
@@ -270,6 +272,7 @@ def main(args):
     if generate:
         testing_feat = QueryFeatureFactory(corpus, queries_group, quantile)
         norm_features_df = testing_feat.generate_features()
+
         _path = f'~/QppUqvProj/Results/{corpus}/test/ref'
         _path = dp.ensure_dir(_path)
         norm_features_df.reset_index().to_json(
