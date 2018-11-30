@@ -47,7 +47,7 @@ class CrossValidation:
             if '-' in ap_file:
                 self.ap_func = ap_file.split('-')[-1]
             else:
-                self.ap_func = None
+                self.ap_func = 'basic'
         else:
             self.full_set = self._build_full_set(predictions_dir)
         if load:
@@ -82,7 +82,7 @@ class CrossValidation:
         if ap_file:
             ap_df = ResultsReader(ap_file, 'ap').data_df
             list_.append(ap_df)
-        full_set = pd.concat(list_, axis=1)
+        full_set = pd.concat(list_, axis=1, sort=True)
         return full_set
 
     def _generate_k_folds(self):
