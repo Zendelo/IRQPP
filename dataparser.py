@@ -20,6 +20,7 @@ class ResultsReader:
         :param data_file: results file path
         :param file_type: 'predictions' for predictor results or 'ap' for ap results or trec for trec format results
         """
+        ensure_file(data_file)
         self.file_type = file_type.lower()
         self.data = data_file
         self.__number_of_col = self.__check_number_of_col()
