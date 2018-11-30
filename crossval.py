@@ -83,6 +83,7 @@ class CrossValidation:
             ap_df = ResultsReader(ap_file, 'ap').data_df
             list_.append(ap_df)
         full_set = pd.concat(list_, axis=1)
+        assert not full_set.empty, f'The Full set DF is empty, make sure that {predictions_dir} is not empty'
         return full_set
 
     def _generate_k_folds(self):
