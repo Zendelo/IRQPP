@@ -236,7 +236,12 @@ class QueriesXMLParser:
             txt.text = '#combine( {} )'.format(text)
 
     def print_queries_xml(self):
+        """Prints to STD.OUT (usually the screen)"""
         print(etree.tostring(self.root, pretty_print=True, encoding='unicode'))
+
+    def print_queries_xml_file(self, file_name):
+        """Prints to a File"""
+        print(etree.tostring(self.root, pretty_print=True, encoding='unicode'), file=open(file_name, 'w'))
 
 
 def ensure_file(file):
