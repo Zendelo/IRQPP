@@ -138,9 +138,9 @@ class QueryFeatureFactory:
 
                 _dict['qid'] += [var]
                 _dict['Jac_coefficient'] += [jc]
-                _dict['Top_10_Docs_overlap'] += [docs_overlap]
-                _dict['RBO_EXT_100'] += [rbo_ext_score]
-                _dict['RBO_FUSED_EXT_100'] += [_rbo_fused_ext_score]
+                _dict[f'Top_{self.top_docs_overlap}_Docs_overlap'] += [docs_overlap]
+                _dict[f'RBO_EXT_{self.rbo_top}'] += [rbo_ext_score]
+                _dict[f'RBO_FUSED_EXT_{self.rbo_top}'] += [_rbo_fused_ext_score]
 
         _df = pd.DataFrame.from_dict(_dict)
         # _df.set_index(['topic', 'qid'], inplace=True)
@@ -182,7 +182,7 @@ class QueryFeatureFactory:
         _df.set_index(['topic', 'qid'], inplace=True)
         # For debugging purposes
         z_m = _df.groupby(['topic']).max()
-
+        z_m.drop('qid', axis='columns', inplace=True)
         max_norm_df = (_df.groupby(['topic', 'qid']).sum() / z_m).fillna(0)
         # _temp = softmax_df.dropna()
         # For debugging purposes
@@ -193,9 +193,31 @@ class QueryFeatureFactory:
         # filter only variations different from original query
         # _df = self._filter_queries(df)
         z_n = _df.groupby(['topic']).sum()
+        z_n.drop('qid', axis='columns', inplace=True)
         # All nan values will be filled with 0
         norm_df = (_df.groupby(['topic', 'qid']).sum() / z_n).fillna(0)
         return norm_df
+
+    def _divide_by_size(self, df):
+        _df = df
+        # filter only variations different from original query
+        # _df = self._filter_queries(df)
+        z_n = _df.groupby(['topic']).count()
+        z_n.drop('qid', axis='columns', inplace=True)
+        # All nan values will be filled with 0
+        # norm_df = (_df.groupby(['topic', 'qid']) / z_n).fillna('!@#!@#!@#!')
+        _df.set_index(['topic', 'qid'], inplace=True)
+        norm_df = _df / z_n
+        return norm_df
+
+    def generate_features(self):
+        _df = self._calc_features()
+        return self._divide_by_size(_df)
+        # return _df
+        # return self._soft_max_scores(_df)
+        # return self._sum_scores(_df)
+        # return self._average_scores(_df)
+        # return self._max_norm_scores(_df)
 
     def save_predictions(self, df: pd.DataFrame):
         _df = self._filter_queries(df)
@@ -206,18 +228,10 @@ class QueryFeatureFactory:
         _topDocsP_dir = dp.ensure_dir(f'{self.predictions_output_dir}/topDocsP/predictions')
         _jcP_dir = dp.ensure_dir(f'{self.predictions_output_dir}/jcP/predictions')
 
-        _df['RBO_EXT_100'].to_csv(f'{_rboP_dir}/predictions-{self.rbo_top}', sep=' ')
-        _df['RBO_FUSED_EXT_100'].to_csv(f'{_FrboP_dir}/predictions-{self.rbo_top}', sep=' ')
-        _df['Top_10_Docs_overlap'].to_csv(f'{_topDocsP_dir}/predictions-{self.top_docs_overlap}', sep=' ')
+        _df[f'RBO_EXT_{self.rbo_top}'].to_csv(f'{_rboP_dir}/predictions-{self.rbo_top}', sep=' ')
+        _df[f'RBO_FUSED_EXT_{self.rbo_top}'].to_csv(f'{_FrboP_dir}/predictions-{self.rbo_top}', sep=' ')
+        _df[f'Top_{self.top_docs_overlap}_Docs_overlap'].to_csv(f'{_topDocsP_dir}/predictions-{self.top_docs_overlap}', sep=' ')
         _df['Jac_coefficient'].to_csv(f'{_jcP_dir}/predictions-{self.rbo_top}', sep=' ')
-
-    def generate_features(self):
-        _df = self._calc_features()
-        return _df
-        # return self._soft_max_scores(_df)
-        # return self._sum_scores(_df)
-        # return self._average_scores(_df)
-        # return self._max_norm_scores(_df)
 
     def generate_predictions(self):
         _df = self._calc_features()
