@@ -120,13 +120,17 @@ class PageRank:
                     pr_sr = pd.Series(data=_initial_pr, index=_df.index.unique('dest'))
                     _pr_dict = {}
                     diff = 1
-                    while diff > epsilon:
+                    timeout = 100
+                    while diff > epsilon and timeout > 0:
                         for dest_node, incoming_weights_df in _df.groupby('dest'):
                             _pr_dict[dest_node] = incoming_weights_df.mul(pr_sr, level='src').sum()
                         _pr_sr = pd.Series(_pr_dict)
                         _diff_sr = pr_sr.subtract(_pr_sr, level='dest').abs()
                         diff = _diff_sr.sum()
                         pr_sr = _pr_sr
+                        timeout -= 1
+                        if timeout == 0:
+                            print(f'\n\n -----> predictions-{pred_score}+lambda+{lambda_param} HAS TIMED-OUT ! \n\n')
                     _score_list.append(pr_sr)
                 res_df = pd.concat(_score_list)
                 self._write_results(res_df, sim_func, pred_score.split('_')[1], lambda_param)
