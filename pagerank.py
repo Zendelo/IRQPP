@@ -19,6 +19,7 @@ parser.add_argument('-c', '--corpus', default='ROBUST', type=str, help='corpus (
                     choices=['ROBUST', 'ClueWeb12B'])
 parser.add_argument('-p', '--predictor', default=None, type=str, help='Choose the predictor to use',
                     choices=['clarity', 'wig', 'nqc', 'qf', 'all'])
+parser.add_argument('--uef', help="use the uef version of the predictor", action="store_true")
 
 # parser.add_argument('-g', '--group', help='group of queries to predict',
 #                     choices=['top', 'low', 'medh', 'medl', 'title'])
@@ -32,7 +33,7 @@ LAMBDA = np.linspace(start=0, stop=1, num=11)
 
 
 class PageRank:
-    def __init__(self, corpus, predictor, load=False):
+    def __init__(self, corpus, predictor, load=True):
         self.corpus = corpus
         self.__set_paths(corpus, predictor)
         self.similarity_features_df = self.__initialize_features_df()
@@ -104,16 +105,20 @@ class PageRank:
         return _dict
 
     def calc_pagerank(self, epsilon=0.00001):
+        """The method will calculate the PR scores for the entire set, with all the hyper parameters and write the
+        results to files"""
         for hyper_params, full_df in self.dict_all_options_stochastic.items():
             sim_func, lambda_param = (s.split('-')[1] for s in hyper_params.split('+'))
             for pred_score in self.prediction_scores:
+                print(f'Working on predictions-{pred_score}+lambda+{lambda_param}')
                 _score_list = []
                 for topic, _df in full_df[pred_score].groupby('topic'):
                     # Set all the PR values to be 1/N
                     _initial_pr = 1 / len(_df.index.unique('dest'))
+                    # Create a Series that holds the PR scores for each query node
                     pr_sr = pd.Series(data=_initial_pr, index=_df.index.unique('dest'))
                     _pr_dict = {}
-                    diff = 1.0
+                    diff = 1
                     while diff > epsilon:
                         for dest_node, incoming_weights_df in _df.groupby('dest'):
                             _pr_dict[dest_node] = incoming_weights_df.mul(pr_sr, level='src').sum()
@@ -123,9 +128,9 @@ class PageRank:
                         pr_sr = _pr_sr
                     _score_list.append(pr_sr)
                 res_df = pd.concat(_score_list)
-                self.writ_results(res_df, sim_func, pred_score.split('_')[1], lambda_param)
+                self._write_results(res_df, sim_func, pred_score.split('_')[1], lambda_param)
 
-    def writ_results(self, res_df: pd.Series, sim_func, pred_score, lambda_param):
+    def _write_results(self, res_df: pd.Series, sim_func, pred_score, lambda_param):
         dir_path = dp.ensure_dir(f'{self.output_dir}/{sim_func}/{self.predictor}/predictions/')
         file_name = f'predictions-{pred_score}+lambda+{lambda_param}'
         res_df.to_csv(path=f'{dir_path}/{file_name}', index=True, sep=' ', float_format='%f')
@@ -134,6 +139,10 @@ class PageRank:
 def main(args):
     corpus = args.corpus
     predictor = args.predictor
+    uef = args.uef
+
+    if uef:
+        predictor = f'uef/{predictor}'
 
     # # Debugging
     # print('\n\n\n------------!!!!!!!---------- Debugging Mode ------------!!!!!!!----------\n\n\n')
