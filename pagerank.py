@@ -129,8 +129,10 @@ class PageRank:
                         diff = _diff_sr.sum()
                         pr_sr = _pr_sr
                         timeout -= 1
+                        # If the PR hasn't converged, it will print a message and continue
                         if timeout == 0:
-                            print(f'\n\n -----> predictions-{pred_score}+lambda+{lambda_param} HAS TIMED-OUT ! \n\n')
+                            print(
+                                f'\n----->The combination {sim_func}: {pred_score} lambda={lambda_param} Timed Out!\n')
                     _score_list.append(pr_sr)
                 res_df = pd.concat(_score_list)
                 self._write_results(res_df, sim_func, pred_score.split('_')[1], lambda_param)
