@@ -97,8 +97,9 @@ class QueryFeatureFactory:
         return {qid: list(combinations_with_replacement(variations, 2)) for qid, variations in self.query_vars.items()}
 
     def _calc_features(self):
-        _dict = {'topic': [], 'qid': [], 'Jac_coefficient': [], f'Top_{self.top_docs_overlap}_Docs_overlap': [],
-                 f'RBO_EXT_{self.rbo_top}': [], f'RBO_FUSED_EXT_{self.rbo_top}': []}
+        _dict = {'topic': [], 'src': [], 'dest': [], 'Jac_coefficient': [],
+                 f'Top_{self.top_docs_overlap}_Docs_overlap': [], f'RBO_EXT_{self.rbo_top}': [],
+                 f'RBO_FUSED_EXT_{self.rbo_top}': []}
         for topic, pairs in self.features_index.items():
             # number of combination with replacement is n(n+1)/2
             _dict['topic'] += [topic] * (2 * len(pairs) - len(self.query_vars[topic]))
@@ -125,12 +126,14 @@ class QueryFeatureFactory:
                 _q2_rbo_fused_ext_score = np.around(_q2_fused_rbo_scores_dict['ext'], 10)
 
                 def _save_to_dict(q_1, q_2):
-                    _dict['qid'] += [(q_1, q_2)]
+                    _dict['src'] += [q_1]
+                    _dict['dest'] += [q_2]
                     _dict['Jac_coefficient'] += [jc]
                     _dict[f'Top_{self.top_docs_overlap}_Docs_overlap'] += [docs_overlap]
                     _dict[f'RBO_EXT_{self.rbo_top}'] += [rbo_ext_score]
                     # The RBO-F feature in that case for edge (q1, q2) will be the RBO similarity of q2 to fused list
                     _dict[f'RBO_FUSED_EXT_{self.rbo_top}'] += [_q2_rbo_fused_ext_score]
+
                 if q1 == q2:
                     _save_to_dict(q1, q2)
                 else:
@@ -138,9 +141,10 @@ class QueryFeatureFactory:
                     _save_to_dict(q2, q1)
 
         _df = pd.DataFrame.from_dict(_dict)
-        _df.set_index(['topic', 'qid'], inplace=True)
-        _df.to_pickle(f'{self.corpus}_raw_PageRank_Features.pkl')
-        print(_df)
+        _df.sort_values(['topic', 'src', 'dest'], inplace=True)
+        _df.set_index(['topic', 'src', 'dest'], inplace=True)
+        _test_dir = dp.ensure_dir(f'~/QppUqvProj/Results/{self.corpus}/test/pageRank/')
+        _df.to_pickle(f'{_test_dir}/{self.corpus}_raw_PageRank_Features.pkl')
         return _df
 
     def _sum_scores(self, df):
@@ -157,14 +161,17 @@ class QueryFeatureFactory:
 
     def generate_features(self):
         _df = self._calc_features()
-        return self._sum_scores(_df)
+        return _df
 
 
-def features_loader(file_to_load, corpus):
+def features_loader(corpus, file_to_load=None):
     if file_to_load is None:
-        file = dp.ensure_file('features_{}_uqv.JSON'.format(corpus))
+        file = dp.ensure_file('{}_raw_PageRank_Features.pkl'.format(corpus))
     else:
         file = dp.ensure_file(file_to_load)
+    if file.endswith('pkl'):
+        features_df = pd.read_pickle(file)
+        return features_df
 
     features_df = pd.read_json(file, dtype={'topic': str, 'qid': str})
     features_df.reset_index(drop=True, inplace=True)
@@ -199,7 +206,10 @@ def main(args):
         norm_features_df.reset_index().to_json(f'{_path}/PageRank_Features.JSON')
 
     elif file_to_load:
-        features_df = features_loader(file_to_load, corpus)
+        features_df = features_loader(corpus, file_to_load)
+        print(features_df)
+    else:
+        features_df = features_loader(corpus)
         print(features_df)
 
 
