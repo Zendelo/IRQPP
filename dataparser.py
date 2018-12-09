@@ -245,7 +245,7 @@ class QueriesXMLParser:
 
 
 def ensure_file(file):
-    """Ensure a single file exists, returns the full path of the file if True"""
+    """Ensure a single file exists, returns the full path of the file if True or throws an Assertion error if not"""
     # tilde expansion
     file_path = os.path.normpath(os.path.expanduser(file))
     assert os.path.isfile(file_path), "The file {} doesn't exist. Please create the file first".format(file)
