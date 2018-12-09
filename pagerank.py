@@ -43,13 +43,14 @@ class PageRank:
         self.full_raw_weights_df = self.__initialize_full_scores_df()
         self.dict_all_options = self._set_weights()
         try:
-            file_to_load = dp.ensure_file(f'~/pagerank_{corpus}_{predictor}_dict_all_options_stochastic.pkl')
+            file_to_load = dp.ensure_file(
+                f'~/QppUqvProj/Results/{corpus}/test/pageRank/pkl_files/{predictor}/dict_all_options_stochastic.pkl')
             with open(file_to_load, 'rb') as handle:
                 self.dict_all_options_stochastic = pickle.load(handle)
         except AssertionError:
             self.dict_all_options_stochastic = self._normalize_rows()
-            _dir = dp.ensure_dir('~/')
-            with open(f'{_dir}/pagerank_{corpus}_{predictor}_dict_all_options_stochastic.pkl', 'wb') as handle:
+            _dir = dp.ensure_dir(f'~/QppUqvProj/Results/{corpus}/test/pageRank/pkl_files/{predictor}')
+            with open(f'{_dir}/dict_all_options_stochastic.pkl', 'wb') as handle:
                 pickle.dump(self.dict_all_options_stochastic, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     @classmethod
@@ -66,7 +67,7 @@ class PageRank:
         _test_dir = f'~/QppUqvProj/Results/{corpus}/test'
         cls.folds = dp.ensure_file(f'{_test_dir}/2_folds_30_repetitions.json')
 
-        cls.ap_file = dp.ensure_file(f'{_test_dir}/pageRank/QLmap1000')
+        # cls.ap_file = dp.ensure_file(f'{_test_dir}/pageRank/QLmap1000')
 
         cls.features = dp.ensure_file(f'{_test_dir}/pageRank/{corpus}_raw_PageRank_Features.pkl')
 
