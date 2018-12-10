@@ -20,6 +20,7 @@ parser.add_argument('-c', '--corpus', default='ROBUST', type=str, help='corpus (
 parser.add_argument('-p', '--predictor', default=None, type=str, help='Choose the predictor to use',
                     choices=['clarity', 'wig', 'nqc', 'qf', 'all'])
 parser.add_argument('--uef', help="use the uef version of the predictor", action="store_true")
+parser.add_argument('--nocache', help="add this option to avoid loading from cache", action="store_false")
 
 # parser.add_argument('-g', '--group', help='group of queries to predict',
 #                     choices=['top', 'low', 'medh', 'medl', 'title'])
@@ -37,21 +38,28 @@ class PageRank:
         self.corpus = corpus
         self.__set_paths(corpus, predictor)
         self.similarity_features_df = self.__initialize_features_df()
+        self.norm_similarity_features_df = self.__normalize_similarity()
         self.similarity_measures = self.similarity_features_df.columns.tolist()
         self.var_cv = CrossValidation(file_to_load=self.folds, predictions_dir=self.vars_results_dir)
+        self.norm_prediction_scores = self.__normalize_predictions()
         self.prediction_scores = self.var_cv.full_set.columns.tolist()
-        self.full_raw_weights_df = self.__initialize_full_scores_df()
+        self.full_raw_weights_df = self.__initialize_full_weights_df()
         self.dict_all_options = self._set_weights()
-        try:
-            file_to_load = dp.ensure_file(
-                f'~/QppUqvProj/Results/{corpus}/test/pageRank/pkl_files/{predictor}/dict_all_options_stochastic.pkl')
-            with open(file_to_load, 'rb') as handle:
-                self.dict_all_options_stochastic = pickle.load(handle)
-        except AssertionError:
+        if load:
+            try:
+                # Will try loading a dictionary, if fails will generate and save a new one
+                file_to_load = dp.ensure_file(
+                    f'~/QppUqvProj/Results/{corpus}/test/pageRank/pkl_files/{predictor}/dict_all_options_stochastic.pkl')
+                with open(file_to_load, 'rb') as handle:
+                    self.dict_all_options_stochastic = pickle.load(handle)
+            except AssertionError:
+                self.dict_all_options_stochastic = self._normalize_rows()
+                self.__save_new_dictionary(corpus, predictor)
+        else:
             self.dict_all_options_stochastic = self._normalize_rows()
-            _dir = dp.ensure_dir(f'~/QppUqvProj/Results/{corpus}/test/pageRank/pkl_files/{predictor}')
-            with open(f'{_dir}/dict_all_options_stochastic.pkl', 'wb') as handle:
-                pickle.dump(self.dict_all_options_stochastic, handle, protocol=pickle.HIGHEST_PROTOCOL)
+            self.__save_new_dictionary(corpus, predictor)
+        # print(self.dict_all_options_stochastic['simfunc-RBO_EXT_100+lambda-1.0'].loc['340'])
+        # exit()
 
     @classmethod
     def __set_paths(cls, corpus, predictor):
@@ -71,20 +79,27 @@ class PageRank:
 
         cls.features = dp.ensure_file(f'{_test_dir}/pageRank/{corpus}_raw_PageRank_Features.pkl')
 
+    def __save_new_dictionary(self, corpus, predictor):
+        _dir = dp.ensure_dir(f'~/QppUqvProj/Results/{corpus}/test/pageRank/pkl_files/{predictor}')
+        with open(f'{_dir}/dict_all_options_stochastic.pkl', 'wb') as handle:
+            pickle.dump(self.dict_all_options_stochastic, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
     def __initialize_features_df(self):
         """This method loads the features df from a pickle file"""
         _features_df = features_loader(self.corpus, self.features)
         return _features_df
 
-    def __initialize_full_scores_df(self):
-        """This method filters from query variations df only the ones relevant for prediction"""
-        _var_scores_df = pd.merge(self.similarity_features_df, self.var_cv.full_set, left_on='dest', how='left',
-                                  right_index=True)
+    def __initialize_full_weights_df(self):
+        """This method merges the df of the normalized prediction scores with the normalized similarity features df,
+        adding the prediction score to the relevant destination query-node"""
+        _var_scores_df = pd.merge(left=self.norm_similarity_features_df,
+                                  right=self.norm_prediction_scores.reset_index('topic', drop=True), left_on='dest',
+                                  how='left', right_index=True)
         return _var_scores_df
 
     def _set_weights(self):
         # TODO: Implement a special case for lambda=1
-        """This method implements the linear interpolation of the weight function"""
+        """This method implements the interpolation of the weight function"""
         _dict = {}
         for lambda_param in LAMBDA:
             for similarity in self.similarity_measures:
@@ -105,13 +120,31 @@ class PageRank:
             _dict[params] = pd.concat(_list)
         return _dict
 
-    def calc_pagerank(self, epsilon=0.00001):
+    def __normalize_predictions(self):
+        """This method will normalize the predictions scores """
+        df = self.var_cv.full_set.reset_index()
+        # Add topic column to the scores df
+        for topic, _ in self.similarity_features_df.groupby('topic'):
+            df.loc[df['qid'].str.startswith(topic), 'topic'] = topic
+        df.set_index(['topic', 'qid'], inplace=True)
+        z_n = df.groupby(['topic']).sum()
+        norm_df = (df.groupby(['topic', 'qid']).sum() / z_n)
+        return norm_df
+
+    def __normalize_similarity(self):
+        """This method will normalize the predictions scores """
+        df = self.similarity_features_df
+        z_n = df.groupby(['topic']).sum()
+        norm_df = (df / z_n)
+        return norm_df
+
+    def calc_pagerank(self, epsilon=1e-04):
         """The method will calculate the PR scores for the entire set, with all the hyper parameters and write the
         results to files"""
         for hyper_params, full_df in self.dict_all_options_stochastic.items():
             sim_func, lambda_param = (s.split('-')[1] for s in hyper_params.split('+'))
             for pred_score in self.prediction_scores:
-                print(f'Working on predictions-{pred_score}+lambda+{lambda_param}')
+                print(f'Working on the combination {sim_func}: {pred_score} lambda={lambda_param}')
                 _score_list = []
                 for topic, _df in full_df[pred_score].groupby('topic'):
                     # Set all the PR values to be 1/N
@@ -132,7 +165,9 @@ class PageRank:
                         # If the PR hasn't converged, it will print a message and continue
                         if timeout == 0:
                             print(
-                                f'\n----->The combination {sim_func}: {pred_score} lambda={lambda_param} Timed Out!\n')
+                                f'\n-------> The combination {sim_func}: {pred_score} lambda={lambda_param} Timed Out!')
+                            print(
+                                f'Topic {topic} has failed to converge, finished with: diff={diff} epsilon={epsilon}\n')
                     _score_list.append(pr_sr)
                 res_df = pd.concat(_score_list)
                 self._write_results(res_df, sim_func, pred_score.split('_')[1], lambda_param)
@@ -147,19 +182,20 @@ def main(args):
     corpus = args.corpus
     predictor = args.predictor
     uef = args.uef
+    load = args.nocache
 
     if uef:
         predictor = f'uef/{predictor}'
 
     # # Debugging
     # print('\n\n\n------------!!!!!!!---------- Debugging Mode ------------!!!!!!!----------\n\n\n')
-    # predictor = 'wig'
+    # predictor = input('What predictor should be used for debugging?\n')
     # corpus = 'ROBUST'
 
     cores = mp.cpu_count() - 1
-
-    pr_obj = PageRank(corpus, predictor, load=True)
-    pr_obj.calc_pagerank()
+    if predictor and corpus:
+        pr_obj = PageRank(corpus, predictor, load=load)
+        pr_obj.calc_pagerank()
 
 
 if __name__ == '__main__':
