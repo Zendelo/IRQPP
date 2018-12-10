@@ -396,11 +396,12 @@ private:
 	std::vector<std::string> qset;
 	parse_query( query, qset );
 
-    // This loop should add "qid:<stemmed query terms>" to the output
+    // This loop will add "qid:<stemmed query terms>" to the output
 	output << q_number << ":" ;
-	for (std::vector<std::string>::const_iterator i = qset.begin(); i != qset.end(); ++i){
+
+	for (std::vector<std::string>::const_iterator i = qset.begin(); i != qset.end(); ++i)
 	output << *i << " ";
-	}
+
 	output << std::endl;
 
 	}
