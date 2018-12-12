@@ -1,11 +1,16 @@
 import argparse
 from statistics import median_high, median_low
+import matplotlib.pyplot as plt
 
 import pandas as pd
+import numpy as np
 
 import dataparser as dt
 
 # TODO: add logging and qrels file generation for UQV
+
+QUERY_GROUPS = {'top': 'MaxAP', 'low': 'MinAP', 'medh': 'MedHiAP', 'medl': 'MedLoAP'}
+QUANTILES = {'med': 'Med', 'top': 'Top', 'low': 'Low'}
 
 parser = argparse.ArgumentParser(description='Script for query files pre-processing',
                                  epilog='Use this script with Caution')
@@ -13,17 +18,28 @@ parser = argparse.ArgumentParser(description='Script for query files pre-process
 parser.add_argument('-t', '--queries', default=None, metavar='queries.txt', help='path to UQV queries txt file')
 parser.add_argument('--remove', default=None, metavar='queries.txt',
                     help='path to queries txt file that will be removed from the final file NON UQV ONLY')
-parser.add_argument('--top', action='store_true', help='Return only the best performing queries of each topic')
-parser.add_argument('--low', action='store_true', help='Return only the worst performing queries of each topic')
-parser.add_argument('--medh', action='store_true', help='Return only the high median performing queries of each topic')
-parser.add_argument('--medl', action='store_true', help='Return only the low median performing queries of each topic')
+parser.add_argument('--group', default='title', choices=['low', 'top', 'medh', 'medl'],
+                    help='Return only the <> performing queries of each topic')
 parser.add_argument('--quant', default=None, choices=['low', 'top', 'med'],
                     help='Return a quantile of the variants for each topic')
 parser.add_argument('--ap', default=None, metavar='QLmap1000', help='path to queries AP results file')
+parser.add_argument('--stats', action='store_true', help='Print statistics')
 
 
-def add_original_queries():
-    pass
+def add_original_queries(uqv_obj: dt.QueriesTextParser):
+    """Don't use this function ! not tested"""
+    original_obj = dt.QueriesTextParser('QppUqvProj/data/ROBUST/queries.txt')
+    uqv_df = uqv_obj.queries_df.set_index('qid')
+    original_df = original_obj.queries_df.set_index('qid')
+    for topic, vars in uqv_obj.query_vars.items():
+        uqv_df.loc[vars, 'topic'] = topic
+    missing_list = []
+    for topic, topic_df in uqv_df.groupby('topic'):
+        if original_df.loc[original_df['text'].isin(topic_df['text'])].empty:
+            missing_list.append(topic)
+    missing_df = pd.DataFrame({'qid': '341-9-1', 'text': original_obj.queries_dict['341'], 'topic': '341'}, index=[0])
+    uqv_df = uqv_df.append(missing_df.set_index('qid'))
+    return uqv_df.sort_index().drop(columns='topic').reset_index()
 
 
 def convert_vid_to_qid(df: pd.DataFrame):
@@ -71,7 +87,7 @@ def filter_low_queries(qdf: pd.DataFrame, apdb: dt.ResultsReader):
     return _df
 
 
-def filter_med_h_queries(qdf: pd.DataFrame, apdb: dt.ResultsReader):
+def filter_medh_queries(qdf: pd.DataFrame, apdb: dt.ResultsReader):
     _apdf = apdb.data_df
     _list = []
     for topic, q_vars in apdb.query_vars.items():
@@ -83,7 +99,7 @@ def filter_med_h_queries(qdf: pd.DataFrame, apdb: dt.ResultsReader):
     return _df
 
 
-def filter_med_l_queries(qdf: pd.DataFrame, apdb: dt.ResultsReader):
+def filter_medl_queries(qdf: pd.DataFrame, apdb: dt.ResultsReader):
     _apdf = apdb.data_df
     _list = []
     for topic, q_vars in apdb.query_vars.items():
@@ -115,24 +131,133 @@ def remove_q1_from_q2(qdf_1: pd.DataFrame, qdf_2: pd.DataFrame):
     return qdf_2.loc[~qdf_2['text'].isin(qdf_1['text'])]
 
 
-def save_txt_queries(q_df: pd.DataFrame):
-    q_df.to_csv('queries_new.txt', sep=":", header=False, index=False)
+def write_queries_to_files(q_df: pd.DataFrame, corpus, queries_group='title', quantile=None, remove=None):
+    if quantile:
+        file_name = f'queries_{corpus}_UQV_{quantile}_variants'
+    elif remove:
+        title = input('What queries were removed? \n')
+        file_name = f'queries_{corpus}_UQV_wo_{title}'
+    else:
+        file_name = f'queries_{corpus}_{queries_group}'
+
+    q_df.to_csv(f'{file_name}.txt', sep=":", header=False, index=False)
+    query_xml = dt.QueriesXMLParser(q_df)
+    query_xml.print_queries_xml_file(f'{file_name}.xml')
+
+
+def add_format(s):
+    s = '${:.4f}$'.format(s)
+    return s
+
+
+def plot_robust_histograms(quant_variants_dict):
+    for quant, vars_df in quant_variants_dict.items():
+        if quant == 'all':
+            bins = np.arange(4, 60) - 0.5
+            xticks = np.arange(4, 60)
+            yticks = np.arange(0, 80, 5)
+        else:
+            bins = np.arange(20) - 0.5
+            xticks = np.arange(20)
+            yticks = np.arange(0, 115, 5)
+        vars_df.groupby('topic')['text'].count().plot(title=f'Number of vars in {quant} quantile ROBUST', kind='hist',
+                                                      bins=bins)
+        plt.xticks(xticks)
+        plt.yticks(yticks)
+        plt.ylabel('Number of topics')
+        plt.xlabel('Number of Variants per topic')
+        # plt.grid(True)
+        plt.show()
+
+
+def plot_cw_histograms(quant_variants_dict):
+    for quant, vars_df in quant_variants_dict.items():
+        if quant == 'all':
+            bins = np.arange(12, 96) - 0.5
+            xticks = np.arange(10, 98, 2)
+            yticks = np.arange(7)
+        else:
+            bins = np.arange(40) - 0.5
+            xticks = np.arange(40)
+            yticks = np.arange(15)
+        vars_df.groupby('topic')['text'].count().plot(title=f'Number of vars in {quant} quantile CW12B', kind='hist',
+                                                      bins=bins)
+        plt.xticks(xticks)
+        plt.yticks(yticks)
+        plt.ylabel('Number of topics')
+        plt.xlabel('Number of Variants per topic')
+        # plt.grid(True)
+        plt.show()
+
+
+def calc_statistics(qdf: pd.DataFrame, apdb: dt.ResultsReader, title_queries_df: pd.DataFrame,
+                    title_ap: dt.ResultsReader, filter_functions_dict: dict, quantiles_dict: dict, corpus):
+    """
+    This function constructs:
+    QUERY_GROUPS={'title'" 'Title', 'top': 'MaxAP', 'low': 'MinAP', 'medh': 'MedHiAP', 'medl': 'MedLoAP'}
+    QUANTILES = {'all': 'All', 'med': 'Med', 'top': 'Top', 'low': 'Low'}
+    queries_groups_dict: {group: df}
+    quant_variants_dict: {quantile: df}
+    """
+    # Add topic column to qdf
+    for topic, q_vars in apdb.query_vars.items():
+        qdf.loc[qdf['qid'].isin(q_vars), 'topic'] = topic
+    # Create queries_groups_dict
+    _title_df = pd.merge(title_queries_df, title_ap.data_df, on='qid')
+    queries_groups_dict = {'title': _title_df.set_index('qid')}
+    for qgroup in QUERY_GROUPS:
+        _df = filter_functions_dict[qgroup](qdf, apdb)
+        queries_groups_dict[qgroup] = _df.merge(apdb.data_df, on='qid').set_index('qid')
+    QUERY_GROUPS['title'] = 'Title'
+    # Create quant_variants_dict
+    _all_vars_df = pd.merge(qdf, apdb.data_df, on='qid')
+    quant_variants_dict = {'all': _all_vars_df.set_index('qid')}
+    for quant in QUANTILES:
+        _df = filter_quant_variants(qdf, apdb, quantiles_dict[quant])
+        quant_variants_dict[quant] = _df.merge(apdb.data_df, on='qid').set_index('qid')
+    QUANTILES['all'] = 'All'
+
+    _map_dict = {}
+    _wo_removal_dict = {}
+    for qgroup, group_df in queries_groups_dict.items():
+        single_map = group_df['ap'].mean()
+        _dict = {'Single': single_map}
+        for quant, vars_df in quant_variants_dict.items():
+            _raw_map = vars_df['ap'].mean()
+            _wo_removal_dict[QUANTILES[quant]] = _raw_map
+            # Remove queries group from the quantile variations (after the quantile was filtered)
+            quant_wo_group_df = remove_q1_from_q2(group_df, vars_df)
+            _map_wo_group = quant_wo_group_df['ap'].mean()
+            _dict[QUANTILES[quant]] = _map_wo_group
+        _map_dict[QUERY_GROUPS[qgroup]] = _dict
+    _map_dict['W/O Removal'] = _wo_removal_dict
+    stats_df = pd.DataFrame.from_dict(_map_dict, orient='index')
+    formatters = [add_format] * len(stats_df.columns)
+    print(stats_df.to_latex(formatters=formatters, escape=False))
+
+    plot_robust_histograms(quant_variants_dict) if corpus == 'ROBUST' else plot_cw_histograms(quant_variants_dict)
 
 
 def main(args):
     queries_txt_file = args.queries
     queries_to_remove = args.remove
     ap_file = args.ap
-    top_queries = args.top
-    low_queries = args.low
-    medh_queries = args.medh
-    medl_queries = args.medl
+    queries_group = args.group
     quant_variants = args.quant
+    stats = args.stats
 
-    # quant_variants = 'low'
-    # ap_file = '../../QppUqvProj/Results/ROBUST/test/raw/QLmap1000'
-    # queries_txt_file = '../../QppUqvProj/data/ROBUST/queries_ROBUST_UQV_full.txt'
+    filter_functions_dict = {'top': filter_top_queries, 'low': filter_low_queries, 'medl': filter_medl_queries,
+                             'medh': filter_medh_queries}
+    quantiles_dict = {'low': [0, 0.33], 'med': [0.33, 0.66], 'top': [0.66, 1]}
 
+    # # Uncomment for Debugging !!!!!
+    # print('\n\n\n----------!!!!!!!!!!!!--------- Debugging Mode ----------!!!!!!!!!!!!---------\n\n\n')
+    # # quant_variants = 'low'
+    # ap_file = dt.ensure_file('~/QppUqvProj/Results/ROBUST/test/raw/QLmap1000')
+    # queries_txt_file = dt.ensure_file('~/QppUqvProj/data/ROBUST/queries_ROBUST_UQV_full.txt')
+    # stats = True
+
+    corpus = 'ROBUST' if 'ROBUST' in queries_txt_file else 'ClueWeb12B'
     if queries_txt_file:
         qdb = dt.QueriesTextParser(queries_txt_file, 'uqv')
         queries_df = remove_duplicates(qdb)
@@ -141,27 +266,24 @@ def main(args):
             queries_df = remove_q1_from_q2(qdb_rm.queries_df, queries_df)
         if ap_file:
             apdb = dt.ResultsReader(ap_file, 'ap')
-            if top_queries:
-                queries_df = filter_top_queries(queries_df, apdb)
-            elif low_queries:
-                queries_df = filter_low_queries(queries_df, apdb)
-            elif medh_queries:
-                queries_df = filter_med_h_queries(queries_df, apdb)
-            elif medl_queries:
-                queries_df = filter_med_l_queries(queries_df, apdb)
+            if queries_group != 'title':
+                queries_df = filter_functions_dict[queries_group](queries_df, apdb)
             elif quant_variants:
-                if quant_variants == 'low':
-                    queries_df = filter_quant_variants(queries_df, apdb, [0, 0.3])
-                elif quant_variants == 'med':
-                    queries_df = filter_quant_variants(queries_df, apdb, [0.33, 0.6])
-                elif quant_variants == 'top':
-                    queries_df = filter_quant_variants(queries_df, apdb, [0.66, 1])
+                queries_df = filter_quant_variants(queries_df, apdb, quantiles_dict[quant_variants])
+            if stats:
+                title_queries_file = dt.ensure_file(f'~/QppUqvProj/data/{corpus}/queries_{corpus}_title.txt')
+                title_queries_df = dt.QueriesTextParser(title_queries_file).queries_df
+                title_ap_file = dt.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/basic/QLmap1000')
+                title_ap = dt.ResultsReader(title_ap_file, 'ap')
+                calc_statistics(queries_df, apdb, title_queries_df, title_ap, filter_functions_dict, quantiles_dict,
+                                corpus)
+                return
 
         # # In order to convert the vid (variants ID) to qid, uncomment next line
         # queries_df = convert_vid_to_qid(queries_df)
-        save_txt_queries(queries_df)
-        query_xml = dt.QueriesXMLParser(queries_df)
-        query_xml.print_queries_xml()
+
+        write_queries_to_files(queries_df, corpus=corpus, queries_group=queries_group, quantile=quant_variants,
+                               remove=queries_to_remove)
 
 
 if __name__ == '__main__':
