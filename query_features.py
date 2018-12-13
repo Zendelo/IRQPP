@@ -85,9 +85,9 @@ class QueryFeatureFactory:
         dp.ensure_file(cls.title_res_file)
 
         if vars_quantile == 'all':
-            _queries_full_file = f'{_corpus_dat_dir}/queries_{corpus}_UQV_full.txt'
+            _queries_full_file = f'{_corpus_dat_dir}/queries_{corpus}_UQV_full.stemmed.txt'
         else:
-            _queries_full_file = f'{_corpus_dat_dir}/queries_{corpus}_UQV_{vars_quantile}_variants.txt'
+            _queries_full_file = f'{_corpus_dat_dir}/queries_{corpus}_UQV_{vars_quantile}_variants.stemmed.txt'
 
         cls.queries_full_file = dp.ensure_file(_queries_full_file)
 
@@ -95,7 +95,7 @@ class QueryFeatureFactory:
         _queries_variations_file = f'{_corpus_dat_dir}/queries_{corpus}_UQV_wo_{qgroup}.txt'
         cls.queries_variations_file = dp.ensure_file(_queries_variations_file)
 
-        _queries_topic_file = f'{_corpus_dat_dir}/queries_{corpus}_{qgroup}.txt'
+        _queries_topic_file = f'{_corpus_dat_dir}/queries_{corpus}_{qgroup}.stemmed.txt'
         cls.queries_topic_file = dp.ensure_file(_queries_topic_file)
 
         _fused_results_file = f'{_corpus_res_dir}/test/fusion/QL.res'
@@ -107,8 +107,8 @@ class QueryFeatureFactory:
         cls.predictions_output_dir = dp.ensure_dir(_predictions_out)
 
     def _calc_features(self):
-        _dict = {'topic': [], 'qid': [], 'Jac_coefficient': [], 'Top_10_Docs_overlap': [], 'RBO_EXT_100': [],
-                 'RBO_FUSED_EXT_100': []}
+        _dict = {'topic': [], 'qid': [], 'Jac_coefficient': [], f'Top_{self.top_docs_overlap}_Docs_overlap': [],
+                 f'RBO_EXT_{self.rbo_top}': [], f'RBO_FUSED_EXT_{self.rbo_top}': []}
 
         for topic in self.topics_data.queries_dict.keys():
             _topic = topic.split('-')[0]
@@ -230,7 +230,8 @@ class QueryFeatureFactory:
 
         _df[f'RBO_EXT_{self.rbo_top}'].to_csv(f'{_rboP_dir}/predictions-{self.rbo_top}', sep=' ')
         _df[f'RBO_FUSED_EXT_{self.rbo_top}'].to_csv(f'{_FrboP_dir}/predictions-{self.rbo_top}', sep=' ')
-        _df[f'Top_{self.top_docs_overlap}_Docs_overlap'].to_csv(f'{_topDocsP_dir}/predictions-{self.top_docs_overlap}', sep=' ')
+        _df[f'Top_{self.top_docs_overlap}_Docs_overlap'].to_csv(f'{_topDocsP_dir}/predictions-{self.top_docs_overlap}',
+                                                                sep=' ')
         _df['Jac_coefficient'].to_csv(f'{_jcP_dir}/predictions-{self.rbo_top}', sep=' ')
 
     def generate_predictions(self):
