@@ -72,8 +72,7 @@ class QueryPredictionRef:
         cls.predictor = predictor
 
         _base_dir = f'~/QppUqvProj/Results/{corpus}/uqvPredictions/'
-        _base_dir = os.path.normpath(os.path.expanduser(_base_dir))
-        cls.vars_results_dir = '{}/raw/{}/predictions/'.format(_base_dir, cls.predictor)
+        cls.vars_results_dir = dp.ensure_dir(f'{_base_dir}/raw/{predictor}/predictions/')
 
         if qgroup == 'title':
             _orig_dir = f'~/QppUqvProj/Results/{corpus}/basicPredictions/title'
@@ -84,16 +83,14 @@ class QueryPredictionRef:
         dp.ensure_dir(cls.output_dir)
 
         _test_dir = f'~/QppUqvProj/Results/{corpus}/test/'
-        _test_dir = os.path.normpath(os.path.expanduser(_test_dir))
-        cls.folds = f'{_test_dir}/2_folds_30_repetitions.json'
-        dp.ensure_file(cls.folds)
+        cls.folds = dp.ensure_file(f'{_test_dir}/2_folds_30_repetitions.json')
 
-        cls.ap_file = f'{_test_dir}/ref/QLmap1000-{qgroup}'
+        cls.ap_file = dp.ensure_file(f'{_test_dir}/ref/QLmap1000-{qgroup}')
 
         # cls.features = '{}/raw/query_features_{}_uqv_legal.JSON'.format(_test_dir, corpus)
         # cls.features = f'{_test_dir}/ref/{qgroup}_query_features_{corpus}_uqv.JSON'
-        cls.features = f'{_test_dir}/ref/{qgroup}_query_{vars_quantile}_variations_features_{corpus}_uqv.JSON'
-        # dp.ensure_file(cls.features)
+        cls.features = dp.ensure_file(
+            f'{_test_dir}/ref/{qgroup}_query_{vars_quantile}_variations_features_{corpus}_uqv.JSON')
 
         _query_vars = f'~/QppUqvProj/data/{corpus}/queries_{corpus}_UQV_wo_{qgroup}.txt'
         cls.query_vars_file = os.path.normpath(os.path.expanduser(_query_vars))
@@ -128,19 +125,19 @@ class QueryPredictionRef:
 
     def calc_queries(self):
         for lambda_param in LAMBDA:
-            _jac_res_df = self.__calc_jac(self.var_scores_df, self.features_df['Jac_coefficient'],
-                                          lambda_param)
+            _jac_res_df = self.__calc_sim_predict(self.var_scores_df, self.features_df['Jac_coefficient'],
+                                                  lambda_param)
             self.write_results(_jac_res_df, 'jac', lambda_param)
 
-            _sim_res_df = self.__calc_top_sim(self.var_scores_df, self.features_df['Top_10_Docs_overlap'],
-                                              lambda_param)
+            _sim_res_df = self.__calc_sim_predict(self.var_scores_df, self.features_df['Top_10_Docs_overlap'],
+                                                  lambda_param)
             self.write_results(_sim_res_df, 'sim', lambda_param)
 
-            _rbo_res_df = self.__calc_rbo(self.var_scores_df, self.features_df['RBO_EXT_100'], lambda_param)
+            _rbo_res_df = self.__calc_sim_predict(self.var_scores_df, self.features_df['RBO_EXT_100'], lambda_param)
             self.write_results(_rbo_res_df, 'rbo', lambda_param)
 
-            _rbof_res_df = self.__calc_rbof(self.var_scores_df, self.features_df['RBO_FUSED_EXT_100'],
-                                            lambda_param)
+            _rbof_res_df = self.__calc_sim_predict(self.var_scores_df, self.features_df['RBO_FUSED_EXT_100'],
+                                                   lambda_param)
             self.write_results(_rbof_res_df, 'rbof', lambda_param)
 
             _uni_res_df = self.__calc_uni(self.var_scores_df, lambda_param)
@@ -149,25 +146,30 @@ class QueryPredictionRef:
     def __calc_uni(self, var_scores_df, lambda_param):
         return lambda_param * self.base_results_df + (1 - lambda_param) * var_scores_df.groupby('topic').mean()
 
-    def __calc_jac(self, var_scores_df, features_df, lambda_param):
+    def __calc_sim_predict(self, var_scores_df, features_df, lambda_param):
         _result_df = var_scores_df.multiply(features_df, axis=0, level='qid')
         _result_df = _result_df.groupby('topic').sum()
         return lambda_param * self.base_results_df + (1 - lambda_param) * _result_df
 
-    def __calc_top_sim(self, var_scores_df, features_df, lambda_param):
-        _result_df = var_scores_df.multiply(features_df, axis=0, level='qid')
-        _result_df = _result_df.groupby('topic').sum()
-        return lambda_param * self.base_results_df + (1 - lambda_param) * _result_df
-
-    def __calc_rbo(self, var_scores_df, features_df, lambda_param):
-        _result_df = var_scores_df.multiply(features_df, axis=0, level='qid')
-        _result_df = _result_df.groupby('topic').sum()
-        return lambda_param * self.base_results_df + (1 - lambda_param) * _result_df
-
-    def __calc_rbof(self, var_scores_df, features_df, lambda_param):
-        _result_df = var_scores_df.multiply(features_df, axis=0, level='qid')
-        _result_df = _result_df.groupby('topic').sum()
-        return lambda_param * self.base_results_df + (1 - lambda_param) * _result_df
+    # def __calc_jac(self, var_scores_df, features_df, lambda_param):
+    #     _result_df = var_scores_df.multiply(features_df, axis=0, level='qid')
+    #     _result_df = _result_df.groupby('topic').sum()
+    #     return lambda_param * self.base_results_df + (1 - lambda_param) * _result_df
+    #
+    # def __calc_top_sim(self, var_scores_df, features_df, lambda_param):
+    #     _result_df = var_scores_df.multiply(features_df, axis=0, level='qid')
+    #     _result_df = _result_df.groupby('topic').sum()
+    #     return lambda_param * self.base_results_df + (1 - lambda_param) * _result_df
+    #
+    # def __calc_rbo(self, var_scores_df, features_df, lambda_param):
+    #     _result_df = var_scores_df.multiply(features_df, axis=0, level='qid')
+    #     _result_df = _result_df.groupby('topic').sum()
+    #     return lambda_param * self.base_results_df + (1 - lambda_param) * _result_df
+    #
+    # def __calc_rbof(self, var_scores_df, features_df, lambda_param):
+    #     _result_df = var_scores_df.multiply(features_df, axis=0, level='qid')
+    #     _result_df = _result_df.groupby('topic').sum()
+    #     return lambda_param * self.base_results_df + (1 - lambda_param) * _result_df
 
     def calc_integrated(self, score_param):
         """The function receives a column name from the scores df, in the shape of score_n
@@ -184,7 +186,7 @@ class QueryPredictionRef:
             dp.ensure_dir(_file_path)
             _file_name = col.replace('score_', 'predictions-')
             file_name = f'{_file_path}{_file_name}+lambda+{lambda_param}'
-            df[col].to_csv(file_name, sep=" ", header=False, index=True)
+            df[col].to_csv(file_name, sep=" ", header=False, index=True, float_format='%f')
 
 
 class LearningSimFunctions:
