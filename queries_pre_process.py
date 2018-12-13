@@ -126,9 +126,16 @@ def alternate_remove_duplicates(qdb: dt.QueriesTextParser):
     return qdb.queries_df[~qdb.queries_df['qid'].isin(qdb.queries_df.loc[_dup_list]['qid'])]
 
 
-def remove_q1_from_q2(qdf_1: pd.DataFrame, qdf_2: pd.DataFrame):
-    """This function will remove from qdf_2 the queries that exist in qdf_1 """
-    return qdf_2.loc[~qdf_2['text'].isin(qdf_1['text'])]
+def remove_q1_from_q2(rm_df: pd.DataFrame, qdb: dt.QueriesTextParser):
+    """This function will remove from queries_df in qdb the queries that exist in rm_df """
+    _dup_list = []
+    full_df = qdb.queries_df.set_index('qid')
+    queries_to_remove = convert_vid_to_qid(rm_df).set_index('qid').to_dict(orient='index')
+    for topic, q_vars in qdb.query_vars.items():
+        # _dup_list.extend(full_df.loc[full_df['text'] == query_text]['qid'])
+        topic_df = full_df.loc[q_vars]
+        _dup_list.extend(topic_df.loc[topic_df['text'] == queries_to_remove[topic]['text']].index.tolist())
+    return full_df.drop(index=_dup_list).reset_index()
 
 
 def write_queries_to_files(q_df: pd.DataFrame, corpus, queries_group='title', quantile=None, remove=None):
@@ -260,29 +267,29 @@ def main(args):
     corpus = 'ROBUST' if 'ROBUST' in queries_txt_file else 'ClueWeb12B'
     if queries_txt_file:
         qdb = dt.QueriesTextParser(queries_txt_file, 'uqv')
-        queries_df = remove_duplicates(qdb)
+        qdb.queries_df = remove_duplicates(qdb)
         if queries_to_remove:
             qdb_rm = dt.QueriesTextParser(queries_to_remove)
-            queries_df = remove_q1_from_q2(qdb_rm.queries_df, queries_df)
+            qdb.queries_df = remove_q1_from_q2(qdb_rm.queries_df, qdb)
         if ap_file:
             apdb = dt.ResultsReader(ap_file, 'ap')
             if queries_group != 'title':
-                queries_df = filter_functions_dict[queries_group](queries_df, apdb)
+                queries_df = filter_functions_dict[queries_group](qdb.queries_df, apdb)
             elif quant_variants:
-                queries_df = filter_quant_variants(queries_df, apdb, quantiles_dict[quant_variants])
+                queries_df = filter_quant_variants(qdb.queries_df, apdb, quantiles_dict[quant_variants])
             if stats:
                 title_queries_file = dt.ensure_file(f'~/QppUqvProj/data/{corpus}/queries_{corpus}_title.txt')
                 title_queries_df = dt.QueriesTextParser(title_queries_file).queries_df
                 title_ap_file = dt.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/basic/QLmap1000')
                 title_ap = dt.ResultsReader(title_ap_file, 'ap')
-                calc_statistics(queries_df, apdb, title_queries_df, title_ap, filter_functions_dict, quantiles_dict,
+                calc_statistics(qdb.queries_df, apdb, title_queries_df, title_ap, filter_functions_dict, quantiles_dict,
                                 corpus)
                 return
 
         # # In order to convert the vid (variants ID) to qid, uncomment next line
         # queries_df = convert_vid_to_qid(queries_df)
 
-        write_queries_to_files(queries_df, corpus=corpus, queries_group=queries_group, quantile=quant_variants,
+        write_queries_to_files(qdb.queries_df, corpus=corpus, queries_group=queries_group, quantile=quant_variants,
                                remove=queries_to_remove)
 
 
