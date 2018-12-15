@@ -21,7 +21,7 @@ from crossval import CrossValidation
 # TODO: Replace the print functions with logger output
 
 PREDICTORS = ['clarity', 'nqc', 'wig', 'qf']
-SIM_REF_PREDICTORS = ['jcP', 'topDocsP', 'rboP', 'FrboP']
+SIM_REF_PREDICTORS = {'jcP': 'Jaccard', 'topDocsP': 'TopDocs', 'rboP': 'RBO', 'FrboP': 'RBO-F'}
 NUM_DOCS = [5, 10, 25, 50, 100, 250, 500, 1000]
 LIST_CUT_OFF = [5, 10, 25, 50, 100]
 # AGGREGATE_FUNCTIONS = ['avg', 'max', 'med', 'min', 'std', 'combsum']
@@ -220,7 +220,7 @@ class GeneratePredictions:
         self.__run_predictor(predictions_dir, predictor_exe, parameters, running_param)
 
     def _generate_lists_uef(self):
-        predictor_exe = 'python3.6 ~/repos/IRQPP/addWorkingsetdocs.py'
+        predictor_exe = 'python3 ~/repos/IRQPP/addWorkingsetdocs.py'
         parameters = '~/QppUqvProj/Results/{}/test/{}/QL.res'.format(self.corpus, self.qtype)
         running_param = '-d '
         predictions_dir = self.predictions_dir + 'uef/data/'
@@ -424,7 +424,7 @@ class CrossVal:
         max_list = []
         _results = defaultdict()
 
-        for quant in ['all', 'med', 'top', 'low']:
+        for quant in ['all', 'med', 'top', 'low', 'low-0']:
             ap_file = os.path.normpath(f'{self.test_dir}/ref/QLmap1000-{query_group}')
             ensure_file(ap_file)
             predictions_dir = f'{self.base_dir}/uqvPredictions/referenceLists/{query_group}/{quant}_vars/general'
@@ -439,7 +439,7 @@ class CrossVal:
                                      file_to_load=self.cv_map_f, load=True, ap_file=ap_file, test=self.corr_measure)
             mean = cv_obj.calc_test_results()
             max_list.append(mean)
-            _quant_res.append('${}$'.format(mean))
+            _quant_res.append(mean)
             _index.append(QUERY_GROUPS[query_group])
 
             for ref_func, func_name in zip(REFERENCE_FUNCTIONS, REFERENCE_TITLES):
@@ -449,7 +449,7 @@ class CrossVal:
                                          file_to_load=self.cv_map_f, load=True, ap_file=ap_file, test=self.corr_measure)
                 mean = cv_obj.calc_test_results()
                 max_list.append(mean)
-                _quant_res.append('${}$'.format(mean))
+                _quant_res.append(mean)
                 _index.append(func_name)
 
             sr = pd.Series(_quant_res)
@@ -458,7 +458,7 @@ class CrossVal:
             _results[quant] = sr
 
         res_df = pd.DataFrame.from_dict(_results, orient='index')
-        res_df = res_df.reindex(index=['all', 'med', 'top', 'low'])
+        res_df = res_df.reindex(index=['all', 'med', 'top', 'low', 'low-0'])
         res_df.index = res_df.index.str.title()
         res_df.index.name = 'Quantile'
         res_df.reset_index(inplace=True)
@@ -466,10 +466,44 @@ class CrossVal:
         res_df.insert(loc=0, column='Predictor', value=predictor.upper())
         return res_df, max(max_list)
 
+    def calc_sim_ref_per_group(self, qgroup):
+        max_list = []
+        _results = defaultdict()
+        ref_dir = f'{self.base_dir}/uqvPredictions/referenceLists'
+        ap_file = os.path.normpath(f'{self.test_dir}/ref/QLmap1000-{qgroup}')
+        ensure_file(ap_file)
+        for quant in ['all', 'med', 'top', 'low', 'low-0']:
+            # list to save results for a specific predictor with different quantile variations
+            _quant_res = list()
+            _index = list()
+            for predictor in SIM_REF_PREDICTORS:
+                _predictions_dir = os.path.normpath(
+                    f'{ref_dir}/{qgroup}/{quant}_vars/sim_as_pred/{predictor}/predictions')
+                cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_predictions_dir,
+                                         file_to_load=self.cv_map_f, load=True, ap_file=ap_file, test=self.corr_measure)
+                mean = cv_obj.calc_test_results()
+                max_list.append(mean)
+                _quant_res.append(mean)
+                _index.append(SIM_REF_PREDICTORS[predictor])
+            sr = pd.Series(_quant_res)
+            sr.name = quant
+            sr.index = _index
+            _results[quant] = sr
+        res_df = pd.DataFrame.from_dict(_results, orient='index')
+        res_df = res_df.reindex(index=['all', 'med', 'top', 'low', 'low-0'])
+        res_df.index = res_df.index.str.title()
+        res_df.index.name = 'Quantile'
+        res_df.reset_index(inplace=True)
+        res_df.insert(loc=0, column='Uniform', value='-')
+        res_df = res_df.reindex(['Quantile'] + REFERENCE_TITLES, axis='columns')
+        res_df.insert(loc=1, column=QUERY_GROUPS[qgroup], value='-')
+        res_df.insert(loc=0, column='Predictor', value='SimilarityOnly')
+        return res_df, max(max_list)
+
     def calc_sim_ref_per_predictor(self, predictor):
         _results = defaultdict()
         ref_dir = f'{self.base_dir}/uqvPredictions/referenceLists'
-        for quant in ['all', 'med', 'top', 'low']:
+        for quant in ['all', 'med', 'top', 'low', 'low-0']:
             # list to save results for a specific predictor with different quantile variations
             _quant_res = list()
             _index = list()
@@ -488,7 +522,7 @@ class CrossVal:
             sr.index = _index
             _results[quant] = sr
         res_df = pd.DataFrame.from_dict(_results, orient='index')
-        res_df = res_df.reindex(index=['all', 'med', 'top', 'low'])
+        res_df = res_df.reindex(index=['all', 'med', 'top', 'low', 'low-0'])
         res_df.index = res_df.index.str.title()
         res_df.index.name = 'Quantile'
         res_df.reset_index(inplace=True)
@@ -658,6 +692,7 @@ class GenerateTable:
         corr_measure = self.cv.corr_measure.capitalize()
         _predictor = PREDICTORS[0]
         for qgroup, queries_group in QUERY_GROUPS.items():
+            _list = []
             tables_max_vals = []
             print('\n\\begin{table}[ht!]')
             print('\\begin{center}')
@@ -665,6 +700,7 @@ class GenerateTable:
                 '\\caption{{ {} QPP-Reference lists {} Correlations for {} queries}}'.format(self.corpus, corr_measure,
                                                                                              queries_group))
             _df, _max = self.cv.calc_reference_per_predictor(_predictor, qgroup)
+            _list.append(_df)
             tables_max_vals.append(_max)
             table = _df.to_latex(header=True, multirow=False, multicolumn=False, index=False, escape=False,
                                  index_names=False, column_format='lccccccc')
@@ -677,6 +713,7 @@ class GenerateTable:
             print(table, end='')
             for predictor in PREDICTORS[1:] + ['uef/clarity', 'uef/nqc', 'uef/wig', 'uef/qf']:
                 _df, _max = self.cv.calc_reference_per_predictor(predictor, qgroup)
+                _list.append(_df)
                 tables_max_vals.append(_max)
                 table = _df.to_latex(header=False, multirow=False, multicolumn=False, index=False, escape=False,
                                      index_names=False, column_format='lcccccc')
@@ -685,11 +722,28 @@ class GenerateTable:
                 table = table.replace(f'{predictor.upper()}', '')
                 table = table.replace('\\toprule', '\\multirow{{4}}{{*}}{{{}}}'.format(predictor.upper()))
                 print(table, end='')
-
+                # temp_df = pd.concat(_list)
+                # print(temp_df)
+                # print(temp_df.to_latex(header=True, multirow=False, multicolumn=False, index=False, escape=False,
+                #                        index_names=False, column_format='lccccccc'))
+                # print(temp_df.groupby('Predictor').max(numeric_only=True))
+                # print(temp_df.groupby('Predictor').idxmax(numeric_only=True))  # Doesn't Work!
+            _df, _max = self.cv.calc_sim_ref_per_group(qgroup)
+            _list.append(_df)
+            tables_max_vals.append(_max)
+            table = _df.to_latex(header=False, multirow=False, multicolumn=False, index=False, escape=False,
+                                 index_names=False, column_format='lcccccc')
+            table = table.replace('\\begin{tabular}{lcccccc}', '')
+            table = table.replace('\\end{tabular}', '')
+            table = table.replace('SimilarityOnly', '')
+            table = table.replace('\\toprule', '\\multirow{4}{*}{SimilarityOnly}')
+            print(table, end='')
             print('\\end{tabular}')
             print('\\end{center}')
             print(f'The maximum value in the table is: {max(tables_max_vals)}')
             print('\\end{table} \n')
+            full_res_df = pd.concat(_list)
+            full_res_df.to_pickle(f'{self.corpus}_{queries_group}_queries_full_results_DF.pkl')
 
 
 def ensure_dir(file_path):

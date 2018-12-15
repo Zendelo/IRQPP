@@ -26,7 +26,7 @@ parser.add_argument('--uef', help='Add this if the predictor is in uef framework
 parser.add_argument('-g', '--group', help='group of queries to predict',
                     choices=['top', 'low', 'title', 'medh', 'medl'])
 parser.add_argument('--quantile', help='quantile of query variants to use for prediction', default='all',
-                    choices=['all', 'low', 'med', 'top'])
+                    choices=['all', 'low', 'low-0', 'med', 'top'])
 parser.add_argument('--corr_measure', default='pearson', type=str, choices=['pearson', 'spearman', 'kendall'],
                     help='features JSON file to load')
 parser.add_argument('--generate', help='use ltr to generate SVM-Rank predictions, or calc to calc predictions',
@@ -82,7 +82,7 @@ class QueryPredictionRef:
         cls.output_dir = f'{_base_dir}/referenceLists/{qgroup}/{vars_quantile}_vars/general/'
         dp.ensure_dir(cls.output_dir)
 
-        _test_dir = f'~/QppUqvProj/Results/{corpus}/test/'
+        _test_dir = f'~/QppUqvProj/Results/{corpus}/test'
         cls.folds = dp.ensure_file(f'{_test_dir}/2_folds_30_repetitions.json')
 
         cls.ap_file = dp.ensure_file(f'{_test_dir}/ref/QLmap1000-{qgroup}')
@@ -97,8 +97,7 @@ class QueryPredictionRef:
         dp.ensure_file(cls.query_vars_file)
 
         _queries2predict = f'~/QppUqvProj/data/{corpus}/queries_{corpus}_{qgroup}.txt'
-        cls.queries2predict_file = os.path.normpath(os.path.expanduser(_queries2predict))
-        dp.ensure_file(cls.queries2predict_file)
+        cls.queries2predict_file = dp.ensure_file(_queries2predict)
 
         if vars_quantile == 'all':
             cls.quantile_vars_file = cls.query_vars_file
@@ -172,7 +171,7 @@ class QueryPredictionRef:
     #     return lambda_param * self.base_results_df + (1 - lambda_param) * _result_df
 
     def calc_integrated(self, score_param):
-        """The function receives a column name from the scores df, in the shape of score_n
+        """The function receives a column name from the scores df, in the shape of score_n used for the LTR method
         Basically it implements the calculations specified in section 3.1.1 in the paper and returns a DF with the
         feature values (and the basic predictions score)"""
         _df = self.features_df.multiply(self.var_scores_df[score_param], axis=0, level='qid')
@@ -443,7 +442,7 @@ def main(args):
             run_calc_process(predictor, corpus, queries_group, quantile)
         elif generate == 'ltr':
             run_ltr_process(predictor, corpus, queries_group, quantile, corr_measure)
-        qpp_ref_ltr.cross_val_fine_tune()
+            qpp_ref_ltr.cross_val_fine_tune()
 
 
 if __name__ == '__main__':

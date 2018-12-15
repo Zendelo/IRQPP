@@ -274,9 +274,9 @@ def main(args):
         if ap_file:
             apdb = dt.ResultsReader(ap_file, 'ap')
             if queries_group != 'title':
-                queries_df = filter_functions_dict[queries_group](qdb.queries_df, apdb)
+                qdb.queries_df = filter_functions_dict[queries_group](qdb.queries_df, apdb)
             elif quant_variants:
-                queries_df = filter_quant_variants(qdb.queries_df, apdb, quantiles_dict[quant_variants])
+                qdb.queries_df = filter_quant_variants(qdb.queries_df, apdb, quantiles_dict[quant_variants])
             if stats:
                 title_queries_file = dt.ensure_file(f'~/QppUqvProj/data/{corpus}/queries_{corpus}_title.txt')
                 title_queries_df = dt.QueriesTextParser(title_queries_file).queries_df

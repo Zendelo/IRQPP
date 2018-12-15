@@ -77,7 +77,7 @@ class CrossValidation:
         for file_ in all_files:
             fname = file_.split('-')[-1]
             df = ResultsReader(file_, 'predictions').data_df
-            df = df.rename(columns={"score": 'score_{}'.format(fname)})
+            df = df.rename(columns={"score": f'score_{fname}'})
             list_.append(df)
         if ap_file:
             ap_df = ResultsReader(ap_file, 'ap').data_df
