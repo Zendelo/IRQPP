@@ -40,6 +40,7 @@ class CrossValidation:
         self.file_name = file_to_load
         assert predictions_dir is not None, 'Specify predictions dir'
         predictions_dir = os.path.abspath(os.path.normpath(os.path.expanduser(predictions_dir)))
+        assert os.listdir(predictions_dir), f'{predictions_dir} is empty'
         self.output_dir = predictions_dir.replace('predictions', 'evaluation')
         ensure_dir(self.output_dir)
         if ap_file:
