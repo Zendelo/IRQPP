@@ -1,15 +1,16 @@
 #!/usr/bin/env python
 
 import csv
+import multiprocessing as mp
+import os
 import sys
+import xml.etree.ElementTree as eT
 from collections import defaultdict
 from subprocess import run
-import multiprocessing as mp
 
 import numpy as np
 import pandas as pd
 from lxml import etree
-import os
 
 
 # TODO: implement all necessary objects and functions, in order to switch all calculations to work with those classes
@@ -159,6 +160,29 @@ class QueriesTextParser:
         return self.queries_dict.get(qid)
 
 
+class QueriesXMLParser:
+    # TODO: add queries_df
+    def __init__(self, query_file):
+        self.file = query_file
+        self.tree = eT.parse(self.file)
+        self.root = self.tree.getroot()
+        # query number: "Full command"
+        self.full_queries = defaultdict(str)
+        self.text_queries = defaultdict(str)
+        self.query_length = defaultdict(int)
+        self.fb_docs = defaultdict(list)
+        self.__parse_queries()
+
+    def __parse_queries(self):
+        for query in self.root.iter('query'):
+            qid_ = query.find('number').text
+            qstr_ = query.find('text').text
+            qtxt_ = qstr_[qstr_.find("(") + 1:qstr_.rfind(")")].split()
+            self.full_queries[qid_] = qstr_
+            self.text_queries[qid_] = qtxt_
+            self.query_length[qid_] = len(qtxt_)
+
+
 class QrelsParser:
     def __init__(self, file, queries: QueriesTextParser, uqv: QueriesTextParser):
         self.queries = queries
@@ -221,7 +245,7 @@ class QrelsParser:
             print(_df.to_string(index=False, header=False, justify='left'))
 
 
-class QueriesXMLParser:
+class QueriesXMLWriter:
     def __init__(self, queries_df: pd.DataFrame):
         self.queries_df = queries_df
         self.root = etree.Element('parameters')
