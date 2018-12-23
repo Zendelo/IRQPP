@@ -37,6 +37,7 @@ LIST_LENGTH = [30, 50, 100, 150, 200]
 def random_sampling(list_length, df):
     """This function implements rank biased sampling of l documents as described in section 2.2"""
     docs_list = []
+    df = df.assign(available=True)
     while len(docs_list) < list_length:
         for rank in itertools.compress(df.index, df['available']):
             u = random.random()
@@ -176,7 +177,7 @@ def main(args):
     with mp.Pool(processes=cores) as pool:
         predictor = pool.starmap(
             partial(RSD, queries_obj=queries_obj, results_obj=results_obj, corpus_scores_obj=corpus_scores_obj,
-                    corpus=corpus, uqv=uqv, load_cache=True), itertools.product(NUMBER_OF_DOCS, LIST_LENGTH))
+                    corpus=corpus, uqv=uqv, load_cache=False), itertools.product(NUMBER_OF_DOCS, LIST_LENGTH))
 
 
 if __name__ == '__main__':
