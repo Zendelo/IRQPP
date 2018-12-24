@@ -162,7 +162,7 @@ def main(args):
     # results_file = dp.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/raw/QL.res')
     # corpus_scores_file = dp.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/raw/logqlc.res')
 
-    queries_file = dp.ensure_file(f'~/QppUqvProj/data/{corpus}/queries.txt')
+    queries_file = dp.ensure_file(f'~/QppUqvProj/data/{corpus}/queries.xml')
     results_file = dp.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/basic/QL.res')
     corpus_scores_file = dp.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/basic/logqlc.res')
 
@@ -172,7 +172,7 @@ def main(args):
     corpus_scores_obj = dp.ResultsReader(corpus_scores_file, 'predictions')
 
     cores = mp.cpu_count() - 1
-    uqv = True if 'uqv' in queries_file.lower() else False
+    uqv = True if 'uqv' in queries_file.split('/')[-1].lower() else False
 
     with mp.Pool(processes=cores) as pool:
         predictor = pool.starmap(
