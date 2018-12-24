@@ -8,6 +8,8 @@ from functools import partial
 from subprocess import run
 from collections import defaultdict
 import pickle
+import timeit
+from math import sqrt
 
 import numpy as np
 import pandas as pd
@@ -92,6 +94,7 @@ class RSD:
         else:
             self.docs_lists_dict = self.generate_sampled_lists(list_length)
             self.__save_new_dictionary()
+        # self.raw_scores_dict = self.calc_raw_scores()
 
     def __save_new_dictionary(self):
         """This method saves the sampled lists dictionary into a pickle file"""
@@ -138,6 +141,28 @@ class RSD:
                 docs_lists_dict[qid].append(_docs_list)
         return docs_lists_dict
 
+    def calc_raw_scores(self):
+        _scores_dict = {}
+        for qid, docs_lists in self.docs_lists_dict.items():
+            _scores_dict[qid] = self.__calc_raw_sigma_sq(qid, docs_lists)
+        return _scores_dict
+
+    def __calc_raw_sigma_sq(self, qid, docs_lists):
+        """This method implements the calculation of the estimator sigma_{s|q} as it's defined in section 2.1"""
+        df = self.res_df.loc[qid]
+        _scores_list = []
+        corpus_score = self.corpus_df.loc[qid].score
+        for _list in docs_lists:
+            # This notation is a hint type. i.e. _df is of type pd.Series
+            _df: pd.Series = df.loc[df['docID'].isin(_list)]['docScore']
+            list_length = len(_df)
+            scores_sum = _df.sum()
+            # Pandas unbiased variance function
+            scores_var = _df.var()
+            wig_weight = max(0, (scores_sum / list_length) - corpus_score)
+            _scores_list.append(wig_weight * scores_var)
+        return sqrt(sum(_scores_list))
+
     def calc_results(self, number_of_docs):
         for qid in self.qdb.query_length:
             _denominator = self._calc_denominator(qid, number_of_docs) * number_of_docs
@@ -147,6 +172,21 @@ class RSD:
             print('{} {:f}'.format(qid, _score))
         # predictions_df = pd.Series(self.predictions)
         # predictions_df.to_json('wig-predictions-{}.res'.format(number_of_docs))
+
+
+def run_predictions(number_of_docs, list_length, queries_obj, results_obj, corpus_scores_obj, corpus, uqv,
+                    load_cache=True):
+    predictor = RSD(number_of_docs=number_of_docs, list_length=list_length, queries_obj=queries_obj,
+                    results_obj=results_obj, corpus_scores_obj=corpus_scores_obj, corpus=corpus, uqv=uqv,
+                    load_cache=load_cache)
+    raw_scores_dict = predictor.calc_raw_scores()
+    df = pd.DataFrame.from_dict(raw_scores_dict, orient='index')
+    if uqv:
+        _dir = dp.ensure_dir(f'~/QppUqvProj/Results/{corpus}/uqvPredictions/raw/rsd/predictions')
+    else:
+        _dir = dp.ensure_dir(f'~/QppUqvProj/Results/{corpus}/basicPredictions/title/rsd/predictions')
+    file_name = f'{_dir}/predictions-{number_of_docs}+{list_length}'
+    df.to_csv(file_name, sep=" ", header=False, index=True, float_format='%f')
 
 
 def main(args):
@@ -174,9 +214,12 @@ def main(args):
     cores = mp.cpu_count() - 1
     uqv = True if 'uqv' in queries_file.split('/')[-1].lower() else False
 
+    # run_predictions(number_of_docs=50, list_length=30, queries_obj=queries_obj, results_obj=results_obj,
+    #                 corpus_scores_obj=corpus_scores_obj, corpus=corpus, uqv=uqv, load_cache=True)
+
     with mp.Pool(processes=cores) as pool:
         predictor = pool.starmap(
-            partial(RSD, queries_obj=queries_obj, results_obj=results_obj, corpus_scores_obj=corpus_scores_obj,
+            partial(run_predictions, queries_obj=queries_obj, results_obj=results_obj, corpus_scores_obj=corpus_scores_obj,
                     corpus=corpus, uqv=uqv, load_cache=True), itertools.product(NUMBER_OF_DOCS, LIST_LENGTH))
 
 
