@@ -12,7 +12,7 @@ import pandas as pd
 # TODO: switch the code to work with the global dataparser
 
 parser = argparse.ArgumentParser(description='NQC predictor',
-                                 usage='Input CE(q|d) scores and queries files',
+                                 usage='Input QL(q|d) scores and queries files',
                                  epilog='Prints the NQC predictor scores')
 
 parser.add_argument('results', metavar='QL(q|d)_results_file', help='The QL results file for the documents scores')
@@ -66,6 +66,9 @@ class QueriesParser:
 
 
 class NQC:
+    """This class implements the QPP method as described in:
+    'Predicting Query Performance by Query-Drift Estimation'
+    The predictor is implemented to work with log(QL) scores (not -CE)"""
     def __init__(self, queries_obj, results_df, corpus_scores_df):
         self.qdb = queries_obj
         self.res = results_df

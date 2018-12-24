@@ -31,7 +31,8 @@ NUMBER_OF_DOCS = [5, 10, 25, 50, 100, 250, 500, 1000]
 
 class SMV:
     """This class implements the QPP method as described in:
-    'Query Performance Prediction By Considering Score Magnitude and Variance Together' """
+    'Query Performance Prediction By Considering Score Magnitude and Variance Together'
+    The predictor is implemented to work with log(QL) scores (not -CE)"""
 
     def __init__(self, queries_obj: dp.QueriesXMLParser, results_obj: dp.ResultsReader,
                  corpus_scores_obj: dp.ResultsReader):
@@ -50,13 +51,6 @@ class SMV:
         _scores_dev = _scores / _mean
         _ln_scores = abs(_scores_dev.apply(np.log))
         return (_scores * _ln_scores).sum()
-
-    # Version for -CE scores
-    # def _calc_numerator(self, qid, qlen, num_docs):
-    #     _scores = list(self.res.loc[qid]['docScore'].head(num_docs))
-    #     for i, score in enumerate(_scores):
-    #         _scores[i] = score * qlen
-    #     return np.std(_scores)
 
     def calc_results(self, number_of_docs):
         for qid in self.qdb.query_length:

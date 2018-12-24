@@ -148,7 +148,7 @@ def write_queries_to_files(q_df: pd.DataFrame, corpus, queries_group='title', qu
         file_name = f'queries_{corpus}_{queries_group}'
 
     q_df.to_csv(f'{file_name}.txt', sep=":", header=False, index=False)
-    query_xml = dt.QueriesXMLParser(q_df)
+    query_xml = dt.QueriesXMLWriter(q_df)
     query_xml.print_queries_xml_file(f'{file_name}.xml')
 
 
