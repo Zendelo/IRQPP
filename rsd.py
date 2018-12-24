@@ -158,13 +158,13 @@ def main(args):
 
     # corpus = 'ROBUST'
 
-    queries_file = dp.ensure_file(f'~/QppUqvProj/data/{corpus}/queries_{corpus}_UQV_full.xml')
-    results_file = dp.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/raw/QL.res')
-    corpus_scores_file = dp.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/raw/logqlc.res')
+    # queries_file = dp.ensure_file(f'~/QppUqvProj/data/{corpus}/queries_{corpus}_UQV_full.xml')
+    # results_file = dp.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/raw/QL.res')
+    # corpus_scores_file = dp.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/raw/logqlc.res')
 
-    # queries_file = dp.ensure_file(f'~/QppUqvProj/data/{corpus}/queries.txt')
-    # results_file = dp.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/basic/QL.res')
-    # corpus_scores_file = dp.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/basic/logqlc.res')
+    queries_file = dp.ensure_file(f'~/QppUqvProj/data/{corpus}/queries.txt')
+    results_file = dp.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/basic/QL.res')
+    corpus_scores_file = dp.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/basic/logqlc.res')
 
     queries_obj = dp.QueriesXMLParser(queries_file)
     # queries_obj = dp.QueriesTextParser(queries_file)
@@ -177,7 +177,7 @@ def main(args):
     with mp.Pool(processes=cores) as pool:
         predictor = pool.starmap(
             partial(RSD, queries_obj=queries_obj, results_obj=results_obj, corpus_scores_obj=corpus_scores_obj,
-                    corpus=corpus, uqv=uqv, load_cache=False), itertools.product(NUMBER_OF_DOCS, LIST_LENGTH))
+                    corpus=corpus, uqv=uqv, load_cache=True), itertools.product(NUMBER_OF_DOCS, LIST_LENGTH))
 
 
 if __name__ == '__main__':
