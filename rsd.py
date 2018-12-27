@@ -34,7 +34,7 @@ parser = argparse.ArgumentParser(description='RSD(wig) predictor',
 parser.add_argument('-c', '--corpus', default=None, help='The corpus to be used', choices=['ROBUST', 'ClueWeb12B'])
 
 NUMBER_OF_DOCS = [5, 10, 25, 50, 100, 250, 500, 1000]
-LIST_LENGTH = [30, 50, 100, 150, 200]
+LIST_LENGTH = [5, 10, 25, 50, 100, 250, 500, 1000]
 
 
 def random_sampling(list_length, df):
@@ -206,15 +206,15 @@ def main(args):
 
     # corpus = 'ROBUST'
 
-    queries_file = dp.ensure_file(f'~/QppUqvProj/data/{corpus}/queries_{corpus}_UQV_full.xml')
-    results_file = dp.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/raw/QL.res')
-    corpus_scores_file = dp.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/raw/logqlc.res')
-    rm_probabilities_dir = dp.ensure_dir(f'~/QppUqvProj/Results/{corpus}/uqvPredictions/raw/rsd/data')
+    # queries_file = dp.ensure_file(f'~/QppUqvProj/data/{corpus}/queries_{corpus}_UQV_full.xml')
+    # results_file = dp.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/raw/QL.res')
+    # corpus_scores_file = dp.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/raw/logqlc.res')
+    # rm_probabilities_dir = dp.ensure_dir(f'~/QppUqvProj/Results/{corpus}/uqvPredictions/raw/rsd/data')
 
-    # queries_file = dp.ensure_file(f'~/QppUqvProj/data/{corpus}/queries.xml')
-    # results_file = dp.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/basic/QL.res')
-    # corpus_scores_file = dp.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/basic/logqlc.res')
-    # rm_probabilities_dir = dp.ensure_dir(f'~/QppUqvProj/Results/{corpus}/basicPredictions/title/rsd/data')
+    queries_file = dp.ensure_file(f'~/QppUqvProj/data/{corpus}/queries.xml')
+    results_file = dp.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/basic/QL.res')
+    corpus_scores_file = dp.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/basic/logqlc.res')
+    rm_probabilities_dir = dp.ensure_dir(f'~/QppUqvProj/Results/{corpus}/basicPredictions/title/rsd/data')
 
     queries_obj = dp.QueriesXMLParser(queries_file)
     # queries_obj = dp.QueriesTextParser(queries_file)
