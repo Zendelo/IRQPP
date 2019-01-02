@@ -24,6 +24,8 @@ parser.add_argument('--quantile', help='quantile of query variants to use for pr
 parser.add_argument('-l', '--load', default=None, type=str, help='features file to load')
 parser.add_argument('--generate', help="generate new features file", action="store_true")
 parser.add_argument('--predict', help="generate new predictions", action="store_true")
+parser.add_argument('--graphs', default=None, help="generate new features for graphs", choices=['asce', 'desc'])
+parser.add_argument('-v', '--vars', default=None, type=int, help="number of variations, valid with graphs")
 
 NUMBER_OF_DOCS = (5, 10, 25, 50, 100, 250, 500, 1000)
 
@@ -43,12 +45,18 @@ def list_overlap(x, y):
 
 
 class QueryFeatureFactory:
-    def __init__(self, corpus, queries_group, vars_quantile, rbo_top=100, top_docs_overlap=10):
-        self.top_docs_overlap = top_docs_overlap
-        self.rbo_top = rbo_top
+    def __init__(self, corpus, queries_group, vars_quantile, **kwargs):
+        self.top_docs_overlap = kwargs.get('top_docs_overlap', 10)
+        self.rbo_top = kwargs.get('rbo_top', 100)
         self.corpus = corpus
         self.queries_group = queries_group
-        self.__set_paths(corpus, queries_group, vars_quantile)
+        graphs = kwargs.get('graphs', None)
+        if graphs:
+            n = kwargs.get('n', None)
+            assert n, 'Missing number of vars'
+            self.__set_graph_paths(corpus, queries_group, graphs, n)
+        else:
+            self.__set_paths(corpus, queries_group, vars_quantile)
         _raw_res_data = dp.ResultsReader(self.results_file, 'trec')
         if queries_group == 'title':
             _title_res_data = dp.ResultsReader(self.title_res_file, 'trec')
@@ -101,10 +109,47 @@ class QueryFeatureFactory:
         _fused_results_file = f'{_corpus_res_dir}/test/fusion/QL.res'
         cls.fused_results_file = dp.ensure_file(_fused_results_file)
 
-        cls.output_dir = dp.ensure_dir(f'{_corpus_res_dir}/test/raw/')
+        # cls.output_dir = dp.ensure_dir(f'{_corpus_res_dir}/test/raw/')
 
         _predictions_out = f'{_corpus_res_dir}/uqvPredictions/referenceLists/{qgroup}/{vars_quantile}_vars/sim_as_pred/'
         cls.predictions_output_dir = dp.ensure_dir(_predictions_out)
+
+    @classmethod
+    def __set_graph_paths(cls, corpus, qgroup, direct, n):
+        """This method sets the default paths of the files and the working directories, it assumes the standard naming
+         convention of the project"""
+        # cls.predictor = predictor
+        _corpus_res_dir = dp.ensure_dir(f'~/QppUqvProj/Results/{corpus}')
+        _corpus_dat_dir = dp.ensure_dir(f'~/QppUqvProj/data/{corpus}')
+
+        _graphs_base_dir = dp.ensure_dir(f'~/QppUqvProj/Graphs/{corpus}')
+        _graphs_res_dir = dp.ensure_dir(f'{_graphs_base_dir}/referenceLists/title/{direct}/{n}_vars')
+        _graphs_dat_dir = dp.ensure_dir(f'{_graphs_base_dir}/data/{direct}')
+
+        _results_file = f'{_corpus_res_dir}/test/raw/QL.res'
+        cls.results_file = os.path.normpath(_results_file)
+        dp.ensure_file(cls.results_file)
+
+        _title_results_file = f'{_corpus_res_dir}/test/basic/QL.res'
+        cls.title_res_file = os.path.normpath(_title_results_file)
+        dp.ensure_file(cls.title_res_file)
+
+        _queries_full_file = f'{_corpus_dat_dir}/queries_{corpus}_UQV_full.stemmed.txt'
+        cls.queries_full_file = dp.ensure_file(_queries_full_file)
+
+        # The variations file is used in the filter function - it consists of all the vars w/o the query at hand
+        _queries_variations_file = f'{_graphs_dat_dir}/queries_wo_title_{n}_vars.txt'
+        cls.queries_variations_file = dp.ensure_file(_queries_variations_file)
+
+        _queries_topic_file = f'{_corpus_dat_dir}/queries_{corpus}_{qgroup}.stemmed.txt'
+        cls.queries_topic_file = dp.ensure_file(_queries_topic_file)
+
+        _fused_results_file = f'{_corpus_res_dir}/test/fusion/QL.res'
+        cls.fused_results_file = dp.ensure_file(_fused_results_file)
+
+        # cls.output_dir = dp.ensure_dir(f'{_graphs_res_dir}/test/raw/')
+
+        cls.predictions_output_dir = dp.ensure_dir(f'{_graphs_res_dir}/sim_as_pred/')
 
     def _calc_features(self):
         _dict = {'topic': [], 'qid': [], 'Jac_coefficient': [], f'Top_{self.top_docs_overlap}_Docs_overlap': [],
@@ -276,6 +321,8 @@ def main(args):
     queries_group = args.group
     file_to_load = args.load
     quantile = args.quantile
+    graphs = args.graphs
+    number_of_vars = args.vars
 
     # # Debugging
     # testing_feat = QueryFeatureFactory('ROBUST')
@@ -297,6 +344,15 @@ def main(args):
             sim_ref_pred = pool.map(
                 partial(run_predictions_process, corpus=corpus, queries_group=queries_group, quantile=quantile),
                 NUMBER_OF_DOCS)
+    elif graphs:
+        assert number_of_vars, 'Missing number of variations'
+        testing_feat = QueryFeatureFactory(corpus, queries_group, quantile, graphs=graphs)
+        norm_features_df = testing_feat.generate_features()
+
+        _path = f'~/QppUqvProj/Graphs/{corpus}/data/ref/'
+        _path = dp.ensure_dir(_path)
+        norm_features_df.reset_index().to_json(
+            f'{_path}/{queries_group}_query_{quantile}_variations_features_{corpus}_uqv.JSON')
 
     elif file_to_load:
         features_df = features_loader(file_to_load, corpus)

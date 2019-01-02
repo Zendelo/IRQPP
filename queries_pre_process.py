@@ -74,6 +74,36 @@ def filter_top_queries(qdf: pd.DataFrame, apdb: dt.ResultsReader):
     return _df
 
 
+def add_topic_to_qdf_from_apdb(qdf, apdb):
+    """This functions will add a topic column to the queries DF using apdb"""
+    if 'topic' not in qdf.columns:
+        for topic, q_vars in apdb.query_vars.items():
+            qdf.loc[qdf['qid'].isin(q_vars), 'topic'] = topic
+
+
+def add_topic_to_qdf(qdf: pd.DataFrame):
+    """This functions will add a topic column to the queries DF"""
+    if 'topic' not in qdf.columns:
+        qdf = qdf.assign(topic=lambda x: x.qid.apply(lambda y: y.split('-')[0]))
+    return qdf
+
+
+def filter_n_top_queries(qdf: pd.DataFrame, apdb: dt.ResultsReader, n):
+    """This function returns a DF with top n queries per topic"""
+    add_topic_to_qdf_from_apdb(qdf, apdb)
+    _ap_vars_df = pd.merge(qdf, apdb.data_df, left_on='qid', right_index=True)
+    _df = _ap_vars_df.sort_values('ap', ascending=False).groupby('topic').head(n)
+    return _df.sort_values('qid')
+
+
+def filter_n_low_queries(qdf: pd.DataFrame, apdb: dt.ResultsReader, n):
+    """This function returns a DF with n lowest queries per topic"""
+    add_topic_to_qdf_from_apdb(qdf, apdb)
+    _ap_vars_df = pd.merge(qdf, apdb.data_df, left_on='qid', right_index=True)
+    _df = _ap_vars_df.sort_values('ap', ascending=True).groupby('topic').head(n)
+    return _df.sort_values('qid')
+
+
 def filter_low_queries(qdf: pd.DataFrame, apdb: dt.ResultsReader):
     _apdf = apdb.data_df
     _list = []
@@ -207,8 +237,7 @@ def calc_statistics(qdf: pd.DataFrame, apdb: dt.ResultsReader, title_queries_df:
     quant_variants_dict: {quantile: df}
     """
     # Add topic column to qdf
-    for topic, q_vars in apdb.query_vars.items():
-        qdf.loc[qdf['qid'].isin(q_vars), 'topic'] = topic
+    add_topic_to_qdf_from_apdb(qdf, apdb)
     # Create queries_groups_dict
     _title_df = pd.merge(title_queries_df, title_ap.data_df, on='qid')
     queries_groups_dict = {'title': _title_df.set_index('qid')}
