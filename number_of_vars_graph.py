@@ -92,19 +92,22 @@ def main(args):
 
     testing = GraphsFactory(corpus)
     # testing.create_query_files(13)
-    # testing.generate_features(13)
-    # testing.generate_sim_predictions(13)
+    # testing.generate_features(1)
+    # testing.generate_sim_predictions(1)
 
     for n in range(1, min(testing.max_variations, max_n) + 1):
         testing.create_query_files(n)
 
     cores = mp.cpu_count() - 1
 
+    """The first run will generate the pkl files, all succeeding runs will load and use it"""
+    testing.generate_features(1)
     with mp.Pool(processes=cores) as pool:
-        pool.map(testing.generate_features, range(1, min(testing.max_variations, max_n) + 1))
+        pool.map(testing.generate_features, range(2, min(testing.max_variations, max_n) + 1))
 
+    testing.generate_sim_predictions(1)
     with mp.Pool(processes=cores) as pool:
-        pool.map(testing.generate_sim_predictions, range(1, min(testing.max_variations, max_n) + 1))
+        pool.map(testing.generate_sim_predictions, range(2, min(testing.max_variations, max_n) + 1))
 
 
 if __name__ == '__main__':
