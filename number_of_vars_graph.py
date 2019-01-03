@@ -71,7 +71,7 @@ class GraphsFactory:
 def main(args):
     corpus = args.corpus
 
-    # TODO:
+    #TODO:
     # Continue to qpp_ref next, make sure it knows how to use the new features format and queries
     # then need to write CV and save all the results in order to plot graphs
 
@@ -95,7 +95,7 @@ def main(args):
     # testing.generate_features(1)
     # testing.generate_sim_predictions(1)
 
-    for n in range(1, min(testing.max_variations, max_n) + 1):
+    for n in range(1, testing.max_n + 1):
         testing.create_query_files(n)
 
     cores = mp.cpu_count() - 1
@@ -103,7 +103,7 @@ def main(args):
     """The first run will generate the pkl files, all succeeding runs will load and use it"""
     testing.generate_features(1)
     with mp.Pool(processes=cores) as pool:
-        pool.map(testing.generate_features, range(2, min(testing.max_variations, max_n) + 1))
+        pool.map(testing.generate_features, range(2, testing.max_n + 1))
 
     with mp.Pool(processes=cores) as pool:
         pool.map(testing.generate_sim_predictions, NUMBER_OF_DOCS)
