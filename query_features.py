@@ -45,6 +45,9 @@ def list_overlap(x, y):
 
 
 class QueryFeatureFactory:
+    """TODO: At the moment this will save for each combination a separate pickle file, should change it to a pickle file
+    that consists of all the calculations and then filter the relevant query variations from it"""
+
     def __init__(self, corpus, queries_group, vars_quantile, **kwargs):
         self.top_docs_overlap = kwargs.get('top_docs_overlap', 10)
         self.rbo_top = kwargs.get('rbo_top', 100)
@@ -69,7 +72,9 @@ class QueryFeatureFactory:
         # write_basic_results(self.prediction_queries_res_data.data_df.loc[self.topics_data.queries_df['qid']], corpus,
         #                     queries_group)
         # exit()
+        # These 2 DF used for the filtering method
         self.variations_data = dp.QueriesTextParser(self.queries_variations_file, 'uqv')
+        self.quantile_variations_data = dp.QueriesTextParser(self.queries_quantile_vars, 'uqv')
         # _var_scores_df.loc[_var_scores_df['qid'].isin(_vars_list)]
         self.raw_res_data = _raw_res_data
 
@@ -92,16 +97,18 @@ class QueryFeatureFactory:
         cls.title_res_file = os.path.normpath(_title_results_file)
         dp.ensure_file(cls.title_res_file)
 
-        if vars_quantile == 'all':
-            _queries_full_file = f'{_corpus_dat_dir}/queries_{corpus}_UQV_full.stemmed.txt'
-        else:
-            _queries_full_file = f'{_corpus_dat_dir}/queries_{corpus}_UQV_{vars_quantile}_variants.stemmed.txt'
-
-        cls.queries_full_file = dp.ensure_file(_queries_full_file)
+        cls.queries_full_file = dp.ensure_file(f'{_corpus_dat_dir}/queries_{corpus}_UQV_full.stemmed.txt')
 
         # The variations file is used in the filter function - it consists of all the vars w/o the query at hand
         _queries_variations_file = f'{_corpus_dat_dir}/queries_{corpus}_UQV_wo_{qgroup}.txt'
         cls.queries_variations_file = dp.ensure_file(_queries_variations_file)
+
+        # The vars quantile file is used in the filter function - it consists of the relevant vars quantile
+        if vars_quantile == 'all':
+            _queries_quantile_file = f'{_corpus_dat_dir}/queries_{corpus}_UQV_full.txt'
+        else:
+            _queries_quantile_file = f'{_corpus_dat_dir}/queries_{corpus}_UQV_{vars_quantile}_variants.txt'
+        cls.queries_quantile_vars = dp.ensure_file(_queries_quantile_file)
 
         _queries_topic_file = f'{_corpus_dat_dir}/queries_{corpus}_{qgroup}.stemmed.txt'
         cls.queries_topic_file = dp.ensure_file(_queries_topic_file)
@@ -114,7 +121,7 @@ class QueryFeatureFactory:
         _predictions_out = f'{_corpus_res_dir}/uqvPredictions/referenceLists/{qgroup}/{vars_quantile}_vars/sim_as_pred/'
         cls.predictions_output_dir = dp.ensure_dir(_predictions_out)
 
-        cls.pkl_dir = dp.ensure_dir(f'~/QppUqvProj/Results/{corpus}/test/ref/pkl_files/{vars_quantile}_vars')
+        cls.pkl_dir = dp.ensure_dir(f'{_corpus_res_dir}/test/ref/pkl_files/')
 
     @classmethod
     def __set_graph_paths(cls, corpus, qgroup, direct, n):
@@ -126,7 +133,7 @@ class QueryFeatureFactory:
 
         _graphs_base_dir = dp.ensure_dir(f'~/QppUqvProj/Graphs/{corpus}')
         _graphs_res_dir = dp.ensure_dir(f'{_graphs_base_dir}/referenceLists/title/{direct}/{n}_vars')
-        _graphs_dat_dir = dp.ensure_dir(f'{_graphs_base_dir}/data/{direct}')
+        _graphs_dat_dir = dp.ensure_dir(f'{_graphs_base_dir}/data')
 
         cls.number_of_vars = n
 
@@ -142,8 +149,9 @@ class QueryFeatureFactory:
         cls.queries_full_file = dp.ensure_file(_queries_full_file)
 
         # The variations file is used in the filter function - it consists of all the vars w/o the query at hand
-        _queries_variations_file = f'{_graphs_dat_dir}/queries/queries_wo_title_{n}_vars.txt'
+        _queries_variations_file = f'{_graphs_dat_dir}/{direct}/queries/queries_wo_title_{n}_vars.txt'
         cls.queries_variations_file = dp.ensure_file(_queries_variations_file)
+        cls.queries_quantile_vars = cls.queries_variations_file
 
         _queries_topic_file = f'{_corpus_dat_dir}/queries_{corpus}_{qgroup}.stemmed.txt'
         cls.queries_topic_file = dp.ensure_file(_queries_topic_file)
@@ -201,8 +209,11 @@ class QueryFeatureFactory:
         return _df
 
     def _filter_queries(self, df):
-        # return df[df['Jac_coefficient'] != 1]
-        return df.loc[df['qid'].isin(self.variations_data.queries_df['qid'])]
+        # Remove the topic queries
+        _df = df.loc[df['qid'].isin(self.variations_data.queries_df['qid'])]
+        # Filter only the relevant quantile variations
+        _df = _df.loc[_df['qid'].isin(self.quantile_variations_data.queries_df['qid'])]
+        return _df
 
     def _soft_max_scores(self, df):
         _df = self._filter_queries(df)
