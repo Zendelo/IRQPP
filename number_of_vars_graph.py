@@ -26,13 +26,13 @@ NUMBER_OF_DOCS = (5, 10, 25, 50, 100, 250, 500, 1000)
 
 
 class GraphsFactory:
-    def __init__(self, corpus):
+    def __init__(self, corpus, max_n=20):
         self.__set_paths(corpus)
         self.corpus = corpus
         self.queries_obj = dp.QueriesTextParser(self.queries_file)
         self.queries_obj.queries_df = add_topic_to_qdf(self.queries_obj.queries_df)
         self.ap_obj = dp.ResultsReader(self.ap_file, 'ap')
-        self.max_variations = self.queries_obj.queries_df.groupby('topic').count().max()['qid']
+        self.max_n = min(self.queries_obj.queries_df.groupby('topic').count().max()['qid'], max_n)
 
     @classmethod
     def __set_paths(cls, corpus):
@@ -59,10 +59,10 @@ class GraphsFactory:
             _df = _feat_obj.generate_features()
             _df.reset_index().to_json(f'{_dir}/title_query_{n}_variations_features_{self.corpus}_uqv.JSON')
 
-    def generate_sim_predictions(self, n):
+    def generate_sim_predictions(self, k):
         for direct in {'asce', 'desc'}:
             _dir = dp.ensure_dir(f'{self.data_dir}/{direct}')
-            for k in NUMBER_OF_DOCS:
+            for n in range(1, self.max_n + 1):
                 sim_ref_pred = QueryFeatureFactory(self.corpus, queries_group='title', vars_quantile='all', rbo_top=k,
                                                    top_docs_overlap=k, graphs=direct, n=n)
                 sim_ref_pred.generate_predictions()
@@ -71,7 +71,7 @@ class GraphsFactory:
 def main(args):
     corpus = args.corpus
 
-    #TODO:
+    # TODO:
     # Continue to qpp_ref next, make sure it knows how to use the new features format and queries
     # then need to write CV and save all the results in order to plot graphs
 
@@ -105,9 +105,8 @@ def main(args):
     with mp.Pool(processes=cores) as pool:
         pool.map(testing.generate_features, range(2, min(testing.max_variations, max_n) + 1))
 
-    testing.generate_sim_predictions(1)
     with mp.Pool(processes=cores) as pool:
-        pool.map(testing.generate_sim_predictions, range(2, min(testing.max_variations, max_n) + 1))
+        pool.map(testing.generate_sim_predictions, NUMBER_OF_DOCS)
 
 
 if __name__ == '__main__':
