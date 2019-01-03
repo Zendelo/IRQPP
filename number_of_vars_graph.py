@@ -42,22 +42,22 @@ class GraphsFactory:
         cls.corpus_scores_file = dp.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/raw/logqlc.res')
         cls.rm_probabilities_dir = dp.ensure_dir(f'~/QppUqvProj/Results/{corpus}/uqvPredictions/raw/rsd/data')
         cls.data_dir = dp.ensure_dir(f'~/QppUqvProj/Graphs/{corpus}/data')
-        cls.predictions_dir = dp.ensure_dir(f'~/QppUqvProj/Graphs/ROBUST/referenceLists/title')
+        cls.predictions_dir = dp.ensure_dir(f'~/QppUqvProj/Graphs/{corpus}/referenceLists/title')
 
     def create_query_files(self, n):
         for direction, func in {('asce', filter_n_low_queries), ('desc', filter_n_top_queries)}:
-            _dir = dp.ensure_dir(f'{self.data_dir}/{direction}')
+            _dir = dp.ensure_dir(f'{self.data_dir}/{direction}/queries')
             _file = f'{_dir}/queries_wo_title_{n}_vars.txt'
             _df = func(self.queries_obj.queries_df, self.ap_obj, n)
             _df[['qid', 'text']].to_csv(_file, sep=":", header=False, index=False)
 
     def generate_features(self, n):
         for direct in {'asce', 'desc'}:
-            _dir = dp.ensure_dir(f'{self.data_dir}/{direct}')
+            _dir = dp.ensure_dir(f'{self.data_dir}/{direct}/features')
             _feat_obj = QueryFeatureFactory(corpus=self.corpus, queries_group='title', vars_quantile='all',
                                             graphs=direct, n=n)
             _df = _feat_obj.generate_features()
-            _df.to_json(f'{_dir}/title_query_{n}_variations_features_{self.corpus}_uqv.JSON')
+            _df.reset_index().to_json(f'{_dir}/title_query_{n}_variations_features_{self.corpus}_uqv.JSON')
 
     def generate_sim_predictions(self, n):
         for direct in {'asce', 'desc'}:
@@ -71,7 +71,10 @@ class GraphsFactory:
 def main(args):
     corpus = args.corpus
 
-    corpus = 'ROBUST'
+    #TODO:
+    # Continue to qpp_ref next, make sure it knows how to use the new features format and queries
+    # then need to write CV and save all the results in order to plot graphs
+
     # ap_file = dp.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/raw/QLmap1000')
     #
     # queries_file = dp.ensure_file(f'~/QppUqvProj/data/{corpus}/queries_{corpus}_UQV_wo_title.stemmed.txt')
@@ -85,14 +88,18 @@ def main(args):
     # rm_probabilities_dir = dp.ensure_dir(f'~/QppUqvProj/Results/{corpus}/basicPredictions/title/rsd/data')
 
     max_n = 20
+    # corpus = 'ROBUST'
+
     testing = GraphsFactory(corpus)
-    # testing.create_query_files(3)
-    # testing.generate_features(3)
+    # testing.create_query_files(13)
+    # testing.generate_features(13)
+    # testing.generate_sim_predictions(13)
 
     for n in range(1, min(testing.max_variations, max_n) + 1):
         testing.create_query_files(n)
 
     cores = mp.cpu_count() - 1
+
     with mp.Pool(processes=cores) as pool:
         pool.map(testing.generate_features, range(1, min(testing.max_variations, max_n) + 1))
 

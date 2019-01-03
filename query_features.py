@@ -114,6 +114,8 @@ class QueryFeatureFactory:
         _predictions_out = f'{_corpus_res_dir}/uqvPredictions/referenceLists/{qgroup}/{vars_quantile}_vars/sim_as_pred/'
         cls.predictions_output_dir = dp.ensure_dir(_predictions_out)
 
+        cls.pkl_dir = dp.ensure_dir(f'~/QppUqvProj/Results/{corpus}/test/ref/pkl_files/{vars_quantile}_vars')
+
     @classmethod
     def __set_graph_paths(cls, corpus, qgroup, direct, n):
         """This method sets the default paths of the files and the working directories, it assumes the standard naming
@@ -125,6 +127,8 @@ class QueryFeatureFactory:
         _graphs_base_dir = dp.ensure_dir(f'~/QppUqvProj/Graphs/{corpus}')
         _graphs_res_dir = dp.ensure_dir(f'{_graphs_base_dir}/referenceLists/title/{direct}/{n}_vars')
         _graphs_dat_dir = dp.ensure_dir(f'{_graphs_base_dir}/data/{direct}')
+
+        cls.number_of_vars = n
 
         _results_file = f'{_corpus_res_dir}/test/raw/QL.res'
         cls.results_file = os.path.normpath(_results_file)
@@ -138,7 +142,7 @@ class QueryFeatureFactory:
         cls.queries_full_file = dp.ensure_file(_queries_full_file)
 
         # The variations file is used in the filter function - it consists of all the vars w/o the query at hand
-        _queries_variations_file = f'{_graphs_dat_dir}/queries_wo_title_{n}_vars.txt'
+        _queries_variations_file = f'{_graphs_dat_dir}/queries/queries_wo_title_{n}_vars.txt'
         cls.queries_variations_file = dp.ensure_file(_queries_variations_file)
 
         _queries_topic_file = f'{_corpus_dat_dir}/queries_{corpus}_{qgroup}.stemmed.txt'
@@ -151,7 +155,12 @@ class QueryFeatureFactory:
 
         cls.predictions_output_dir = dp.ensure_dir(f'{_graphs_res_dir}/sim_as_pred/')
 
+        cls.pkl_dir = dp.ensure_dir(f'{_graphs_dat_dir}/pkl_files/features')
+
     def _calc_features(self):
+        """This method calculates the similarity features for all the variations with the 'query at hand' i.e. the query
+        that being predicted, including the query itself (if it's among the variations)"""
+
         _dict = {'topic': [], 'qid': [], 'Jac_coefficient': [], f'Top_{self.top_docs_overlap}_Docs_overlap': [],
                  f'RBO_EXT_{self.rbo_top}': [], f'RBO_FUSED_EXT_{self.rbo_top}': []}
 
@@ -244,9 +253,9 @@ class QueryFeatureFactory:
         return norm_df
 
     def _divide_by_size(self, df):
-        _df = df
+        # _df = df
         # filter only variations different from original query
-        # _df = self._filter_queries(df)
+        _df = self._filter_queries(df)
         z_n = _df.groupby(['topic']).count()
         z_n.drop('qid', axis='columns', inplace=True)
         # All nan values will be filled with 0
@@ -255,8 +264,41 @@ class QueryFeatureFactory:
         norm_df = _df / z_n
         return norm_df
 
-    def generate_features(self):
-        _df = self._calc_features()
+    def __load_features_df(self, _file_name):
+        """The method will try to load the features DF from a pkl file, if it fails it will generate a new df
+        and save it"""
+        try:
+            # Will try loading a DF, if fails will generate and save a new one
+            file_to_load = dp.ensure_file(_file_name)
+            _df = pd.read_pickle(file_to_load)
+        except AssertionError:
+            print(f'\nFailed to load {_file_name}')
+            print(f'Will generate {self.pkl_dir.rsplit("/")[-1]} vars {self.queries_group}_query_features '
+                  f'features and save')
+            _df = self._calc_features()
+            _df.to_pickle(_file_name)
+        return _df
+
+    def __get_pkl_file_name(self):
+        # Following EAFP principle, using try instead of if hasattr(self, number_of_vars)
+        try:
+            _file = '{}/{}_queries_{}_{}_vars_RBO_{}_TopDocs_{}.pkl'.format(self.pkl_dir, self.queries_group,
+                                                                            self.corpus, self.number_of_vars,
+                                                                            self.rbo_top, self.top_docs_overlap)
+        except AttributeError:
+            _file = '{}/{}_queries_{}_RBO_{}_TopDocs_{}.pkl'.format(self.pkl_dir, self.queries_group, self.corpus,
+                                                                    self.rbo_top, self.top_docs_overlap)
+        return _file
+
+    def generate_features(self, load_from_pkl=True):
+        """If `load_from_pkl` is True the method will try to load the features DF from a pkl file, otherwise
+        it will generate a new df and save it"""
+        _file = self.__get_pkl_file_name()
+        if load_from_pkl:
+            _df = self.__load_features_df(_file)
+        else:
+            _df = self._calc_features()
+            _df.to_pickle(_file)
         return self._divide_by_size(_df)
         # return _df
         # return self._soft_max_scores(_df)
@@ -279,8 +321,13 @@ class QueryFeatureFactory:
                                                                 sep=' ')
         _df['Jac_coefficient'].to_csv(f'{_jcP_dir}/predictions-{self.rbo_top}', sep=' ')
 
-    def generate_predictions(self):
-        _df = self._calc_features()
+    def generate_predictions(self, load_from_pkl=True):
+        _file = self.__get_pkl_file_name()
+        if load_from_pkl:
+            _df = self.__load_features_df(_file)
+        else:
+            _df = self._calc_features()
+            _df.to_pickle(_file)
         self.save_predictions(_df)
 
 
@@ -325,9 +372,10 @@ def main(args):
     number_of_vars = args.vars
 
     # # Debugging
-    # testing_feat = QueryFeatureFactory('ROBUST')
+    # testing_feat = QueryFeatureFactory('ROBUST', 'title', 'all')
     # norm_features_df = testing_feat.generate_features()
-    # norm_features_df.reset_index().to_json('query_features_{}_uqv.JSON'.format(corpus))
+    # # norm_features_df.reset_index().to_json('query_features_{}_uqv.JSON'.format(corpus))
+    # return
 
     cores = mp.cpu_count() - 1
 
