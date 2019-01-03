@@ -308,7 +308,7 @@ class QueryFeatureFactory:
 
     def save_predictions(self, df: pd.DataFrame):
         _df = self._filter_queries(df)
-        _df = df.groupby('topic').mean()
+        _df = _df.groupby('topic').mean()
         _df = dp.convert_vid_to_qid(_df)
         _rboP_dir = dp.ensure_dir(f'{self.predictions_output_dir}/rboP/predictions')
         _FrboP_dir = dp.ensure_dir(f'{self.predictions_output_dir}/FrboP/predictions')
