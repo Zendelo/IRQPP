@@ -291,14 +291,8 @@ class QueryFeatureFactory:
         return _df
 
     def __get_pkl_file_name(self):
-        # Following EAFP principle, using try instead of if hasattr(self, number_of_vars)
-        try:
-            _file = '{}/{}_queries_{}_{}_vars_RBO_{}_TopDocs_{}.pkl'.format(self.pkl_dir, self.queries_group,
-                                                                            self.corpus, self.number_of_vars,
-                                                                            self.rbo_top, self.top_docs_overlap)
-        except AttributeError:
-            _file = '{}/{}_queries_{}_RBO_{}_TopDocs_{}.pkl'.format(self.pkl_dir, self.queries_group, self.corpus,
-                                                                    self.rbo_top, self.top_docs_overlap)
+        _file = '{}/{}_queries_{}_RBO_{}_TopDocs_{}.pkl'.format(self.pkl_dir, self.queries_group, self.corpus,
+                                                                self.rbo_top, self.top_docs_overlap)
         return _file
 
     def generate_features(self, load_from_pkl=True):
