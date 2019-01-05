@@ -153,8 +153,6 @@ def main(args):
     with mp.Pool(processes=cores) as pool:
         pool.map(testing.generate_sim_predictions, NUMBER_OF_DOCS)
 
-    with mp.Pool(processes=cores) as pool:
-        pool.map(testing.generate_qpp_reference_predictions, PREDICTORS)
     full_results_df = testing.generate_results_df(cores)
 
     print(full_results_df)
