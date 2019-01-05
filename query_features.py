@@ -132,7 +132,7 @@ class QueryFeatureFactory:
         _corpus_dat_dir = dp.ensure_dir(f'~/QppUqvProj/data/{corpus}')
 
         _graphs_base_dir = dp.ensure_dir(f'~/QppUqvProj/Graphs/{corpus}')
-        _graphs_res_dir = dp.ensure_dir(f'{_graphs_base_dir}/referenceLists/title/{direct}/{n}_vars')
+        _graphs_res_dir = dp.ensure_dir(f'{_graphs_base_dir}/referenceLists/{qgroup}/{direct}/{n}_vars')
         _graphs_dat_dir = dp.ensure_dir(f'{_graphs_base_dir}/data')
 
         cls.number_of_vars = n
@@ -149,7 +149,7 @@ class QueryFeatureFactory:
         cls.queries_full_file = dp.ensure_file(_queries_full_file)
 
         # The variations file is used in the filter function - it consists of all the vars w/o the query at hand
-        _queries_variations_file = f'{_graphs_dat_dir}/{direct}/queries/queries_wo_title_{n}_vars.txt'
+        _queries_variations_file = f'{_graphs_dat_dir}/{direct}/queries/queries_wo_{qgroup}_{n}_vars.txt'
         cls.queries_variations_file = dp.ensure_file(_queries_variations_file)
         cls.queries_quantile_vars = cls.queries_variations_file
 

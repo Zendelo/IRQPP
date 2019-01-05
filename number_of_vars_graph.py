@@ -12,6 +12,7 @@ from functools import partial
 from subprocess import run
 from query_features import QueryFeatureFactory
 from queries_pre_process import filter_n_top_queries, filter_n_low_queries, add_topic_to_qdf
+from qpp_ref import QueryPredictionRef
 
 parser = argparse.ArgumentParser(description='Results generator for QPP with Reference lists graphs',
                                  usage='',
@@ -19,7 +20,7 @@ parser = argparse.ArgumentParser(description='Results generator for QPP with Ref
 
 parser.add_argument('-c', '--corpus', default=None, help='The corpus to be used', choices=['ROBUST', 'ClueWeb12B'])
 
-PREDICTORS_WO_QF = ['clarity', 'wig', 'nqc', 'smv', 'preret', 'uef/clarity', 'uef/wig', 'uef/nqc', 'uef/smv']
+PREDICTORS_WO_QF = ['clarity', 'wig', 'nqc', 'smv', 'rsd', 'preret', 'uef/clarity', 'uef/wig', 'uef/nqc', 'uef/smv']
 PREDICTORS_QF = ['qf', 'uef/qf']
 PREDICTORS = PREDICTORS_WO_QF + PREDICTORS_QF
 NUMBER_OF_DOCS = (5, 10, 25, 50, 100, 250, 500, 1000)
@@ -67,11 +68,19 @@ class GraphsFactory:
                                                    top_docs_overlap=k, graphs=direct, n=n)
                 sim_ref_pred.generate_predictions()
 
+    def generate_qpp_reference_predictions(self, predictor):
+        for direct in {'asce', 'desc'}:
+            _dir = dp.ensure_dir(f'{self.data_dir}/{direct}')
+            for n in range(1, self.max_n + 1):
+                qpp_ref = QueryPredictionRef(predictor, self.corpus, qgroup='title', vars_quantile='all', graphs=direct,
+                                             n=n)
+                qpp_ref.calc_queries()
+
 
 def main(args):
     corpus = args.corpus
 
-    #TODO:
+    # TODO:
     # Continue to qpp_ref next, make sure it knows how to use the new features format and queries
     # then need to write CV and save all the results in order to plot graphs
 
@@ -87,13 +96,13 @@ def main(args):
     # corpus_scores_file = dp.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/basic/logqlc.res')
     # rm_probabilities_dir = dp.ensure_dir(f'~/QppUqvProj/Results/{corpus}/basicPredictions/title/rsd/data')
 
-    max_n = 20
     # corpus = 'ROBUST'
 
     testing = GraphsFactory(corpus)
     # testing.create_query_files(13)
     # testing.generate_features(1)
     # testing.generate_sim_predictions(1)
+    # testing.generate_qpp_reference_predictions('wig')
 
     for n in range(1, testing.max_n + 1):
         testing.create_query_files(n)
@@ -107,6 +116,9 @@ def main(args):
 
     with mp.Pool(processes=cores) as pool:
         pool.map(testing.generate_sim_predictions, NUMBER_OF_DOCS)
+
+    with mp.Pool(processes=cores) as pool:
+        pool.map(testing.generate_qpp_reference_predictions, PREDICTORS)
 
 
 if __name__ == '__main__':

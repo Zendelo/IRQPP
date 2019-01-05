@@ -14,6 +14,14 @@ from Timer.timer import Timer
 from crossval import CrossValidation
 from query_features import features_loader
 
+LAMBDA = np.linspace(start=0, stop=1, num=11)
+C_PARAMETERS = [0.01, 0.1, 1, 10]
+PREDICTORS_WO_QF = ['clarity', 'wig', 'nqc', 'smv', 'rsd', 'preret', 'uef/clarity', 'uef/wig', 'uef/nqc', 'uef/smv']
+PREDICTORS_QF = ['qf', 'uef/qf']
+PREDICTORS = PREDICTORS_WO_QF + PREDICTORS_QF
+SIMILARITY_FUNCTIONS = {'Jac_coefficient': 'jac', 'Top_10_Docs_overlap': 'sim', 'RBO_EXT_100': 'rbo',
+                        'RBO_FUSED_EXT_100': 'rbof'}
+
 parser = argparse.ArgumentParser(description='Query Prediction Using Reference lists',
                                  usage='python3.6 qpp_ref.py -c CORPUS ... <parameter files>',
                                  epilog='Unless --generate is given, will try loading the files')
@@ -21,7 +29,7 @@ parser = argparse.ArgumentParser(description='Query Prediction Using Reference l
 parser.add_argument('-c', '--corpus', type=str, default=None, help='corpus to work with',
                     choices=['ROBUST', 'ClueWeb12B'])
 parser.add_argument('-p', '--predictor', default=None, type=str, help='Choose the predictor to use',
-                    choices=['clarity', 'wig', 'nqc', 'qf', 'all'])
+                    choices=PREDICTORS + ['all'])
 parser.add_argument('--uef', help='Add this if the predictor is in uef framework', action="store_true")
 parser.add_argument('-g', '--group', help='group of queries to predict',
                     choices=['top', 'low', 'title', 'medh', 'medl'])
@@ -30,20 +38,23 @@ parser.add_argument('--quantile', help='quantile of query variants to use for pr
 parser.add_argument('--corr_measure', default='pearson', type=str, choices=['pearson', 'spearman', 'kendall'],
                     help='features JSON file to load')
 parser.add_argument('--generate', help='use ltr to generate SVM-Rank predictions, or calc to calc predictions',
-                    choices=['ltr', 'calc'])
-
-LAMBDA = np.linspace(start=0, stop=1, num=11)
-C_PARAMETERS = [0.01, 0.1, 1, 10]
+                    choices=['ltr', 'calc', 'oracle'])
 
 
 class QueryPredictionRef:
-    """The class reads a queries intended for prediction, it's named inside the class as queries_group or qgroup - e.g
+    """The class reads the queries intended for prediction, it's named inside the class as queries_group or qgroup - e.g
     "title" / "top" ..
     Also reads a file with the variations without the queries to be predicted, and a file with the features constructed
     for the relevant queries with the relevant variations"""
 
-    def __init__(self, predictor, corpus, qgroup, vars_quantile):
-        self.__set_paths(corpus, predictor, qgroup, vars_quantile)
+    def __init__(self, predictor, corpus, qgroup, vars_quantile, **kwargs):
+        graphs = kwargs.get('graphs', None)
+        if graphs:
+            n = kwargs.get('n', None)
+            assert n, 'Missing number of vars'
+            self.__set_graph_paths(corpus, predictor, qgroup, graphs, n)
+        else:
+            self.__set_paths(corpus, predictor, qgroup, vars_quantile)
         _q2p_obj = dp.QueriesTextParser(self.queries2predict_file, 'uqv')
         self.var_cv = CrossValidation(file_to_load=self.folds, predictions_dir=self.vars_results_dir)
         _vars_results_df = self.var_cv.full_set
@@ -64,6 +75,8 @@ class QueryPredictionRef:
         self.features_df = self.__initialize_features_df(_quantile_vars, _features_df)
         self.var_scores_df = self.__initialize_var_scores_df(_features_df.reset_index()[['topic', 'qid']],
                                                              _vars_results_df)
+        self.real_ap_df = self.__initialize_var_scores_df(_features_df.reset_index()[['topic', 'qid']],
+                                                          dp.ResultsReader(self.real_ap_file, 'ap').data_df)
 
     @classmethod
     def __set_paths(cls, corpus, predictor, qgroup, vars_quantile):
@@ -75,12 +88,10 @@ class QueryPredictionRef:
         cls.vars_results_dir = dp.ensure_dir(f'{_base_dir}/raw/{predictor}/predictions/')
 
         if qgroup == 'title':
-            _orig_dir = f'~/QppUqvProj/Results/{corpus}/basicPredictions/title'
-            _orig_dir = os.path.normpath(os.path.expanduser(_orig_dir))
+            _orig_dir = dp.ensure_file(f'~/QppUqvProj/Results/{corpus}/basicPredictions/title')
             cls.base_results_dir = f'{_orig_dir}/{predictor}/predictions/'
 
-        cls.output_dir = f'{_base_dir}/referenceLists/{qgroup}/{vars_quantile}_vars/general/'
-        dp.ensure_dir(cls.output_dir)
+        cls.output_dir = dp.ensure_dir(f'{_base_dir}/referenceLists/{qgroup}/{vars_quantile}_vars/')
 
         _test_dir = f'~/QppUqvProj/Results/{corpus}/test'
         cls.folds = dp.ensure_file(f'{_test_dir}/2_folds_30_repetitions.json')
@@ -92,6 +103,7 @@ class QueryPredictionRef:
         cls.features = dp.ensure_file(
             f'{_test_dir}/ref/{qgroup}_query_{vars_quantile}_variations_features_{corpus}_uqv.JSON')
 
+        # The variations file is used in the filter function - it consists of all the vars w/o the query at hand
         _query_vars = f'~/QppUqvProj/data/{corpus}/queries_{corpus}_UQV_wo_{qgroup}.txt'
         cls.query_vars_file = os.path.normpath(os.path.expanduser(_query_vars))
         dp.ensure_file(cls.query_vars_file)
@@ -106,8 +118,53 @@ class QueryPredictionRef:
             cls.quantile_vars_file = os.path.normpath(os.path.expanduser(_quantile_vars))
             dp.ensure_file(cls.quantile_vars_file)
 
+        cls.real_ap_file = dp.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/raw/QLmap1000')
+
+    @classmethod
+    def __set_graph_paths(cls, corpus, predictor, qgroup, direct, n):
+        """This method sets the default paths of the files and the working directories, it assumes the standard naming
+         convention of the project"""
+        cls.predictor = predictor
+
+        _corpus_res_dir = dp.ensure_dir(f'~/QppUqvProj/Results/{corpus}/uqvPredictions/')
+        _corpus_dat_dir = dp.ensure_dir(f'~/QppUqvProj/data/{corpus}')
+
+        _graphs_base_dir = dp.ensure_dir(f'~/QppUqvProj/Graphs/{corpus}')
+        _graphs_dat_dir = dp.ensure_dir(f'{_graphs_base_dir}/data/{direct}')
+
+        # Prediction results of all UQV query variants
+        cls.vars_results_dir = dp.ensure_dir(f'{_corpus_res_dir}/raw/{predictor}/predictions/')
+
+        # Prediction results of the queries to be predicted
+        if qgroup == 'title':
+            _orig_dir = dp.ensure_dir(f'~/QppUqvProj/Results/{corpus}/basicPredictions/title')
+            cls.base_results_dir = f'{_orig_dir}/{predictor}/predictions/'
+
+        # The directory to save the new results
+        cls.output_dir = dp.ensure_dir(f'{_graphs_base_dir}/referenceLists/{qgroup}/{direct}/{n}_vars')
+
+        # The files for used for the LTR and CV
+        _test_dir = f'~/QppUqvProj/Results/{corpus}/test'
+        cls.folds = dp.ensure_file(f'{_test_dir}/2_folds_30_repetitions.json')
+        cls.ap_file = dp.ensure_file(f'{_test_dir}/ref/QLmap1000-{qgroup}')
+
+        # The features file used for prediction
+        cls.features = dp.ensure_file(
+            f'{_graphs_dat_dir}/features/{qgroup}_query_{n}_variations_features_{corpus}_uqv.JSON')
+
+        # The variations file is used in the filter function - it consists of all the vars w/o the query at hand
+        cls.query_vars_file = dp.ensure_file(f'{_graphs_dat_dir}/queries/queries_wo_{qgroup}_{n}_vars.txt')
+        cls.quantile_vars_file = cls.query_vars_file
+
+        _queries2predict = f'~/QppUqvProj/data/{corpus}/queries_{corpus}_{qgroup}.txt'
+        cls.queries2predict_file = dp.ensure_file(_queries2predict)
+
+        cls.real_ap_file = dp.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/raw/QLmap1000')
+
     def __initialize_features_df(self, quantile_vars, features_df):
-        """This method filters from features df only the ones conjunction with the relevant variations"""
+        """This method filters from features df only the ones conjunction with the relevant variations
+        self.query_vars - consists of all the variations :except the queries group being predicted
+        :rtype: pd.DataFrame"""
         _quant_vars = quantile_vars.queries_df['qid'].tolist()
         _vars_list = self.query_vars.queries_df.loc[self.query_vars.queries_df['qid'].isin(_quant_vars)]['qid']
         _features_df = features_df.reset_index()
@@ -119,56 +176,50 @@ class QueryPredictionRef:
         """This method filters from query variations df only the ones relevant for prediction"""
         _var_scores_df = pd.merge(topic_df, vars_results_df, on='qid')
         _var_scores_df = _var_scores_df.loc[_var_scores_df['qid'].isin(self.features_df.index.get_level_values('qid'))]
+        # print(_var_scores_df.loc[_var_scores_df['topic'] == '361'])
         _var_scores_df.set_index(['topic', 'qid'], inplace=True)
         return _var_scores_df
 
     def calc_queries(self):
         for lambda_param in LAMBDA:
-            _jac_res_df = self.__calc_sim_predict(self.var_scores_df, self.features_df['Jac_coefficient'],
-                                                  lambda_param)
-            self.write_results(_jac_res_df, 'jac', lambda_param)
 
-            _sim_res_df = self.__calc_sim_predict(self.var_scores_df, self.features_df['Top_10_Docs_overlap'],
-                                                  lambda_param)
-            self.write_results(_sim_res_df, 'sim', lambda_param)
+            for col in self.features_df.columns:
+                _res_df = self.__calc_sim_predict(self.features_df[col], lambda_param)
+                self.write_results(_res_df, SIMILARITY_FUNCTIONS.get(col, col), lambda_param)
 
-            _rbo_res_df = self.__calc_sim_predict(self.var_scores_df, self.features_df['RBO_EXT_100'], lambda_param)
-            self.write_results(_rbo_res_df, 'rbo', lambda_param)
-
-            _rbof_res_df = self.__calc_sim_predict(self.var_scores_df, self.features_df['RBO_FUSED_EXT_100'],
-                                                   lambda_param)
-            self.write_results(_rbof_res_df, 'rbof', lambda_param)
-
-            _uni_res_df = self.__calc_uni(self.var_scores_df, lambda_param)
+            _uni_res_df = self.__calc_uni(lambda_param)
             self.write_results(_uni_res_df, 'uni', lambda_param)
 
-    def __calc_uni(self, var_scores_df, lambda_param):
-        return lambda_param * self.base_results_df + (1 - lambda_param) * var_scores_df.groupby('topic').mean()
+    def calc_oracle(self):
+        lambda_param = 0
+        for col in self.features_df.columns:
+            _res_df = self.__calc_sim_oracle(self.features_df[col], lambda_param)
+            self.write_results(_res_df, SIMILARITY_FUNCTIONS.get(col, col), lambda_param, oracle=True)
 
-    def __calc_sim_predict(self, var_scores_df, features_df, lambda_param):
-        _result_df = var_scores_df.multiply(features_df, axis=0, level='qid')
+        _uni_res_df = self.__calc_uni_oracle(lambda_param)
+        self.write_results(_uni_res_df, 'uni', lambda_param, oracle=True)
+
+    def __calc_uni(self, lambda_param):
+        return lambda_param * self.base_results_df + (1 - lambda_param) * self.var_scores_df.groupby('topic').mean()
+
+    def __calc_uni_oracle(self, lambda_param):
+        _mean_df = (1 - lambda_param) * self.real_ap_df.groupby('topic').mean()
+        _base_df = lambda_param * self.base_results_df
+        return _base_df.add(_mean_df['ap'], axis=0)
+
+    def __calc_sim_predict(self, features_df, lambda_param):
+        _result_df = self.var_scores_df.multiply(features_df, axis=0, level='qid')
         _result_df = _result_df.groupby('topic').sum()
         return lambda_param * self.base_results_df + (1 - lambda_param) * _result_df
 
-    # def __calc_jac(self, var_scores_df, features_df, lambda_param):
-    #     _result_df = var_scores_df.multiply(features_df, axis=0, level='qid')
-    #     _result_df = _result_df.groupby('topic').sum()
-    #     return lambda_param * self.base_results_df + (1 - lambda_param) * _result_df
-    #
-    # def __calc_top_sim(self, var_scores_df, features_df, lambda_param):
-    #     _result_df = var_scores_df.multiply(features_df, axis=0, level='qid')
-    #     _result_df = _result_df.groupby('topic').sum()
-    #     return lambda_param * self.base_results_df + (1 - lambda_param) * _result_df
-    #
-    # def __calc_rbo(self, var_scores_df, features_df, lambda_param):
-    #     _result_df = var_scores_df.multiply(features_df, axis=0, level='qid')
-    #     _result_df = _result_df.groupby('topic').sum()
-    #     return lambda_param * self.base_results_df + (1 - lambda_param) * _result_df
-    #
-    # def __calc_rbof(self, var_scores_df, features_df, lambda_param):
-    #     _result_df = var_scores_df.multiply(features_df, axis=0, level='qid')
-    #     _result_df = _result_df.groupby('topic').sum()
-    #     return lambda_param * self.base_results_df + (1 - lambda_param) * _result_df
+    def __calc_sim_oracle(self, features_df, lambda_param):
+        """This method will calculate the prediction value using real AP values of the variants, in order to set the
+        upper bound for the full potential of the method"""
+        _result_df = self.real_ap_df.multiply(features_df, axis=0, level='qid')
+        _result_df = _result_df.groupby('topic').sum()
+        _result_df = (1 - lambda_param) * _result_df
+        _base_predictions = lambda_param * self.base_results_df
+        return _base_predictions.add(_result_df['ap'], axis=0)
 
     def calc_integrated(self, score_param):
         """The function receives a column name from the scores df, in the shape of score_n used for the LTR method
@@ -179,9 +230,13 @@ class QueryPredictionRef:
         _res_df = _df.join(self.base_results_df[score_param], on='topic')
         return _res_df
 
-    def write_results(self, df, simfunc, lambda_param):
+    def write_results(self, df, simfunc, lambda_param, oracle=False):
+        if oracle:
+            output_dir = dp.ensure_dir(f'{self.output_dir}/oracle')
+        else:
+            output_dir = dp.ensure_dir(f'{self.output_dir}/general')
         for col in df.columns:
-            _file_path = f'{self.output_dir}{simfunc}/{self.predictor}/predictions/'
+            _file_path = f'{output_dir}/{simfunc}/{self.predictor}/predictions/'
             dp.ensure_dir(_file_path)
             _file_name = col.replace('score_', 'predictions-')
             file_name = f'{_file_path}{_file_name}+lambda+{lambda_param}'
@@ -199,7 +254,7 @@ class LearningSimFunctions:
         _ap_file = qpp_ref.ap_file
         self.ap_obj = dp.ResultsReader(_ap_file, 'ap')
         self.folds_df = qpp_ref.var_cv.data_sets_map.transpose()
-        self.output_dir = f'{qpp_ref.output_dir}ltr/{_predictor}/'
+        self.output_dir = f'{qpp_ref.output_dir}/ltr/{_predictor}/'
         dp.ensure_dir(self.output_dir)
         self.calc_features_df = qpp_ref.calc_integrated
         self.feature_names = self.features_df.columns.tolist()
@@ -389,6 +444,12 @@ def run_calc_process(pred, corpus, queries_group, quantile):
     return qpp_ref
 
 
+def run_calc_oracle_process(pred, corpus, queries_group, quantile):
+    qpp_ref = QueryPredictionRef(pred, corpus, queries_group, quantile)
+    qpp_ref.calc_oracle()
+    return qpp_ref
+
+
 def run_ltr_process(pred, corpus, queries_group, quantile, corr_measure):
     qpp_ref = QueryPredictionRef(pred, corpus, queries_group, quantile)
     qpp_ref_ltr = LearningSimFunctions(qpp_ref, corr_measure)
@@ -425,6 +486,11 @@ def main(args):
                 qpp_ref = pool.map(
                     partial(run_calc_process, corpus=corpus, queries_group=queries_group, quantile=quantile),
                     PREDICTORS)
+        elif generate == 'oracle':
+            with mp.Pool(processes=cores) as pool:
+                qpp_ref = pool.map(
+                    partial(run_calc_oracle_process, corpus=corpus, queries_group=queries_group, quantile=quantile),
+                    PREDICTORS)
         elif generate == 'ltr':
             with mp.Pool(processes=cores) as pool:
                 qpp_ref_ltr = pool.map(
@@ -440,6 +506,8 @@ def main(args):
         qpp_ref_ltr = LearningSimFunctions(qpp_ref, corr_measure)
         if generate == 'calc':
             run_calc_process(predictor, corpus, queries_group, quantile)
+        elif generate == 'oracle':
+            run_calc_oracle_process(predictor, corpus, queries_group, quantile)
         elif generate == 'ltr':
             run_ltr_process(predictor, corpus, queries_group, quantile, corr_measure)
             qpp_ref_ltr.cross_val_fine_tune()
@@ -448,8 +516,5 @@ def main(args):
 if __name__ == '__main__':
     args = parser.parse_args()
     overall_timer = Timer('Total runtime')
-    PREDICTORS_WO_QF = ['clarity', 'wig', 'nqc', 'uef/clarity', 'uef/wig', 'uef/nqc']
-    PREDICTORS_QF = ['qf', 'uef/qf']
-    PREDICTORS = PREDICTORS_WO_QF + PREDICTORS_QF
     main(args)
     overall_timer.stop()
