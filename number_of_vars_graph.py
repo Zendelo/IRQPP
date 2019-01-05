@@ -93,6 +93,7 @@ class GraphsFactory:
                 qpp_ref.calc_queries()
 
     def _calc_general_model_result(self, direct, predictor, sim_func):
+        print(f'\n---Generating {predictor}-{sim_func} {direct} predictions---\n')
         _dict = defaultdict(list)
         _dir = f'{self.results_dir}/{direct}'
         for n in range(1, self.max_n + 1):
@@ -109,8 +110,8 @@ class GraphsFactory:
         return _df
 
     def generate_results_df(self, cores, load_from_pkl=True):
+        _pkl_file = f'{self.data_dir}/pkl_files/full_results_df_{self.max_n}_{self.corpus}.pkl'
         if load_from_pkl:
-            _pkl_file = f'{self.data_dir}/pkl_files/full_results_df_{self.corpus}.pkl'
             try:
                 file_to_load = dp.ensure_file(_pkl_file)
                 full_results_df = pd.read_pickle(file_to_load)
@@ -123,7 +124,7 @@ class GraphsFactory:
                                                             SIMILARITY_FUNCTIONS.values()))
                 pool.close()
                 full_results_df = pd.concat(result, axis=0)
-                full_results_df.to_pickle(f'{self.data_dir}/pkl_files/full_results_df_{self.corpus}.pkl')
+                full_results_df.to_pickle(_pkl_file)
         else:
             with mp.Pool(processes=cores) as pool:
                 result = pool.starmap(self._calc_general_model_result,
@@ -131,7 +132,7 @@ class GraphsFactory:
                                                         SIMILARITY_FUNCTIONS.values()))
             pool.close()
             full_results_df = pd.concat(result, axis=0)
-            full_results_df.to_pickle(f'{self.data_dir}/pkl_files/full_results_df_{self.corpus}.pkl')
+            full_results_df.to_pickle(_pkl_file)
         return full_results_df
 
 
@@ -140,7 +141,7 @@ def main(args):
 
     # corpus = 'ROBUST'
 
-    testing = GraphsFactory(corpus, max_n=20)
+    testing = GraphsFactory(corpus, max_n=40)
     # testing.create_query_files(13)
     # testing.generate_features(1)
     # testing.generate_sim_predictions(1)
