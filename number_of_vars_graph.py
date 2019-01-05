@@ -25,6 +25,7 @@ parser.add_argument('-c', '--corpus', default=None, help='The corpus to be used'
 PREDICTORS_WO_QF = ['clarity', 'wig', 'nqc', 'smv', 'rsd', 'preret', 'uef/clarity', 'uef/wig', 'uef/nqc', 'uef/smv']
 PREDICTORS_QF = ['qf', 'uef/qf']
 PREDICTORS = PREDICTORS_WO_QF + PREDICTORS_QF
+PREDICTORS.remove('rsd')
 NUMBER_OF_DOCS = (5, 10, 25, 50, 100, 250, 500, 1000)
 SIMILARITY_FUNCTIONS = {'Jac_coefficient': 'jac', 'Top_10_Docs_overlap': 'sim', 'RBO_EXT_100': 'rbo',
                         'RBO_FUSED_EXT_100': 'rbof'}
@@ -65,6 +66,7 @@ class GraphsFactory:
             _df[['qid', 'text']].to_csv(_file, sep=":", header=False, index=False)
 
     def generate_features(self, n):
+        print(f'\n---Generating Features for {n} vars---\n')
         for direct in {'asce', 'desc'}:
             _dir = dp.ensure_dir(f'{self.data_dir}/{direct}/features')
             _feat_obj = QueryFeatureFactory(corpus=self.corpus, queries_group='title', vars_quantile='all',
@@ -73,6 +75,7 @@ class GraphsFactory:
             _df.reset_index().to_json(f'{_dir}/title_query_{n}_variations_features_{self.corpus}_uqv.JSON')
 
     def generate_sim_predictions(self, k):
+        print(f'\n---Generating sim predictions {k} docs---\n')
         for direct in {'asce', 'desc'}:
             _dir = dp.ensure_dir(f'{self.data_dir}/{direct}')
             for n in range(1, self.max_n + 1):
@@ -81,6 +84,7 @@ class GraphsFactory:
                 sim_ref_pred.generate_predictions()
 
     def generate_qpp_reference_predictions(self, predictor):
+        print(f'\n---Generating qpp ref predictions with {predictor}---\n')
         for direct in {'asce', 'desc'}:
             _dir = dp.ensure_dir(f'{self.data_dir}/{direct}')
             for n in range(1, self.max_n + 1):
@@ -136,14 +140,14 @@ def main(args):
 
     # corpus = 'ROBUST'
 
-    testing = GraphsFactory(corpus, max_n=30)
+    testing = GraphsFactory(corpus, max_n=20)
     # testing.create_query_files(13)
     # testing.generate_features(1)
     # testing.generate_sim_predictions(1)
     # testing.generate_qpp_reference_predictions('wig')
 
-    for n in range(1, testing.max_n + 1):
-        testing.create_query_files(n)
+    # for n in range(1, testing.max_n + 1):
+    #     testing.create_query_files(n)
 
     cores = mp.cpu_count() - 1
 
@@ -151,8 +155,11 @@ def main(args):
     testing.generate_features(1)
     with mp.Pool(processes=cores) as pool:
         pool.map(testing.generate_features, range(2, testing.max_n + 1))
+        print('Finished features generating')
         pool.map(testing.generate_sim_predictions, NUMBER_OF_DOCS)
+        print('Finished sim predictions')
         pool.map(testing.generate_qpp_reference_predictions, PREDICTORS)
+        print('Finished QppRef generation')
     pool.close()
 
     full_results_df = testing.generate_results_df(cores)
