@@ -147,8 +147,8 @@ def main(args):
     # testing.generate_sim_predictions(1)
     # testing.generate_qpp_reference_predictions('wig')
 
-    # for n in range(1, testing.max_n + 1):
-    #     testing.create_query_files(n)
+    for n in range(1, testing.max_n + 1):
+        testing.create_query_files(n)
 
     cores = mp.cpu_count() - 1
 
