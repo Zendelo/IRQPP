@@ -117,6 +117,7 @@ class GraphsFactory:
                     result = pool.starmap(self._calc_general_model_result,
                                           itertools.product({'asce', 'desc'}, PREDICTORS,
                                                             SIMILARITY_FUNCTIONS.values()))
+                pool.close()
                 full_results_df = pd.concat(result, axis=0)
                 full_results_df.to_pickle(f'{self.data_dir}/pkl_files/full_results_df_{self.corpus}.pkl')
         else:
@@ -124,6 +125,7 @@ class GraphsFactory:
                 result = pool.starmap(self._calc_general_model_result,
                                       itertools.product({'asce', 'desc'}, PREDICTORS,
                                                         SIMILARITY_FUNCTIONS.values()))
+            pool.close()
             full_results_df = pd.concat(result, axis=0)
             full_results_df.to_pickle(f'{self.data_dir}/pkl_files/full_results_df_{self.corpus}.pkl')
         return full_results_df
@@ -143,15 +145,15 @@ def main(args):
     for n in range(1, testing.max_n + 1):
         testing.create_query_files(n)
 
-    cores = mp.cpu_count()
+    cores = mp.cpu_count() - 1
 
     """The first run will generate the pkl files, all succeeding runs will load and use it"""
     testing.generate_features(1)
     with mp.Pool(processes=cores) as pool:
         pool.map(testing.generate_features, range(2, testing.max_n + 1))
-
-    with mp.Pool(processes=cores) as pool:
         pool.map(testing.generate_sim_predictions, NUMBER_OF_DOCS)
+        pool.map(testing.generate_qpp_reference_predictions, PREDICTORS)
+    pool.close()
 
     full_results_df = testing.generate_results_df(cores)
 
