@@ -1,20 +1,17 @@
-import pandas as pd
-import numpy as np
-import dataparser as dp
-from Timer.timer import Timer
-from qpp_ref import run_calc_process
 import argparse
-import glob
 import itertools
 import multiprocessing as mp
 from collections import defaultdict
-import os
-from functools import partial
-from subprocess import run
-from query_features import QueryFeatureFactory
-from queries_pre_process import filter_n_top_queries, filter_n_low_queries, add_topic_to_qdf
-from qpp_ref import QueryPredictionRef
+
+import matplotlib.pyplot as plt
+import pandas as pd
+
+import dataparser as dp
+from Timer.timer import Timer
 from crossval import CrossValidation
+from qpp_ref import QueryPredictionRef
+from queries_pre_process import filter_n_top_queries, filter_n_low_queries, add_topic_to_qdf
+from query_features import QueryFeatureFactory
 
 parser = argparse.ArgumentParser(description='Results generator for QPP with Reference lists graphs',
                                  usage='',
@@ -29,6 +26,25 @@ PREDICTORS.remove('rsd')
 NUMBER_OF_DOCS = (5, 10, 25, 50, 100, 250, 500, 1000)
 SIMILARITY_FUNCTIONS = {'Jac_coefficient': 'jac', 'Top_10_Docs_overlap': 'sim', 'RBO_EXT_100': 'rbo',
                         'RBO_FUSED_EXT_100': 'rbof'}
+# Filter out filled markers and marker settings that do nothing.
+MARKERS = ['x', '+', 'v', '3', 'X']
+LINE_STYLES = ['-', ':', '--']
+MARKERS_STYLE = [''.join(i) for i in itertools.product(MARKERS, LINE_STYLES)]
+
+
+def plot_graphs(df: pd.DataFrame):
+    df['result'] = pd.to_numeric(df['result'])
+    for index, _df in df.groupby(['direction', 'sim_func']):
+        _df = _df.set_index('n_vars')
+        _dict = {}
+        for predictor, sub_df in _df.groupby('predictor')['result']:
+            _dict[predictor] = sub_df
+        _df = pd.DataFrame(_dict)
+        _df.plot(style=MARKERS_STYLE[:len(_df.columns)], grid=True,
+                 title=f'Direction: {index[0].capitalize()} Similarity function: {index[1].upper()}')
+        plt.xlabel('Maximum Number of Variants')
+        plt.ylabel('Correlation')
+        plt.show()
 
 
 class GraphsFactory:
@@ -147,25 +163,26 @@ def main(args):
     # testing.generate_sim_predictions(1)
     # testing.generate_qpp_reference_predictions('wig')
 
-    for n in range(1, testing.max_n + 1):
-        testing.create_query_files(n)
+    # for n in range(1, testing.max_n + 1):
+    #     testing.create_query_files(n)
 
     cores = mp.cpu_count() - 1
-
-    """The first run will generate the pkl files, all succeeding runs will load and use it"""
-    testing.generate_features(1)
-    with mp.Pool(processes=cores) as pool:
-        pool.map(testing.generate_features, range(2, testing.max_n + 1))
-        print('Finished features generating')
-        pool.map(testing.generate_sim_predictions, NUMBER_OF_DOCS)
-        print('Finished sim predictions')
-        pool.map(testing.generate_qpp_reference_predictions, PREDICTORS)
-        print('Finished QppRef generation')
-    pool.close()
+    # """The first run will generate the pkl files, all succeeding runs will load and use it"""
+    # testing.generate_features(1)
+    # with mp.Pool(processes=cores) as pool:
+    #     pool.map(testing.generate_features, range(2, testing.max_n + 1))
+    #     print('Finished features generating')
+    #     pool.map(testing.generate_sim_predictions, NUMBER_OF_DOCS)
+    #     print('Finished sim predictions')
+    #     pool.map(testing.generate_qpp_reference_predictions, PREDICTORS)
+    #     print('Finished QppRef generation')
+    # pool.close()
 
     full_results_df = testing.generate_results_df(cores)
 
-    print(full_results_df)
+    # print(full_results_df)
+
+    plot_graphs(full_results_df)
 
 
 if __name__ == '__main__':
