@@ -18,11 +18,18 @@ parser = argparse.ArgumentParser(description='Results generator for QPP with Ref
                                  epilog='')
 
 parser.add_argument('-c', '--corpus', default=None, help='The corpus to be used', choices=['ROBUST', 'ClueWeb12B'])
+parser.add_argument('--preret', action='store_true')
+parser.add_argument('--nocache', action='store_false', help='Add this option in order to generate all pkl files')
 
-PREDICTORS_WO_QF = ['clarity', 'wig', 'nqc', 'smv', 'rsd', 'preret', 'uef/clarity', 'uef/wig', 'uef/nqc', 'uef/smv']
+PREDICTORS_WO_QF = ['clarity', 'wig', 'nqc', 'smv', 'rsd', 'uef/clarity', 'uef/wig', 'uef/nqc', 'uef/smv']
 PREDICTORS_QF = ['qf', 'uef/qf']
-PREDICTORS = PREDICTORS_WO_QF + PREDICTORS_QF
+
+PRE_RET_PREDICTORS = ['preret/AvgIDF', 'preret/AvgSCQTFIDF', 'preret/AvgVarTFIDF', 'preret/MaxIDF',
+                      'preret/MaxSCQTFIDF', 'preret/MaxVarTFIDF']
+
+PREDICTORS = PREDICTORS_WO_QF + PREDICTORS_QF + PRE_RET_PREDICTORS
 PREDICTORS.remove('rsd')
+
 NUMBER_OF_DOCS = (5, 10, 25, 50, 100, 250, 500, 1000)
 SIMILARITY_FUNCTIONS = {'Jac_coefficient': 'jac', 'Top_10_Docs_overlap': 'sim', 'RBO_EXT_100': 'rbo',
                         'RBO_FUSED_EXT_100': 'rbof'}
@@ -48,19 +55,23 @@ def plot_graphs(df: pd.DataFrame):
 
 
 class GraphsFactory:
-    def __init__(self, corpus, max_n=20, corr_measure='pearson'):
+    def __init__(self, corpus, max_n=20, corr_measure='pearson', load_from_pkl=True):
         self.corr_measure = corr_measure
+        self.load_from_pkl = load_from_pkl
         self.__set_paths(corpus)
         self.corpus = corpus
         self.queries_obj = dp.QueriesTextParser(self.queries_file)
         self.queries_obj.queries_df = add_topic_to_qdf(self.queries_obj.queries_df)
         self.raw_ap_obj = dp.ResultsReader(self.raw_ap_file, 'ap')
         self.max_n = min(self.queries_obj.queries_df.groupby('topic').count().max()['qid'], max_n)
+        self.basic_results_dict = defaultdict(float)
 
     @classmethod
     def __set_paths(cls, corpus):
         _corpus_test_dir = dp.ensure_dir(f'~/QppUqvProj/Results/{corpus}/test/')
 
+        # Basic predictions dir
+        cls.basic_predictions_dir = dp.ensure_dir(f'~/QppUqvProj/Results/ROBUST/basicPredictions/title/')
         # AP file to pick variations according to AP
         cls.raw_ap_file = dp.ensure_file(f'{_corpus_test_dir}/raw/QLmap1000')
         # AP file for the cross validation process
@@ -87,7 +98,7 @@ class GraphsFactory:
             _dir = dp.ensure_dir(f'{self.data_dir}/{direct}/features')
             _feat_obj = QueryFeatureFactory(corpus=self.corpus, queries_group='title', vars_quantile='all',
                                             graphs=direct, n=n)
-            _df = _feat_obj.generate_features()
+            _df = _feat_obj.generate_features(self.load_from_pkl)
             _df.reset_index().to_json(f'{_dir}/title_query_{n}_variations_features_{self.corpus}_uqv.JSON')
 
     def generate_sim_predictions(self, k):
@@ -97,7 +108,7 @@ class GraphsFactory:
             for n in range(1, self.max_n + 1):
                 sim_ref_pred = QueryFeatureFactory(self.corpus, queries_group='title', vars_quantile='all', rbo_top=k,
                                                    top_docs_overlap=k, graphs=direct, n=n)
-                sim_ref_pred.generate_predictions()
+                sim_ref_pred.generate_predictions(self.load_from_pkl)
 
     def generate_qpp_reference_predictions(self, predictor):
         print(f'\n---Generating qpp ref predictions with {predictor}---\n')
@@ -108,26 +119,41 @@ class GraphsFactory:
                                              n=n)
                 qpp_ref.calc_queries()
 
+    def calc_single_query_result(self, predictor):
+        print(f'\n---Generating {predictor} 0 vars results---\n')
+        _predictions_dir = dp.ensure_dir(f'{self.basic_predictions_dir}/{predictor}/predictions')
+        cv_obj = CrossValidation(k=2, rep=30, file_to_load=self.cv_map_file, predictions_dir=_predictions_dir,
+                                 load=True, ap_file=self.query_ap_file, test=self.corr_measure)
+        mean = cv_obj.calc_test_results()
+        self.basic_results_dict[predictor] = mean
+        return mean
+
     def _calc_general_model_result(self, direct, predictor, sim_func):
-        print(f'\n---Generating {predictor}-{sim_func} {direct} predictions---\n')
+        print(f'\n---Generating {predictor}-{sim_func} {direct} results---\n')
         _dict = defaultdict(list)
+
+        def append_to_full_results_dict(_mean, _n):
+            _dict['direction'].append(direct)
+            _dict['predictor'].append(predictor)
+            _dict['sim_func'].append(sim_func)
+            _dict['n_vars'].append(_n)
+            _dict['result'].append(_mean)
+
+        mean = self.basic_results_dict.get(predictor, self.calc_single_query_result(predictor))
+        append_to_full_results_dict(mean, 0)
         _dir = f'{self.results_dir}/{direct}'
         for n in range(1, self.max_n + 1):
             _predictions_dir = dp.ensure_dir(f'{_dir}/{n}_vars/general/{sim_func}/{predictor}/predictions')
             cv_obj = CrossValidation(k=2, rep=30, file_to_load=self.cv_map_file, predictions_dir=_predictions_dir,
                                      load=True, ap_file=self.query_ap_file, test=self.corr_measure)
             mean = cv_obj.calc_test_results()
-            _dict['direction'].append(direct)
-            _dict['predictor'].append(predictor)
-            _dict['sim_func'].append(sim_func)
-            _dict['n_vars'].append(n)
-            _dict['result'].append(mean)
+            append_to_full_results_dict(mean, n)
         _df = pd.DataFrame.from_dict(_dict)
         return _df
 
-    def generate_results_df(self, cores, load_from_pkl=True):
-        _pkl_file = f'{self.data_dir}/pkl_files/full_results_df_{self.max_n}_{self.corpus}.pkl'
-        if load_from_pkl:
+    def generate_results_df(self, cores):
+        _pkl_file = f'{self.data_dir}/pkl_files/full_results_df_{self.max_n}_{self.corpus}_{self.corr_measure}.pkl'
+        if self.load_from_pkl:
             try:
                 file_to_load = dp.ensure_file(_pkl_file)
                 full_results_df = pd.read_pickle(file_to_load)
@@ -154,35 +180,35 @@ class GraphsFactory:
 
 def main(args):
     corpus = args.corpus
+    pre_ret = args.preret
+    load_cache = args.nocache
 
     # corpus = 'ROBUST'
 
-    testing = GraphsFactory(corpus, max_n=40)
-    # testing.create_query_files(13)
-    # testing.generate_features(1)
-    # testing.generate_sim_predictions(1)
-    # testing.generate_qpp_reference_predictions('wig')
+    testing = GraphsFactory(corpus, max_n=40, load_from_pkl=load_cache)
+    # testing.generate_results_df(4)
+    # exit()
 
-    # for n in range(1, testing.max_n + 1):
-    #     testing.create_query_files(n)
+    for n in range(1, testing.max_n + 1):
+        testing.create_query_files(n)
 
     cores = mp.cpu_count() - 1
-    # """The first run will generate the pkl files, all succeeding runs will load and use it"""
-    # testing.generate_features(1)
-    # with mp.Pool(processes=cores) as pool:
-    #     pool.map(testing.generate_features, range(2, testing.max_n + 1))
-    #     print('Finished features generating')
-    #     pool.map(testing.generate_sim_predictions, NUMBER_OF_DOCS)
-    #     print('Finished sim predictions')
-    #     pool.map(testing.generate_qpp_reference_predictions, PREDICTORS)
-    #     print('Finished QppRef generation')
-    # pool.close()
+    """The first run will generate the pkl files, all succeeding runs will load and use it"""
+    testing.generate_features(1)
+    with mp.Pool(processes=cores) as pool:
+        pool.map(testing.generate_features, range(2, testing.max_n + 1))
+        print('Finished features generating')
+        pool.map(testing.generate_sim_predictions, NUMBER_OF_DOCS)
+        print('Finished sim predictions')
+        pool.map(testing.generate_qpp_reference_predictions, PREDICTORS)
+        print('Finished QppRef generation')
+    pool.close()
 
     full_results_df = testing.generate_results_df(cores)
 
-    # print(full_results_df)
+    print(full_results_df)
 
-    plot_graphs(full_results_df)
+    # plot_graphs(full_results_df)
 
 
 if __name__ == '__main__':
