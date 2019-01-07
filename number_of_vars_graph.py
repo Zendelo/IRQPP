@@ -183,6 +183,9 @@ def main(args):
     pre_ret = args.preret
     load_cache = args.nocache
 
+    if not corpus:
+        return
+
     # corpus = 'ROBUST'
 
     testing = GraphsFactory(corpus, max_n=40, load_from_pkl=load_cache)
