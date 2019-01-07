@@ -1,6 +1,7 @@
 import argparse
 import itertools
 import multiprocessing as mp
+import pickle
 from collections import defaultdict
 
 import matplotlib.pyplot as plt
@@ -65,6 +66,7 @@ class GraphsFactory:
         self.raw_ap_obj = dp.ResultsReader(self.raw_ap_file, 'ap')
         self.max_n = min(self.queries_obj.queries_df.groupby('topic').count().max()['qid'], max_n)
         self.basic_results_dict = defaultdict(float)
+        self.__initialize_basic_results_dict()
 
     @classmethod
     def __set_paths(cls, corpus):
@@ -119,6 +121,26 @@ class GraphsFactory:
                                              n=n)
                 qpp_ref.calc_queries()
 
+    def __initialize_basic_results_dict(self):
+        _pkl_file = f'{self.data_dir}/pkl_files/basic_results_dict_{self.corpus}_{self.corr_measure}.pkl'
+        if self.load_from_pkl:
+            try:
+                file_to_load = dp.ensure_file(_pkl_file)
+                with open(file_to_load, 'rb') as handle:
+                    self.basic_results_dict = pickle.load(handle)
+            except AssertionError:
+                print(f'\nFailed to load {_pkl_file}')
+                print(f'Will generate {_pkl_file} and save')
+                for predictor in PREDICTORS:
+                    self.calc_single_query_result(predictor)
+                with open(_pkl_file, 'wb') as handle:
+                    pickle.dump(self.basic_results_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        else:
+            for predictor in PREDICTORS:
+                self.calc_single_query_result(predictor)
+            with open(_pkl_file, 'wb') as handle:
+                pickle.dump(self.basic_results_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
     def calc_single_query_result(self, predictor):
         print(f'\n---Generating {predictor} 0 vars results---\n')
         _predictions_dir = dp.ensure_dir(f'{self.basic_predictions_dir}/{predictor}/predictions')
@@ -126,7 +148,6 @@ class GraphsFactory:
                                  load=True, ap_file=self.query_ap_file, test=self.corr_measure)
         mean = cv_obj.calc_test_results()
         self.basic_results_dict[predictor] = mean
-        return mean
 
     def _calc_general_model_result(self, direct, predictor, sim_func):
         print(f'\n---Generating {predictor}-{sim_func} {direct} results---\n')
