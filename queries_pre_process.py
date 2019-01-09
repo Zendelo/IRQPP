@@ -1,6 +1,7 @@
 import argparse
 from statistics import median_high, median_low
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 import pandas as pd
 import numpy as np
@@ -24,6 +25,7 @@ parser.add_argument('--quant', default=None, choices=['low', 'top', 'med'],
                     help='Return a quantile of the variants for each topic')
 parser.add_argument('--ap', default=None, metavar='QLmap1000', help='path to queries AP results file')
 parser.add_argument('--stats', action='store_true', help='Print statistics')
+parser.add_argument('--plot_vars', action='store_true', help='Print vars AP graph')
 
 
 def add_original_queries(uqv_obj: dt.QueriesTextParser):
@@ -227,6 +229,55 @@ def plot_cw_histograms(quant_variants_dict):
         plt.show()
 
 
+def plot_variants_ap(qdf: pd.DataFrame, apdb: dt.ResultsReader, qdf_title: pd.DataFrame, ap_title: dt.ResultsReader,
+                     corpus):
+    # TODO: ADD title AP scores here for the title queries and check in the whole project
+    _ap_vars_df = pd.merge(qdf, apdb.data_df, left_on='qid', right_index=True)
+    _ap_title_df = pd.merge(qdf_title, ap_title.data_df, left_on='qid', right_index=True)
+    vars_df = add_topic_to_qdf(_ap_vars_df)
+    vars_df = vars_df.drop('text', axis=1)
+    title_df = _ap_title_df.drop(['text'], axis=1).rename({'ap': 'title_ap', 'qid': 'topic'}, axis=1)
+    topics_mean = vars_df.groupby('topic').mean().rename({'ap': 'topic_mean'}, axis=1)
+    vars_df = vars_df.merge(topics_mean, on='topic')
+    vars_df = vars_df.merge(title_df, on='topic')
+    vars_df['topic'] = vars_df['topic'].astype('category')
+    _list = []
+    for i in [0, 0.25, 0.5, 0.75, 1]:
+        _sr = vars_df.groupby('topic')['ap'].quantile(i, interpolation='higher')
+        _sr.name = f'{i}_Q'
+        _list.append(_sr)
+    _df = pd.concat(_list, axis=1)
+    vars_df = vars_df.merge(_df, on='topic')
+    vars_df = vars_df.sort_values('topic_mean')
+    fig, ax = plt.subplots()
+    for i, m, c in zip([0, 0.25, 0.5, 0.75, 1], ['_', '2', '+', '1', '_'],
+                       ['royalblue', 'palevioletred', 'mediumvioletred', 'm', 'blue']):
+        _df = vars_df.loc[:, ['topic', 'qid', f'{i}_Q']]
+        ram_plot(_df, ax, m, color=c)
+    _df = vars_df.loc[:, ['topic', 'qid', 'topic_mean']]
+    ram_plot(_df, ax, '.', markerfacecolor='None', linestyle=':', color='darkorange')
+    _df = vars_df.loc[:, ['topic', 'qid', 'title_ap']]
+    ram_plot(_df, ax, 'd', color='c')
+
+    plt.xlabel('topic')
+    plt.ylabel('AP')
+    plt.title(f'{corpus} query variations AP')
+    plt.show()
+
+
+def ram_plot(df, ax, marker, markersize=None, markerfacecolor=None, color='None', linestyle='None'):
+    """The function was named after Ram Yazdi that helped to solve this challenge in a dark hour"""
+    bars = df['topic'].unique()
+    mapping_name_to_index = {name: index for index, name in enumerate(bars)}
+    df['topic'] = df['topic'].replace(mapping_name_to_index)
+    pos = [i for i, p in enumerate(bars) if i % 4 == 0]
+    df.set_index('topic').plot(legend=True, marker=marker, markersize=markersize, linestyle=linestyle, color=color,
+                               markerfacecolor=markerfacecolor, grid=True, ax=ax)
+    plt.xticks(pos, np.array(pos) + 1, rotation=50)
+    plt.yticks(np.arange(0, 1, 0.05))
+    plt.legend()
+
+
 def calc_statistics(qdf: pd.DataFrame, apdb: dt.ResultsReader, title_queries_df: pd.DataFrame,
                     title_ap: dt.ResultsReader, filter_functions_dict: dict, quantiles_dict: dict, corpus):
     """
@@ -281,6 +332,7 @@ def main(args):
     queries_group = args.group
     quant_variants = args.quant
     stats = args.stats
+    plot_vars = args.plot_vars
 
     filter_functions_dict = {'top': filter_top_queries, 'low': filter_low_queries, 'medl': filter_medl_queries,
                              'medh': filter_medh_queries}
@@ -289,9 +341,10 @@ def main(args):
     # # Uncomment for Debugging !!!!!
     # print('\n\n\n----------!!!!!!!!!!!!--------- Debugging Mode ----------!!!!!!!!!!!!---------\n\n\n')
     # # quant_variants = 'low'
-    # ap_file = dt.ensure_file('~/QppUqvProj/Results/ROBUST/test/raw/QLmap1000')
-    # queries_txt_file = dt.ensure_file('~/QppUqvProj/data/ROBUST/queries_ROBUST_UQV_full.txt')
-    # stats = True
+    # corpus = 'ClueWeb12B'
+    # ap_file = dt.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/raw/QLmap1000')
+    # queries_txt_file = dt.ensure_file(f'~/QppUqvProj/data/{corpus}/queries_{corpus}_UQV_full.txt')
+    # plot_vars = True
 
     corpus = 'ROBUST' if 'ROBUST' in queries_txt_file else 'ClueWeb12B'
     if queries_txt_file:
@@ -314,6 +367,12 @@ def main(args):
                 calc_statistics(qdb.queries_df, apdb, title_queries_df, title_ap, filter_functions_dict, quantiles_dict,
                                 corpus)
                 return
+            elif plot_vars:
+                title_queries_file = dt.ensure_file(f'~/QppUqvProj/data/{corpus}/queries_{corpus}_title.txt')
+                title_queries_df = dt.QueriesTextParser(title_queries_file).queries_df
+                title_ap_file = dt.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/basic/QLmap1000')
+                title_ap = dt.ResultsReader(title_ap_file, 'ap')
+                plot_variants_ap(qdb.queries_df, apdb, title_queries_df, title_ap, corpus)
 
         # # In order to convert the vid (variants ID) to qid, uncomment next line
         # queries_df = convert_vid_to_qid(queries_df)
