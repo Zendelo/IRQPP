@@ -14,12 +14,15 @@ from qpp_ref import QueryPredictionRef
 from queries_pre_process import filter_n_top_queries, filter_n_low_queries, add_topic_to_qdf
 from query_features import QueryFeatureFactory
 
+# Define the Font for the plots
+plt.rcParams.update({'font.size': 15, 'font.family': 'serif', 'font.weight': 'normal'})
+
 parser = argparse.ArgumentParser(description='Results generator for QPP with Reference lists graphs',
                                  usage='',
                                  epilog='')
 
 parser.add_argument('-c', '--corpus', default=None, help='The corpus to be used', choices=['ROBUST', 'ClueWeb12B'])
-parser.add_argument('--preret', action='store_true')
+parser.add_argument('--generate', action='store_true')
 parser.add_argument('--nocache', action='store_false', help='Add this option in order to generate all pkl files')
 
 PREDICTORS_WO_QF = ['clarity', 'wig', 'nqc', 'smv', 'rsd', 'uef/clarity', 'uef/wig', 'uef/nqc', 'uef/smv']
@@ -73,7 +76,7 @@ class GraphsFactory:
         _corpus_test_dir = dp.ensure_dir(f'~/QppUqvProj/Results/{corpus}/test/')
 
         # Basic predictions dir
-        cls.basic_predictions_dir = dp.ensure_dir(f'~/QppUqvProj/Results/ROBUST/basicPredictions/title/')
+        cls.basic_predictions_dir = dp.ensure_dir(f'~/QppUqvProj/Results/{corpus}/basicPredictions/title/')
         # AP file to pick variations according to AP
         cls.raw_ap_file = dp.ensure_file(f'{_corpus_test_dir}/raw/QLmap1000')
         # AP file for the cross validation process
@@ -105,12 +108,14 @@ class GraphsFactory:
 
     def generate_sim_predictions(self, k):
         print(f'\n---Generating sim predictions {k} docs---\n')
+        load_pickle = self.load_from_pkl
         for direct in {'asce', 'desc'}:
             _dir = dp.ensure_dir(f'{self.data_dir}/{direct}')
             for n in range(1, self.max_n + 1):
                 sim_ref_pred = QueryFeatureFactory(self.corpus, queries_group='title', vars_quantile='all', rbo_top=k,
                                                    top_docs_overlap=k, graphs=direct, n=n)
-                sim_ref_pred.generate_predictions(self.load_from_pkl)
+                sim_ref_pred.generate_predictions(load_pickle)
+                load_pickle = True
 
     def generate_qpp_reference_predictions(self, predictor):
         print(f'\n---Generating qpp ref predictions with {predictor}---\n')
@@ -172,7 +177,7 @@ class GraphsFactory:
         _df = pd.DataFrame.from_dict(_dict)
         return _df
 
-    def generate_results_df(self, cores):
+    def generate_results_df(self, cores=None):
         _pkl_file = f'{self.data_dir}/pkl_files/full_results_df_{self.max_n}_{self.corpus}_{self.corr_measure}.pkl'
         if self.load_from_pkl:
             try:
@@ -201,35 +206,36 @@ class GraphsFactory:
 
 def main(args):
     corpus = args.corpus
-    pre_ret = args.preret
+    generate = args.generate
     load_cache = args.nocache
+
+    # corpus = 'ROBUST'
+    # corpus = 'ClueWeb12B'
 
     if not corpus:
         return
-
-    # corpus = 'ROBUST'
 
     testing = GraphsFactory(corpus, max_n=40, load_from_pkl=load_cache)
     # testing.generate_results_df(4)
     # exit()
 
-    for n in range(1, testing.max_n + 1):
-        testing.create_query_files(n)
+    if generate:
+        for n in range(1, testing.max_n + 1):
+            testing.create_query_files(n)
 
-    cores = mp.cpu_count() - 1
-    """The first run will generate the pkl files, all succeeding runs will load and use it"""
-    testing.generate_features(1)
-    with mp.Pool(processes=cores) as pool:
-        pool.map(testing.generate_features, range(2, testing.max_n + 1))
-        print('Finished features generating')
-        pool.map(testing.generate_sim_predictions, NUMBER_OF_DOCS)
-        print('Finished sim predictions')
-        pool.map(testing.generate_qpp_reference_predictions, PREDICTORS)
-        print('Finished QppRef generation')
-    pool.close()
+        cores = mp.cpu_count() - 1
+        """The first run will generate the pkl files, all succeeding runs will load and use it"""
+        testing.generate_features(1)
+        with mp.Pool(processes=cores) as pool:
+            pool.map(testing.generate_features, range(2, testing.max_n + 1))
+            print('Finished features generating')
+            pool.map(testing.generate_sim_predictions, NUMBER_OF_DOCS)
+            print('Finished sim predictions')
+            pool.map(testing.generate_qpp_reference_predictions, PREDICTORS)
+            print('Finished QppRef generation')
+        pool.close()
 
-    full_results_df = testing.generate_results_df(cores)
-
+    full_results_df = testing.generate_results_df()
     print(full_results_df)
 
     # plot_graphs(full_results_df)
