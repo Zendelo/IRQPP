@@ -8,6 +8,9 @@ import numpy as np
 
 import dataparser as dt
 
+# Define the Font for the plots
+plt.rcParams.update({'font.size': 35, 'font.family': 'serif', 'font.weight': 'normal'})
+
 # TODO: add logging and qrels file generation for UQV
 
 QUERY_GROUPS = {'top': 'MaxAP', 'low': 'MinAP', 'medh': 'MedHiAP', 'medl': 'MedLoAP'}
@@ -231,50 +234,52 @@ def plot_cw_histograms(quant_variants_dict):
 
 def plot_variants_ap(qdf: pd.DataFrame, apdb: dt.ResultsReader, qdf_title: pd.DataFrame, ap_title: dt.ResultsReader,
                      corpus):
-    # TODO: ADD title AP scores here for the title queries and check in the whole project
     _ap_vars_df = pd.merge(qdf, apdb.data_df, left_on='qid', right_index=True)
     _ap_title_df = pd.merge(qdf_title, ap_title.data_df, left_on='qid', right_index=True)
     vars_df = add_topic_to_qdf(_ap_vars_df)
     vars_df = vars_df.drop('text', axis=1)
-    title_df = _ap_title_df.drop(['text'], axis=1).rename({'ap': 'title_ap', 'qid': 'topic'}, axis=1)
-    topics_mean = vars_df.groupby('topic').mean().rename({'ap': 'topic_mean'}, axis=1)
+    title_df = _ap_title_df.drop(['text'], axis=1).rename({'ap': 'Title', 'qid': 'topic'}, axis=1)
+    topics_mean = vars_df.groupby('topic').mean().rename({'ap': 'Average'}, axis=1)
     vars_df = vars_df.merge(topics_mean, on='topic')
-    vars_df = vars_df.merge(title_df, on='topic')
+    vars_df = vars_df.merge(title_df, on='topic').rename({'ap': 'Variations'}, axis=1)
     vars_df['topic'] = vars_df['topic'].astype('category')
-    _list = []
-    for i in [0, 0.25, 0.5, 0.75, 1]:
-        _sr = vars_df.groupby('topic')['ap'].quantile(i, interpolation='higher')
-        _sr.name = f'{i}_Q'
-        _list.append(_sr)
-    _df = pd.concat(_list, axis=1)
-    vars_df = vars_df.merge(_df, on='topic')
-    vars_df = vars_df.sort_values('topic_mean')
+    # _list = []
+    # for i in [0, 0.25, 0.5, 0.75, 1]:
+    #     _sr = vars_df.groupby('topic')['ap'].quantile(i, interpolation='higher')
+    #     _sr.name = f'{i}_Q'
+    #     _list.append(_sr)
+    # _df = pd.concat(_list, axis=1)
+    # vars_df = vars_df.merge(_df, on='topic')
+    vars_df = vars_df.sort_values('Average')
     fig, ax = plt.subplots()
-    for i, m, c in zip([0, 0.25, 0.5, 0.75, 1], ['_', '2', '+', '1', '_'],
-                       ['royalblue', 'palevioletred', 'mediumvioletred', 'm', 'blue']):
-        _df = vars_df.loc[:, ['topic', 'qid', f'{i}_Q']]
-        ram_plot(_df, ax, m, color=c)
-    _df = vars_df.loc[:, ['topic', 'qid', 'topic_mean']]
-    ram_plot(_df, ax, '.', markerfacecolor='None', linestyle=':', color='darkorange')
-    _df = vars_df.loc[:, ['topic', 'qid', 'title_ap']]
-    ram_plot(_df, ax, 'd', color='c')
+    # for i, m, c in zip([0, 0.25, 0.5, 0.75, 1], ['_', '2', '+', '1', '_'],
+    #                    ['royalblue', 'palevioletred', 'mediumvioletred', 'm', 'blue']):
+    #     _df = vars_df.loc[:, ['topic', 'qid', f'{i}_Q']]
+    #     ram_plot(_df, ax, m, color=c)
+    _df = vars_df.loc[:, ['topic', 'qid', 'Variations']]
+    ram_plot(_df, ax, 2, color='#2a88aa', markersize=10, mew=2)
+    _df = vars_df.loc[:, ['topic', 'qid', 'Average']]
+    ram_plot(_df, ax, '', markerfacecolor='None', linestyle='-', color='darkslategrey', markersize=18, linewidth=3)
+    _df = vars_df.loc[:, ['topic', 'qid', 'Title']]
+    ram_plot(_df, ax, 'o', color='k', markersize=8, markerfacecolor='#49565b')
 
-    plt.xlabel('topic')
+    plt.xlabel('Topic')
     plt.ylabel('AP')
-    plt.title(f'{corpus} query variations AP')
+    plt.title(corpus_shorten(corpus))
     plt.show()
 
 
-def ram_plot(df, ax, marker, markersize=None, markerfacecolor=None, color='None', linestyle='None'):
+def ram_plot(df, ax, marker, markersize=None, markerfacecolor=None, color='None', linestyle='None', linewidth=None,
+             mew=None):
     """The function was named after Ram Yazdi that helped to solve this challenge in a dark hour"""
     bars = df['topic'].unique()
     mapping_name_to_index = {name: index for index, name in enumerate(bars)}
     df['topic'] = df['topic'].replace(mapping_name_to_index)
-    pos = [i for i, p in enumerate(bars) if i % 4 == 0]
+    pos = [0, 50, 100, 150, 200, 249] if len(bars) > 100 else [0, 50, 100]
     df.set_index('topic').plot(legend=True, marker=marker, markersize=markersize, linestyle=linestyle, color=color,
-                               markerfacecolor=markerfacecolor, grid=True, ax=ax)
-    plt.xticks(pos, np.array(pos) + 1, rotation=50)
-    plt.yticks(np.arange(0, 1, 0.05))
+                               markerfacecolor=markerfacecolor, grid=False, linewidth=linewidth, mew=mew, ax=ax)
+    plt.xticks(np.array(pos), pos, rotation=0)
+    plt.yticks(np.arange(0, 1.2, 0.2))
     plt.legend()
 
 
@@ -323,6 +328,11 @@ def calc_statistics(qdf: pd.DataFrame, apdb: dt.ResultsReader, title_queries_df:
     print(stats_df.to_latex(formatters=formatters, escape=False))
 
     plot_robust_histograms(quant_variants_dict) if corpus == 'ROBUST' else plot_cw_histograms(quant_variants_dict)
+
+
+def corpus_shorten(corpus):
+    corp = 'ROBUST' if corpus == 'ROBUST' else 'CW12'
+    return corp
 
 
 def main(args):
