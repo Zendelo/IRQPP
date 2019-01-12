@@ -14,7 +14,7 @@ parser = argparse.ArgumentParser(description='add a Total block to the UQV refer
 parser.add_argument('-c', '--corpus', type=str, default=None, help='corpus to work with',
                     choices=['ROBUST', 'ClueWeb12B'])
 parser.add_argument('--oracle', action='store_true')
-parser.add_argument('-t', '--table', choices=['qppRef', 'single'])
+parser.add_argument('-t', '--table', choices=['main', 'single'])
 
 POST_PREDICTORS = ['CLARITY', 'NQC', 'WIG', 'SMV', 'RSD', 'QF']
 UEF_PREDICTORS = ['UEF/{}'.format(p) for p in POST_PREDICTORS]
@@ -60,7 +60,7 @@ def print_ref_table_from_pkl(df_file):
 
 
 def load_ref_tables_and_sum(corpus, kind):
-    table_files = glob(f'{corpus}_*_queries_{kind}_results_DF.pkl')
+    table_files = glob(f'/home/olegzendel/{corpus}_*_queries_{kind}_results_DF.pkl')
     assert len(table_files) > 0, f'{corpus}_*_queries_full_results_DF.pkl, are missing'
     for df_file in sorted(table_files):
         file_name = dp.ensure_file(df_file)
@@ -93,7 +93,34 @@ def sum_ref_table_quant_columns(df_file, queries_group):
     print(table.replace('Total', '').replace('index', queries_group))
 
 
-def mark_max(df):
+def print_main_table(corpus):
+    table_files = glob(f'/home/olegzendel/{corpus}_Title_queries_full_results_DF.pkl')
+    rb_df_file = dp.ensure_file(f'~/ROBUST_Title_queries_full_results_DF.pkl')
+    cw_df_file = dp.ensure_file(f'~/ClueWeb12B_Title_queries_full_results_DF.pkl')
+    rb_df = pd.read_pickle(rb_df_file)
+    cw_df = pd.read_pickle(cw_df_file)
+    rb_df = rb_df.loc[rb_df['Quantile'] == 'All'].set_index('Predictor').drop('Quantile', axis=1)
+    cw_df = cw_df.loc[cw_df['Quantile'] == 'All'].set_index('Predictor').drop('Quantile', axis=1)
+    print(mark_max_per_row(rb_df).to_latex(escape=False))
+    print(mark_max_per_row(cw_df).to_latex(escape=False))
+    # print(rb_df.max(1))
+    # print(rb_df)
+    # print(cw_df.max(1))
+    # print(cw_df)
+
+
+def mark_bold_row_und_col(_df):
+    col_indices = _df.idxmax(0)
+    row_indices = _df.idxmax(1)
+    df = _df.applymap(float_to_str)
+    for i in zip(row_indices.index, row_indices.values):
+        df.loc[i] = float_to_bold(df.loc[i])
+    for i in zip(col_indices.values, col_indices.index):
+        df.loc[i] = float_to_underline(df.loc[i])
+    return df
+
+
+def mark_max_per_row(df):
     """marking the maximum in a Series or DataFrame"""
     _df = df.apply(lambda x: [float_to_bold(i) if i == max(x) else float_to_str(i) for i in x], axis=1,
                    result_type='expand')
@@ -101,12 +128,31 @@ def mark_max(df):
     return _df
 
 
+def mark_max_per_column(df):
+    """marking the maximum in a Series or DataFrame"""
+    _df = df.apply(lambda x: [float_to_underline(i) if i == max(x) else float_to_str(i) for i in x], axis=0,
+                   result_type='expand')
+    _df.columns = df.columns
+    return _df
+
+
+def float_to_underline(x):
+    return f'\\underline{{{float_to_str(x)}}}'
+
+
 def float_to_bold(x):
     return f'\\mathbf{{{float_to_str(x)}}}'
 
 
 def float_to_str(x):
-    return f'{x:.3f}'.lstrip('0')
+    if type(x) is float:
+        return f'{x:.3f}'.lstrip('0')
+    else:
+        try:
+            x.isnumeric()
+            return x.lstrip('0')
+        except AttributeError:
+            return x
 
 
 def print_single_table():
@@ -119,7 +165,10 @@ def print_single_table():
     cw_df = cw_df.drop('kendall', axis=1).rename({'pearson': '\\clueTwelve'}, axis=1)
     cw_df = cw_df.pivot(index='Predictor', columns='Function')
 
-    df = pd.merge(right=mark_max(cw_df), left=mark_max(rb_df), on='Predictor')
+    _cw_df = mark_bold_row_und_col(cw_df)
+    _rb_df = mark_bold_row_und_col(rb_df)
+
+    df = pd.merge(right=_cw_df, left=_rb_df, on='Predictor')
 
     df = df.reindex(PREDICTORS)
     df = df.applymap(lambda x: f'${x}$')
@@ -133,15 +182,16 @@ def main(args):
     oracle = args.oracle
     table_type = args.table
 
-    table = 'single'
-    corpus = 'ClueWeb12B'
+    table_type = 'single'
+    corpus = 'ROBUST'
 
     if oracle:
         kind = 'oracle'
     else:
         kind = 'full'
-    if table_type == 'qppRef':
-        load_ref_tables_and_sum(corpus, kind)
+    if table_type == 'main':
+        print_main_table(corpus)
+        # load_ref_tables_and_sum(corpus, kind)
     else:
         print_single_table()
 
