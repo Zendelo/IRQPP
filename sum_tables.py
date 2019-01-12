@@ -101,8 +101,8 @@ def print_main_table(corpus):
     cw_df = pd.read_pickle(cw_df_file)
     rb_df = rb_df.loc[rb_df['Quantile'] == 'All'].set_index('Predictor').drop('Quantile', axis=1)
     cw_df = cw_df.loc[cw_df['Quantile'] == 'All'].set_index('Predictor').drop('Quantile', axis=1)
-    print(mark_max_per_row(rb_df).to_latex(escape=False))
-    print(mark_max_per_row(cw_df).to_latex(escape=False))
+    print(mark_max_per_row(rb_df).applymap('${}$'.format).to_latex(escape=False))
+    print(mark_max_per_row(cw_df).applymap('${}$'.format).to_latex(escape=False))
     # print(rb_df.max(1))
     # print(rb_df)
     # print(cw_df.max(1))
@@ -182,7 +182,7 @@ def main(args):
     oracle = args.oracle
     table_type = args.table
 
-    table_type = 'single'
+    table_type = 'main'
     corpus = 'ROBUST'
 
     if oracle:
