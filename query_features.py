@@ -1,7 +1,8 @@
 import argparse
+import glob
 import multiprocessing as mp
 import os
-from functools import partial
+from functools import partial, reduce
 
 import numpy as np
 import pandas as pd
@@ -209,6 +210,7 @@ class QueryFeatureFactory:
         return _df
 
     def _filter_queries(self, df):
+        df.reset_index(inplace=True)
         # Remove the topic queries
         _df = df.loc[df['qid'].isin(self.variations_data.queries_df['qid'])]
         # Filter only the relevant quantile variations
@@ -263,7 +265,7 @@ class QueryFeatureFactory:
         norm_df = (_df.groupby(['topic', 'qid']).sum() / z_n).fillna(0)
         return norm_df
 
-    def _divide_by_size(self, df):
+    def divide_by_size(self, df):
         # _df = df
         # filter only variations different from original query
         _df = self._filter_queries(df)
@@ -304,7 +306,7 @@ class QueryFeatureFactory:
         else:
             _df = self._calc_features()
             _df.to_pickle(_file)
-        return self._divide_by_size(_df)
+        return self.divide_by_size(_df)
         # return _df
         # return self._soft_max_scores(_df)
         # return self._sum_scores(_df)
@@ -366,6 +368,27 @@ def run_predictions_process(n, corpus, queries_group, quantile):
     return sim_ref_pred
 
 
+def load_full_features_df(corpus, queries_group, quantile):
+    features_obj = QueryFeatureFactory(corpus, queries_group, quantile)
+    pkl_dir = dp.ensure_dir(f'~/QppUqvProj/Results/{corpus}/test/ref/pkl_files/')
+    _list = []
+    last_df = pd.DataFrame()
+    for n in NUMBER_OF_DOCS:
+        _file = f'{pkl_dir}/{queries_group}_queries_{corpus}_RBO_{n}_TopDocs_{n}.pkl'
+        try:
+            dp.ensure_file(_file)
+            _df = pd.read_pickle(_file).set_index(['topic', 'qid'])
+            _list.append(_df.drop('Jac_coefficient', axis=1))
+            last_df = _df['Jac_coefficient']
+        except AssertionError:
+            print(f'!! Warning !! The file {_file} is missing')
+    df = pd.concat(_list + [last_df], axis=1)
+    _path = f'~/QppUqvProj/Results/{corpus}/test/ref'
+    _path = dp.ensure_dir(_path)
+    features_obj.divide_by_size(df).reset_index().to_json(
+        f'{_path}/{queries_group}_query_{quantile}_variations_features_{corpus}_uqv.JSON')
+
+
 def main(args):
     corpus = args.corpus
     generate = args.generate
@@ -376,10 +399,13 @@ def main(args):
     graphs = args.graphs
     number_of_vars = args.vars
 
-    # # Debugging
+    # Debugging
+    corpus = 'ClueWeb12B'
+    queries_group = 'title'
+    quantile = 'all'
     # testing_feat = QueryFeatureFactory('ROBUST', 'title', 'all')
     # norm_features_df = testing_feat.generate_features()
-    # # norm_features_df.reset_index().to_json('query_features_{}_uqv.JSON'.format(corpus))
+    # norm_features_df.reset_index().to_json('query_features_{}_uqv.JSON'.format(corpus))
     # return
 
     cores = mp.cpu_count() - 1
@@ -410,6 +436,9 @@ def main(args):
     elif file_to_load:
         features_df = features_loader(file_to_load, corpus)
         print(features_df)
+
+    else:
+        load_full_features_df(corpus, queries_group, quantile)
 
 
 if __name__ == '__main__':

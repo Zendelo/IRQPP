@@ -16,9 +16,13 @@ from query_features import features_loader
 
 LAMBDA = np.linspace(start=0, stop=1, num=11)
 C_PARAMETERS = [0.01, 0.1, 1, 10]
-PREDICTORS_WO_QF = ['clarity', 'wig', 'nqc', 'smv', 'rsd', 'preret', 'uef/clarity', 'uef/wig', 'uef/nqc', 'uef/smv']
+NUM_DOCS = [5, 10, 25, 50, 100, 250, 500, 1000]
+
+PREDICTORS_WO_QF = ['clarity', 'wig', 'nqc', 'smv', 'rsd', 'uef/clarity', 'uef/wig', 'uef/nqc', 'uef/smv']
+PRE_RET_PREDICTORS = ['preret/AvgIDF', 'preret/AvgSCQTFIDF', 'preret/AvgVarTFIDF', 'preret/MaxIDF',
+                      'preret/MaxSCQTFIDF', 'preret/MaxVarTFIDF']
 PREDICTORS_QF = ['qf', 'uef/qf']
-PREDICTORS = PREDICTORS_WO_QF + PREDICTORS_QF
+PREDICTORS = PREDICTORS_WO_QF + PRE_RET_PREDICTORS + PREDICTORS_QF
 SIMILARITY_FUNCTIONS = {'Jac_coefficient': 'jac', 'Top_10_Docs_overlap': 'sim', 'RBO_EXT_100': 'rbo',
                         'RBO_FUSED_EXT_100': 'rbof'}
 
@@ -39,6 +43,20 @@ parser.add_argument('--corr_measure', default='pearson', type=str, choices=['pea
                     help='features JSON file to load')
 parser.add_argument('--generate', help='use ltr to generate SVM-Rank predictions, or calc to calc predictions',
                     choices=['ltr', 'calc', 'oracle'])
+
+
+def get_simfunct(sim):
+    if sim.endswith('coefficient'):
+        result = 'jac'
+    elif sim.endswith('overlap'):
+        result = 'sim'
+    elif sim.lower().startswith('rbo_fused'):
+        result = 'rbof'
+    elif sim.lower().startswith('rbo_ext'):
+        result = 'rbo'
+    else:
+        result = sim
+    return result
 
 
 class QueryPredictionRef:
@@ -66,17 +84,19 @@ class QueryPredictionRef:
             self.base_results_df = dp.convert_vid_to_qid(_vars_results_df.loc[_q2p_obj.queries_dict.keys()])
 
         self.base_results_df.rename_axis('topic', inplace=True)
-        # # The next function is used to save results in basic predictions format of the given queries set
+        # The next function is used to save results in basic predictions format of the given queries set
         # write_basic_predictions(self.base_results_df, corpus, qgroup, predictor)
-        # exit()
         self.query_vars = dp.QueriesTextParser(self.query_vars_file, 'uqv')
         _quantile_vars = dp.QueriesTextParser(self.quantile_vars_file, 'uqv')
         _features_df = features_loader(self.features, corpus)
         self.features_df = self.__initialize_features_df(_quantile_vars, _features_df)
         self.var_scores_df = self.__initialize_var_scores_df(_features_df.reset_index()[['topic', 'qid']],
                                                              _vars_results_df)
+        self.geo_mean_df = self.__initialize_geo_scores_df(_features_df.reset_index()[['topic', 'qid']],
+                                                           dp.ResultsReader(self.geo_mean_file, 'predictions').data_df)
         self.real_ap_df = self.__initialize_var_scores_df(_features_df.reset_index()[['topic', 'qid']],
                                                           dp.ResultsReader(self.real_ap_file, 'ap').data_df)
+        self.geo_as_predictor()
 
     @classmethod
     def __set_paths(cls, corpus, predictor, qgroup, vars_quantile):
@@ -88,7 +108,7 @@ class QueryPredictionRef:
         cls.vars_results_dir = dp.ensure_dir(f'{_base_dir}/raw/{predictor}/predictions/')
 
         if qgroup == 'title':
-            _orig_dir = dp.ensure_file(f'~/QppUqvProj/Results/{corpus}/basicPredictions/title')
+            _orig_dir = dp.ensure_dir(f'~/QppUqvProj/Results/{corpus}/basicPredictions/title')
             cls.base_results_dir = f'{_orig_dir}/{predictor}/predictions/'
 
         cls.output_dir = dp.ensure_dir(f'{_base_dir}/referenceLists/{qgroup}/{vars_quantile}_vars/')
@@ -102,6 +122,9 @@ class QueryPredictionRef:
         # cls.features = f'{_test_dir}/ref/{qgroup}_query_features_{corpus}_uqv.JSON'
         cls.features = dp.ensure_file(
             f'{_test_dir}/ref/{qgroup}_query_{vars_quantile}_variations_features_{corpus}_uqv.JSON')
+
+        cls.geo_mean_file = dp.ensure_file(
+            f'{_base_dir}/raw/geo/predictions/predictions-20000')
 
         # The variations file is used in the filter function - it consists of all the vars w/o the query at hand
         _query_vars = f'~/QppUqvProj/data/{corpus}/queries_{corpus}_UQV_wo_{qgroup}.txt'
@@ -119,6 +142,9 @@ class QueryPredictionRef:
             dp.ensure_file(cls.quantile_vars_file)
 
         cls.real_ap_file = dp.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/raw/QLmap1000')
+
+        cls.geo_predictions_dir = dp.ensure_dir(
+            f'{_base_dir}/referenceLists/{qgroup}/{vars_quantile}_vars/sim_as_pred/geo/predictions')
 
     @classmethod
     def __set_graph_paths(cls, corpus, predictor, qgroup, direct, n):
@@ -152,6 +178,9 @@ class QueryPredictionRef:
         cls.features = dp.ensure_file(
             f'{_graphs_dat_dir}/features/{qgroup}_query_{n}_variations_features_{corpus}_uqv.JSON')
 
+        cls.geo_mean_file = dp.ensure_file(
+            f'QppUqvProj/Results/{corpus}/uqvPredictions/raw/geo/predictions/predictions-10000')
+
         # The variations file is used in the filter function - it consists of all the vars w/o the query at hand
         cls.query_vars_file = dp.ensure_file(f'{_graphs_dat_dir}/queries/queries_wo_{qgroup}_{n}_vars.txt')
         cls.quantile_vars_file = cls.query_vars_file
@@ -180,15 +209,22 @@ class QueryPredictionRef:
         _var_scores_df.set_index(['topic', 'qid'], inplace=True)
         return _var_scores_df
 
+    def __initialize_geo_scores_df(self, topic_df, geo_scores_df):
+        """This method filters from query variations df only the ones relevant for prediction"""
+        _geo_scores_df = pd.concat([geo_scores_df, self.features_df.reset_index('topic')['topic']], axis=1,
+                                   join='inner').reset_index()
+        return _geo_scores_df.set_index(['topic', 'qid'])
+
     def calc_queries(self):
         for lambda_param in LAMBDA:
-
             for col in self.features_df.columns:
                 _res_df = self.__calc_sim_predict(self.features_df[col], lambda_param)
-                self.write_results(_res_df, SIMILARITY_FUNCTIONS.get(col, col), lambda_param)
+                self.write_results(_res_df, col, lambda_param)
 
             _uni_res_df = self.__calc_uni(lambda_param)
             self.write_results(_uni_res_df, 'uni', lambda_param)
+            _geo_res_df = self.__calc_geo_predict(lambda_param)
+            self.write_results(_geo_res_df, 'geo', lambda_param)
 
     def calc_oracle(self):
         lambda_param = 0
@@ -212,6 +248,11 @@ class QueryPredictionRef:
         _result_df = _result_df.groupby('topic').sum()
         return lambda_param * self.base_results_df + (1 - lambda_param) * _result_df
 
+    def __calc_geo_predict(self, lambda_param):
+        _result_df = self.var_scores_df.multiply(self.geo_mean_df['score'], axis=0, level='qid')
+        _result_df = _result_df.groupby('topic').sum()
+        return lambda_param * self.base_results_df + (1 - lambda_param) * _result_df
+
     def __calc_sim_oracle(self, features_df, lambda_param):
         """This method will calculate the prediction value using real AP values of the variants, in order to set the
         upper bound for the full potential of the method"""
@@ -230,17 +271,29 @@ class QueryPredictionRef:
         _res_df = _df.join(self.base_results_df[score_param], on='topic')
         return _res_df
 
-    def write_results(self, df, simfunc, lambda_param, oracle=False):
+    def write_results(self, df, column, lambda_param, oracle=False):
+        sim_func = get_simfunct(column)
+        if sim_func != 'jac' and sim_func != 'uni' and sim_func != 'geo':
+            sim_param = [s for s in column.split('_') if s.isdigit()][0]
+        else:
+            sim_param = None
         if oracle:
             output_dir = dp.ensure_dir(f'{self.output_dir}/oracle')
         else:
             output_dir = dp.ensure_dir(f'{self.output_dir}/general')
         for col in df.columns:
-            _file_path = f'{output_dir}/{simfunc}/{self.predictor}/predictions/'
+            _file_path = f'{output_dir}/{sim_func}/{self.predictor}/predictions/'
             dp.ensure_dir(_file_path)
             _file_name = col.replace('score_', 'predictions-')
-            file_name = f'{_file_path}{_file_name}+lambda+{lambda_param}'
+            if sim_param:
+                file_name = f'{_file_path}{_file_name}+{sim_func}+{sim_param}+lambda+{lambda_param}'
+            else:
+                file_name = f'{_file_path}{_file_name}+lambda+{lambda_param}'
             df[col].to_csv(file_name, sep=" ", header=False, index=True, float_format='%f')
+
+    def geo_as_predictor(self):
+        df = self.geo_mean_df.groupby('topic').mean()
+        df['score'].to_csv(f'{self.geo_predictions_dir}/predictions-GEO', sep=' ')
 
 
 class LearningSimFunctions:
@@ -474,7 +527,7 @@ def main(args):
     # corpus = 'ROBUST'
     # quantile = 'all'
     # queries_group = 'title'
-    # generate = 'ltr'
+    # generate = 'calc'
 
     assert predictor is not None, 'No predictor was chosen'
     assert corpus is not None, 'No corpus was chosen'
