@@ -20,16 +20,22 @@ from crossval import CrossValidation
 # TODO: Create a single set_paths class method and replace all the paths with parameters
 # TODO: Replace the print functions with logger output
 
-PREDICTORS = ['clarity', 'nqc', 'wig', 'qf']
-SIM_REF_PREDICTORS = {'jcP': 'Jaccard', 'topDocsP': 'TopDocs', 'rboP': 'RBO', 'FrboP': 'RBO-F'}
+PREDICTORS = ['clarity', 'nqc', 'wig', 'smv', 'qf', 'rsd']
+UEF_PREDICTORS = ['uef/{}'.format(p) for p in PREDICTORS]
+UEF_PREDICTORS.remove('uef/smv')
+UEF_PREDICTORS.remove('uef/rsd')
+PRE_RET_PREDICTORS = ['preret/AvgIDF', 'preret/AvgSCQTFIDF', 'preret/AvgVarTFIDF', 'preret/MaxIDF',
+                      'preret/MaxSCQTFIDF', 'preret/MaxVarTFIDF']
+PREDICTORS = PRE_RET_PREDICTORS + PREDICTORS
+SIM_REF_PREDICTORS = {'jcP': 'Jaccard', 'topDocsP': 'TopDocs', 'rboP': 'RBO', 'FrboP': 'RBO-F', 'geo': 'GEO'}
 NUM_DOCS = [5, 10, 25, 50, 100, 250, 500, 1000]
 LIST_CUT_OFF = [5, 10, 25, 50, 100]
 # AGGREGATE_FUNCTIONS = ['avg', 'max', 'med', 'min', 'std', 'combsum']
 AGGREGATE_FUNCTIONS = ['avg', 'max', 'med', 'std']
-SINGLE_FUNCTIONS = ['max', 'min', 'medl', 'medh']
-CORR_MEASURES = ['pearson', 'kendall', 'spearman']
-REFERENCE_FUNCTIONS = ['uni', 'jac', 'sim', 'rbo', 'rbof']
-REFERENCE_TITLES = ['Uniform', 'Jaccard', 'TopDocs', 'RBO', 'RBO-F']
+SINGLE_FUNCTIONS = ['title', 'top', 'low', 'medh']
+CORR_MEASURES = ['pearson', 'kendall']
+REFERENCE_FUNCTIONS = ['uni', 'jac', 'sim', 'rbo', 'rbof', 'geo']
+REFERENCE_TITLES = ['Uniform', 'Jaccard', 'TopDocs', 'RBO', 'RBO-F', 'GEO']
 QUERY_GROUPS = {'title': 'Title', 'top': 'MaxAP', 'low': 'MinAP', 'medh': 'MedHiAP', 'medl': 'MedLoAP'}
 SPLITS = 2
 REPEATS = 30
@@ -38,8 +44,7 @@ parser = argparse.ArgumentParser(description='Full Results Pipeline Automation G
                                  usage='python3.6 generate_results.py --predictor PREDICTOR -c CORPUS -q QUERIES ',
                                  epilog='Currently Beta Version')
 
-parser.add_argument('--predictor', metavar='predictor_name', help='predictor to run',
-                    choices=['clarity', 'wig', 'nqc', 'qf', 'uef', 'all'])
+parser.add_argument('--predictor', help='predictor to run', choices=PREDICTORS + ['uef', 'all'])
 # parser.add_argument('-r', '--predictions_dir', metavar='results_dir_path',
 #                     default='~/QppUqvProj/Results/ROBUST/basicPredictions/', help='path where to save results')
 parser.add_argument('-q', '--queries', metavar='queries.xml', default='~/data/ROBUST/queries.xml',
@@ -56,6 +61,7 @@ parser.add_argument('--generate', help="generate new predictions", action="store
 parser.add_argument('--lists', help="generate new lists", action="store_true")
 parser.add_argument('--svm', help="generate SVM predictions", action="store_true")
 parser.add_argument('--calc', help="calc new UQV predictions", action="store_true")
+parser.add_argument('--oracle', help="calc new UQV predictions", action="store_true")
 
 
 class GeneratePredictions:
@@ -122,7 +128,7 @@ class GeneratePredictions:
                 ensure_files([predictor_exe.split()[1]] + [parameters, queries])
                 self.__run_py_predictor(predictor_exe, parameters, queries, running_param, n, output)
 
-        elif predictor_exe.endswith(('nqc.py', 'wig.py')):
+        elif predictor_exe.endswith(('nqc.py', 'wig.py', 'smv.py')):
             for n in NUM_DOCS:
                 print('\n ******** Running for: {} documents ******** \n'.format(n))
                 output = predictions_dir + '{}-{}'.format(res, n)
@@ -189,6 +195,19 @@ class GeneratePredictions:
             predictions_dir = predictions_dir + 'nqc/predictions/'
         self.__run_predictor(predictions_dir, predictor_exe, parameters, running_param)
 
+    def generate_smv(self, predictions_dir=None):
+        print('\n -- SMV -- \n')
+        predictor_exe = 'python3 ~/repos/IRQPP/smv.py'
+        ql_scores = '~/QppUqvProj/Results/{}/test/{}/QL.res'.format(self.corpus, self.qtype)
+        qlc_scores = '~/QppUqvProj/Results/{}/test/{}/logqlc.res'.format(self.corpus, self.qtype)
+        parameters = '{} {}'.format(ql_scores, qlc_scores)
+        running_param = '-d '
+        if predictions_dir is None:
+            predictions_dir = self.predictions_dir + 'smv/predictions/'
+        else:
+            predictions_dir = predictions_dir + 'smv/predictions/'
+        self.__run_predictor(predictions_dir, predictor_exe, parameters, running_param)
+
     def generate_qf(self, predictions_dir=None):
         print('\n -- QF -- \n')
         if self.gen_lists:
@@ -213,7 +232,7 @@ class GeneratePredictions:
         """Assuming all the previous predictions exist, will generate the uef lists and predictions"""
         if self.gen_lists:
             self._generate_lists_uef()
-        predictor_exe = 'python3.6 ~/repos/IRQPP/uef/uef.py'
+        predictor_exe = 'python3 ~/repos/IRQPP/uef/uef.py'
         parameters = '~/QppUqvProj/Results/{}/test/{}/QL.res'.format(self.corpus, self.qtype)
         running_param = '-d '
         predictions_dir = self.predictions_dir + 'uef/'
@@ -370,48 +389,48 @@ class CrossVal:
         return res_df
 
     def calc_single(self, single_f):
-        test_dir = os.path.normpath('{}/single'.format(self.test_dir))
-        predictions_dir = '{}/uqvPredictions/single/{}'.format(self.base_dir, single_f)
-        ap_score = ensure_file('{}/map1000-{}'.format(test_dir, single_f))
+        test_dir = os.path.normpath('{}/ref'.format(self.test_dir))
+        predictions_dir = '{}/basicPredictions/{}'.format(self.base_dir, single_f)
+        ap_score = ensure_file('{}/QLmap1000-{}'.format(test_dir, single_f))
 
         _results = defaultdict()
 
-        for p in PREDICTORS:
+        for p in PREDICTORS + UEF_PREDICTORS:
             # dir of aggregated prediction results
             _predictions_dir = os.path.normpath('{}/{}/predictions'.format(predictions_dir, p))
             # dir of aggregated uef prediction results
-            _uef_predictions_dir = os.path.normpath('{}/uef/{}/predictions'.format(predictions_dir, p))
+            # _uef_predictions_dir = os.path.normpath('{}/uef/{}/predictions'.format(predictions_dir, p))
             # list to save non uef results for a specific predictor with different AP files
             _p_res = list()
             # list to save uef results
-            _uef_p_res = list()
+            # _uef_p_res = list()
             _index = list()
             for measure in CORR_MEASURES:
                 cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_predictions_dir,
                                          file_to_load=self.cv_map_f, load=True, test=measure,
                                          ap_file=ap_score)
-                uef_cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_uef_predictions_dir,
-                                             file_to_load=self.cv_map_f, load=True, test=measure,
-                                             ap_file=ap_score)
+                # uef_cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_uef_predictions_dir,
+                #                              file_to_load=self.cv_map_f, load=True, test=measure,
+                #                              ap_file=ap_score)
                 mean = cv_obj.calc_test_results()
-                uef_mean = uef_cv_obj.calc_test_results()
-                _p_res.append('${}$'.format(mean))
-                _uef_p_res.append('${}$'.format(uef_mean))
+                # uef_mean = uef_cv_obj.calc_test_results()
+                _p_res.append(float(mean))
+                # _uef_p_res.append('${}$'.format(uef_mean))
                 _index.append(measure)
 
             sr = pd.Series(_p_res)
-            uef_sr = pd.Series(_uef_p_res)
+            # uef_sr = pd.Series(_uef_p_res)
             sr.name = p
             sr.index = _index
-            uef_p = 'uef({})'.format(p)
-            uef_sr.name = uef_p
-            uef_sr.index = _index
+            # uef_p = 'uef({})'.format(p)
+            # uef_sr.name = uef_p
+            # uef_sr.index = _index
             _results[p] = sr
-            _results[uef_p] = uef_sr
+            # _results[uef_p] = uef_sr
 
         res_df = pd.DataFrame.from_dict(_results, orient='index')
-        _uef_predictors = ['uef({})'.format(p) for p in PREDICTORS]
-        res_df = res_df.reindex(index=PREDICTORS + _uef_predictors)
+        # _uef_predictors = ['uef({})'.format(p) for p in PREDICTORS]
+        res_df = res_df.reindex(index=PREDICTORS + UEF_PREDICTORS)
         res_df.index = res_df.index.str.upper()
         res_df.index.name = 'Predictor'
         res_df.reset_index(inplace=True)
@@ -420,27 +439,30 @@ class CrossVal:
         res_df.insert(loc=0, column='Function', value=single_f)
         return res_df
 
-    def calc_reference_per_predictor(self, predictor, query_group):
+    def calc_reference_per_predictor(self, predictor, query_group, oracle=False):
         max_list = []
         _results = defaultdict()
 
-        for quant in ['all', 'med', 'top', 'low', 'low-0']:
-            ap_file = os.path.normpath(f'{self.test_dir}/ref/QLmap1000-{query_group}')
-            ensure_file(ap_file)
-            predictions_dir = f'{self.base_dir}/uqvPredictions/referenceLists/{query_group}/{quant}_vars/general'
-            base_pred_dir = f'{self.base_dir}/basicPredictions/{query_group}'
-            # list to save results for a specific predictor with different quantile variations
-            _quant_res = list()
-            _index = list()
+        ap_file = os.path.normpath(f'{self.test_dir}/ref/QLmap1000-{query_group}')
+        ensure_file(ap_file)
+        base_pred_dir = f'{self.base_dir}/basicPredictions/{query_group}'
 
-            """This part calculates and adds title queries column"""
-            _base_predictions_dir = os.path.normpath('{}/{}/predictions'.format(base_pred_dir, predictor))
-            cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_base_predictions_dir,
-                                     file_to_load=self.cv_map_f, load=True, ap_file=ap_file, test=self.corr_measure)
-            mean = cv_obj.calc_test_results()
-            max_list.append(mean)
-            _quant_res.append(mean)
-            _index.append(QUERY_GROUPS[query_group])
+        """This part calculates and adds title queries column"""
+        _base_predictions_dir = os.path.normpath('{}/{}/predictions'.format(base_pred_dir, predictor))
+        cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_base_predictions_dir,
+                                 file_to_load=self.cv_map_f, load=True, ap_file=ap_file, test=self.corr_measure)
+        _mean = cv_obj.calc_test_results()
+        max_list.append(_mean)
+
+        for quant in ['all', 'med', 'top', 'low', 'low-0']:
+
+            if oracle:
+                predictions_dir = f'{self.base_dir}/uqvPredictions/referenceLists/{query_group}/{quant}_vars/oracle'
+            else:
+                predictions_dir = f'{self.base_dir}/uqvPredictions/referenceLists/{query_group}/{quant}_vars/general'
+            # list to save results for a specific predictor with different quantile variations
+            _quant_res = [_mean]
+            _index = [QUERY_GROUPS[query_group]]
 
             for ref_func, func_name in zip(REFERENCE_FUNCTIONS, REFERENCE_TITLES):
                 _predictions_dir = os.path.normpath(f'{predictions_dir}/{ref_func}/{predictor}/predictions')
@@ -619,32 +641,39 @@ class GenerateTable:
                            index_names=False, column_format='lccc'))
 
     def print_sing_latex_table(self):
+        _list = []
         print('\\begin{table}[ht!]')
         print('\\begin{center}')
         print('\\caption{{ {} UQV single picked queries}}'.format(self.corpus))
+        _sing = SINGLE_FUNCTIONS[0]
+        _df = self.cv.calc_single(_sing)
+        _list.append(_df)
 
-        _df = self.cv.calc_basic()
         table = _df.to_latex(header=True, multirow=False, multicolumn=False, index=False, escape=False,
                              index_names=False, column_format='llccc')
 
         table = table.replace('\\toprule', '\\toprule \n  &&  \\multicolumn{3}{c}{Correlation method} \\\\')
         table = table.replace('Predictor', '& Predictor')
-        table = table.replace('basic', '')
-        table = table.replace('\\midrule', '\\midrule \n \\multirow{8}{*}{basic}')
+        table = table.replace(f'{_sing} &', '&')
+        table = table.replace('\\midrule', f'\\midrule \n \\multirow{{8}}{{*}}{_sing}')
         table = table.replace('\\end{tabular}', '')
         print(table)
-        for sing in SINGLE_FUNCTIONS:
+        for sing in SINGLE_FUNCTIONS[1:]:
             _df = self.cv.calc_single(sing)
+            _list.append(_df)
             table = _df.to_latex(header=False, multirow=False, multicolumn=False, index=False, escape=False,
                                  index_names=False, column_format='llccc')
             table = table.replace('\\begin{tabular}{llccc}', '')
             table = table.replace('\\end{tabular}', '')
-            table = table.replace('{}'.format(sing), '')
-            table = table.replace('\\toprule', '\\multirow{{8}}{{*}}{{{}}}'.format(sing))
+            table = table.replace('{} &'.format(sing), '&')
+            table = table.replace('\\toprule', f'\\multirow{{8}}{{*}}{{{sing.title()}AP}}')
             print(table)
         print('\\end{tabular}')
         print('\\end{center}')
         print('\\end{table}')
+        full_df = pd.concat(_list, axis=0)
+        print(full_df)
+        full_df.to_pickle(f'{self.corpus}_single_queries_full_results_DF.pkl')
 
     def print_basic_latex_table(self):
         _df = self.cv.calc_basic()
@@ -669,7 +698,7 @@ class GenerateTable:
         # This will replace the 8 last substrings, using Extended Slices with negative int to copy in reverse order
         # table = table[::-1].replace('{}'.format(_predictor.upper()[::-1]), '', 4)[::-1]
         table = table.replace(f'{_predictor}', '')
-        table = table.replace('\\midrule', f'\\midrule \n \\multirow{{4}}{{*}}{{{_predictor}}}')
+        table = table.replace('\\midrule', f'\\midrule \n \\multirow{{5}}{{*}}{{{_predictor}}}')
         table = table.replace('\\toprule', f'\\toprule \n & & \\multicolumn{{5}}{{c}}{{Queries Group}} \\\\')
         print(table, end='')
         for predictor in SIM_REF_PREDICTORS[1:]:
@@ -679,14 +708,14 @@ class GenerateTable:
             table = table.replace('\\begin{tabular}{lcccccc}', '')
             table = table.replace('\\end{tabular}', '')
             table = table.replace(f'{predictor}', '')
-            table = table.replace('\\toprule', '\\multirow{{4}}{{*}}{{{}}}'.format(predictor))
+            table = table.replace('\\toprule', '\\multirow{{5}}{{*}}{{{}}}'.format(predictor))
             print(table, end='')
 
         print('\\end{tabular}')
         print('\\end{center}')
         print('\\end{table} \n')
 
-    def print_ref_latex_table(self):
+    def print_ref_latex_table(self, oracle=False):
         """This functions will print tables with all the qunatile variations, with all the predictors inside. Good for
          comparing the influence of the variations quantile, it prints a separate table for each group of queries"""
         corr_measure = self.cv.corr_measure.capitalize()
@@ -699,7 +728,7 @@ class GenerateTable:
             print(
                 '\\caption{{ {} QPP-Reference lists {} Correlations for {} queries}}'.format(self.corpus, corr_measure,
                                                                                              queries_group))
-            _df, _max = self.cv.calc_reference_per_predictor(_predictor, qgroup)
+            _df, _max = self.cv.calc_reference_per_predictor(_predictor, qgroup, oracle)
             _list.append(_df)
             tables_max_vals.append(_max)
             table = _df.to_latex(header=True, multirow=False, multicolumn=False, index=False, escape=False,
@@ -708,11 +737,11 @@ class GenerateTable:
             # This will replace the 8 last substrings, using Extended Slices with negative int to copy in reverse order
             # table = table[::-1].replace('{}'.format(_predictor.upper()[::-1]), '', 4)[::-1]
             table = table.replace(f'{_predictor.upper()}', '')
-            table = table.replace('\\midrule', f'\\midrule \n \\multirow{{4}}{{*}}{{{_predictor.upper()}}}')
+            table = table.replace('\\midrule', f'\\midrule \n \\multirow{{5}}{{*}}{{{_predictor.upper()}}}')
             table = table.replace('\\toprule', f'\\toprule \n & & \\multicolumn{{5}}{{c}}{{Similarity Functions}} \\\\')
             print(table, end='')
-            for predictor in PREDICTORS[1:] + ['uef/clarity', 'uef/nqc', 'uef/wig', 'uef/qf']:
-                _df, _max = self.cv.calc_reference_per_predictor(predictor, qgroup)
+            for predictor in PREDICTORS[1:] + UEF_PREDICTORS:
+                _df, _max = self.cv.calc_reference_per_predictor(predictor, qgroup, oracle)
                 _list.append(_df)
                 tables_max_vals.append(_max)
                 table = _df.to_latex(header=False, multirow=False, multicolumn=False, index=False, escape=False,
@@ -720,30 +749,32 @@ class GenerateTable:
                 table = table.replace('\\begin{tabular}{lcccccc}', '')
                 table = table.replace('\\end{tabular}', '')
                 table = table.replace(f'{predictor.upper()}', '')
-                table = table.replace('\\toprule', '\\multirow{{4}}{{*}}{{{}}}'.format(predictor.upper()))
+                table = table.replace('\\toprule', '\\multirow{{5}}{{*}}{{{}}}'.format(predictor.upper()))
                 print(table, end='')
-                # temp_df = pd.concat(_list)
-                # print(temp_df)
-                # print(temp_df.to_latex(header=True, multirow=False, multicolumn=False, index=False, escape=False,
-                #                        index_names=False, column_format='lccccccc'))
-                # print(temp_df.groupby('Predictor').max(numeric_only=True))
-                # print(temp_df.groupby('Predictor').idxmax(numeric_only=True))  # Doesn't Work!
+
             _df, _max = self.cv.calc_sim_ref_per_group(qgroup)
             _list.append(_df)
+
+            full_res_df = pd.concat(_list)
+            if oracle:
+                full_res_df.to_pickle(
+                    f'{self.corpus}_{queries_group}_{self.cv.corr_measure}_queries_oracle_results_DF.pkl')
+            else:
+                full_res_df.to_pickle(
+                    f'{self.corpus}_{queries_group}_{self.cv.corr_measure}_queries_full_results_DF.pkl')
+
             tables_max_vals.append(_max)
             table = _df.to_latex(header=False, multirow=False, multicolumn=False, index=False, escape=False,
                                  index_names=False, column_format='lcccccc')
             table = table.replace('\\begin{tabular}{lcccccc}', '')
             table = table.replace('\\end{tabular}', '')
             table = table.replace('SimilarityOnly', '')
-            table = table.replace('\\toprule', '\\multirow{4}{*}{SimilarityOnly}')
+            table = table.replace('\\toprule', '\\multirow{5}{*}{SimilarityOnly}')
             print(table, end='')
             print('\\end{tabular}')
             print('\\end{center}')
             print(f'The maximum value in the table is: {max(tables_max_vals)}')
             print('\\end{table} \n')
-            full_res_df = pd.concat(_list)
-            full_res_df.to_pickle(f'{self.corpus}_{queries_group}_queries_full_results_DF.pkl')
 
 
 def ensure_dir(file_path):
@@ -772,6 +803,7 @@ def main(args):
     generate_functions = {'clarity': GeneratePredictions.generate_clartiy,
                           'nqc': GeneratePredictions.generate_nqc,
                           'wig': GeneratePredictions.generate_wig,
+                          'smv': GeneratePredictions.generate_smv,
                           'qf': GeneratePredictions.generate_qf,
                           'uef': GeneratePredictions.generate_uef}
 
@@ -794,10 +826,12 @@ def main(args):
     calc_predictions = args.calc
     generate_svm = args.svm
     table = args.table
+    # Stores true if oracle tables should be printed for the QPP-Reference similarity model
+    oracle = args.oracle
 
     # # Debugging - should be in comment when not debugging !
     # print('\n------+++^+++------ Debugging !! ------+++^+++------\n')
-    # corpus = 'ROBUST'
+    # corpus = 'ClueWeb12B'
     # table = 'referenceLists'
 
     base_dir = '~/QppUqvProj/Results/{}'.format(corpus)
