@@ -2,7 +2,6 @@
 
 import argparse
 import glob
-import multiprocessing
 import os
 from collections import defaultdict
 from subprocess import run
@@ -75,7 +74,7 @@ class GeneratePredictions:
         self.corpus = corpus
         self.qtype = qtype if (qtype == 'basic' or qtype == 'fusion') else 'raw'
         self.gen_lists = lists
-        self.cpu_cores = max(multiprocessing.cpu_count() * 0.5, min(multiprocessing.cpu_count(), 16))
+        self.cpu_cores = max(mp.cpu_count() * 0.5, min(mp.cpu_count(), 16))
 
     @staticmethod
     def __run_indri_app(predictor_exe, parameters, threads, running_param, n, queries, output):
@@ -740,16 +739,19 @@ class GenerateTable:
             table = table.replace('\\midrule', f'\\midrule \n \\multirow{{5}}{{*}}{{{_predictor.upper()}}}')
             table = table.replace('\\toprule', f'\\toprule \n & & \\multicolumn{{5}}{{c}}{{Similarity Functions}} \\\\')
             print(table, end='')
-            for predictor in PREDICTORS[1:] + UEF_PREDICTORS:
-                _df, _max = self.cv.calc_reference_per_predictor(predictor, qgroup, oracle)
+            with mp.Pool(processes=mp.cpu_count() - 1) as pool:
+                result = pool.map(partial(self.cv.calc_reference_per_predictor, query_group=qgroup, oracle=oracle),
+                                  PREDICTORS[1:] + UEF_PREDICTORS)
+            for _df, _max in result:
+                # _df, _max = self.cv.calc_reference_per_predictor(predictor, qgroup, oracle)
                 _list.append(_df)
                 tables_max_vals.append(_max)
                 table = _df.to_latex(header=False, multirow=False, multicolumn=False, index=False, escape=False,
                                      index_names=False, column_format='lcccccc')
                 table = table.replace('\\begin{tabular}{lcccccc}', '')
                 table = table.replace('\\end{tabular}', '')
-                table = table.replace(f'{predictor.upper()}', '')
-                table = table.replace('\\toprule', '\\multirow{{5}}{{*}}{{{}}}'.format(predictor.upper()))
+                # table = table.replace(f'{predictor.upper()}', '')
+                # table = table.replace('\\toprule', '\\multirow{{5}}{{*}}{{{}}}'.format(predictor.upper()))
                 print(table, end='')
 
             _df, _max = self.cv.calc_sim_ref_per_group(qgroup)
