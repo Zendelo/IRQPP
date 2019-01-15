@@ -1,99 +1,213 @@
-import pandas as pd
-import numpy as np
-import os
-import dataparser as dp
-from crossval import CrossValidation
-from features import features_loader
 import argparse
-from Timer.timer import Timer
-from glob import glob
+import itertools
 from collections import defaultdict
+from glob import glob
+from shutil import copy2
+import multiprocessing as mp
+import os
+
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+
+import dataparser as dp
+from Timer.timer import Timer
+from crossval import CrossValidation
+
+# Define the Font for the plots
+plt.rcParams.update({'font.size': 35, 'font.family': 'serif', 'font.weight': 'normal'})
+# plt.rcParams.update({'font.size': 10, 'font.family': 'serif', 'font.weight': 'normal'})
 
 parser = argparse.ArgumentParser(description='Query Prediction Using Reference lists',
                                  usage='python3.6 qpp_ref.py -c CORPUS ... <parameter files>',
                                  epilog='Unless --generate is given, will try loading the files')
 
-parser.add_argument('-c', '--corpus', type=str, default=None, help='choose the corpus',
-                    choices=['ROBUST', 'ClueWeb12B'])
-parser.add_argument('-p', '--predictor', type=str, default=None, help='choose the predictor',
-                    choices=['clarity', 'wig', 'nqc', 'qf'])
-parser.add_argument('-f', '--function', type=str, default=None, help='choose the similarity function',
-                    choices=['uni', 'rbo', 'jac', 'rbof', 'overlap'])
+parser.add_argument('-c', '--corpus', default=None, help='The corpus to be used', choices=['ROBUST', 'ClueWeb12B'])
+parser.add_argument('--generate', action='store_true')
+parser.add_argument('--nocache', action='store_false', help='Add this option in order to generate all pkl files')
 
-parser.add_argument('--generate', help='Add this to generate new results, make sure to RM the previous results',
-                    action="store_true")
-# parser.add_argument('--fine',
-#                     help='Add this to generate new results, with fine tuning of parameters (may cause overfitting)',
-#                     action="store_true")
+PREDICTORS_WO_QF = ['clarity', 'wig', 'nqc', 'smv', 'rsd', 'uef/clarity', 'uef/wig', 'uef/nqc']
 
+PRE_RET_PREDICTORS = ['preret/AvgIDF', 'preret/AvgSCQTFIDF', 'preret/AvgVarTFIDF', 'preret/MaxIDF',
+                      'preret/MaxSCQTFIDF', 'preret/MaxVarTFIDF']
+
+PREDICTORS = PRE_RET_PREDICTORS + PREDICTORS_WO_QF
+
+NUMBER_OF_DOCS = (5, 10, 25, 50, 100, 250, 500, 1000)
+SIMILARITY_FUNCTIONS = {'Jac_coefficient': 'jac', 'Top_Docs_overlap': 'sim', 'RBO_EXT_100': 'rbo',
+                        'RBO_FUSED_EXT_100': 'rbof'}
+# Filter out filled markers and marker settings that do nothing.
+MARKERS = ['x', '+', 'v', '3', 'X']
+LINE_STYLES = ['-', ':', '--']
+MARKERS_STYLE = [''.join(i) for i in itertools.product(MARKERS, LINE_STYLES)]
 LAMBDA = np.linspace(start=0, stop=1, num=11)
 MARKERS = ['-^', '-v', '-D', '-x', '-h', '-H', 'p-', 's-', '--v', '--1', '--2', '--D', '--x', '--h', '--H', '^-.',
            '-.v', '1-.', '2-.', '-.D', '-.x', '-.h', '-.H', '3-.', '4-.', 's-.', 'p-.', '+-.', '*-.']
+SKIP = {'clarity', 'preret/MaxVarTFIDF', 'preret/MaxIDF', 'uef/clarity'}
 
 
 class GenerateResults:
-    def __init__(self, predictor, corpus, ref_feature, corr_measure='pearson'):
-        self.__set_paths(corpus, predictor, ref_feature)
+    def __init__(self, corpus, corr_measure='pearson', load_from_pkl=True):
+        self.corpus = corpus
+        self.__set_paths(corpus)
         self.corr_measure = corr_measure
+        self.results_dirs_dict = self.cp_result_file_to_dirs()
+        self.load_from_pkl = load_from_pkl
 
     @classmethod
-    def __set_paths(cls, corpus, predictor, ref_feature):
+    def __set_paths(cls, corpus):
         """This method sets the default paths of the files and the working directories, it assumes the standard naming
          convention of the project"""
-        cls.predictor = predictor
-        cls.ref_feature = ref_feature
-        cls.corpus = corpus
-        _base_dir = f'~/QppUqvProj/Results/{corpus}/uqvPredictions/'
-        _base_dir = os.path.normpath(os.path.expanduser(_base_dir))
-        cls.results_dir = f'{_base_dir}/referenceLists/{ref_feature}/{predictor}/predictions/'
-        _ap_file = f'~/QppUqvProj/Results/{corpus}/test/basic/QLmap1000'
-        cls.true_ap_file = os.path.normpath(os.path.expanduser(_ap_file))
+        _corpus_test_dir = dp.ensure_dir(f'~/QppUqvProj/Results/{corpus}/test/')
 
-    def generate_full_set_results(self):
+        # AP file for the cross validation process
+        cls.query_ap_file = dp.ensure_file(f'{_corpus_test_dir}/ref/QLmap1000-title')
+        # CV folds mapping file
+        cls.cv_map_file = dp.ensure_file(f'{_corpus_test_dir}/2_folds_30_repetitions.json')
+        # The data dir for the Graphs
+        cls.data_dir = dp.ensure_dir(f'~/QppUqvProj/Graphs/{corpus}/data')
+        # The results base dir for the Graphs
+        cls.results_dir = dp.ensure_dir(f'~/QppUqvProj/Graphs/{corpus}/referenceLists/title/all_vars/general')
+        cls.raw_res_base_dir = dp.ensure_dir(
+            f'~/QppUqvProj/Results/{corpus}/uqvPredictions/referenceLists/title/all_vars/general')
+
+        _ap_file = f'~/QppUqvProj/Results/{corpus}/test/basic/QLmap1000'
+        cls.true_ap_file = dp.ensure_file(_ap_file)
+
+    def cp_result_file_to_dirs(self):
+        destination_dirs = defaultdict(str)
+        for lam in LAMBDA:
+            for sim, pred in itertools.product(SIMILARITY_FUNCTIONS.values(), PREDICTORS):
+                dest_dir = dp.ensure_dir(f'{self.results_dir}/{sim}/{pred}/lambda-{lam}/predictions')
+                destination_dirs[sim, pred, f'{lam:.1f}'] = dest_dir
+                src_dir = dp.ensure_dir(f'{self.raw_res_base_dir}/{sim}/{pred}/predictions')
+                prediction_files = glob(f'{src_dir}/predictions-*+lambda+{lam}')
+                for _file in prediction_files:
+                    copy2(_file, dest_dir)
+        return destination_dirs
+
+    def generate_graph_df(self, similarity, predictor):
         _dict = defaultdict(list)
-        plots_dict = {}
-        prediction_files = glob(self.results_dir + 'predictions-*')
-        for result in prediction_files:
-            _params = result.split('-')[-1].split('lambda')
-            _predictor_param = _params[0].strip('+')
-            _lambda_val = _params[-1].strip('+')
-            _temp_df = dp.ResultsReader(result, 'predictions').data_df
-            _df = _temp_df.rename(columns={"score": f'lambda-{_lambda_val}'})
-            _dict[f'{self.predictor}-{_predictor_param}'].append(_df)
-        for pred, _list in _dict.items():
-            ap_df = dp.ResultsReader(self.true_ap_file, 'ap').data_df
-            _list.append(ap_df)
-            _df = pd.concat(_list, axis=1)
-            _df = _df.reindex_axis(sorted(_df.columns), axis=1)
-            plots_dict[pred] = _df.corr()['ap'].drop('ap')
-        plots_df = pd.DataFrame(plots_dict)
-        plots_df.index.name = 'lambda'
-        plots_df.rename(index=lambda x: f'{x.lstrip("lambda-")}', inplace=True)
-        plots_df.rename(index=float, inplace=True)
-        # plots_df.reindex_axis(sorted(plots_df.columns), axis=0)
-        plots_df.plot(
-            title=f'{self.corr_measure.title()} correlation {self.ref_feature} similarity on {self.corpus}',
-            grid=True, fontsize=10, style=MARKERS, markersize=10)
-        plots_df.to_csv(f'{self.predictor}_{self.corr_measure}_AP_fullset_{self.ref_feature}')
-        plt.ylabel(f'{self.corr_measure}')
-        plt.xlabel('Lambda values')
+
+        def append_to_full_results_dict(result, lambda_param):
+            _dict['predictor'].append(predictor)
+            _dict['sim_func'].append(similarity)
+            _dict['result'].append(result)
+            _dict['lambda'].append(lambda_param)
+
+        for lam in LAMBDA:
+            lambda_param = f'{lam:.1f}'
+            result = self._calc_cv_result(similarity, predictor, lambda_param)
+            append_to_full_results_dict(result, lambda_param)
+        return pd.DataFrame.from_dict(_dict)
+
+    def _calc_cv_result(self, similarity, predictor, lambda_param):
+        predictions_dir = self.results_dirs_dict.get((similarity, predictor, lambda_param))
+        cv_obj = CrossValidation(k=2, rep=30, file_to_load=self.cv_map_file, predictions_dir=predictions_dir, load=True,
+                                 ap_file=self.query_ap_file, test=self.corr_measure)
+        mean = cv_obj.calc_test_results()
+        return mean
+
+    def generate_results_df(self, cores=4):
+        _pkl_file = f'{self.data_dir}/pkl_files/lambda_full_results_df_{self.corpus}_{self.corr_measure}.pkl'
+        if self.load_from_pkl:
+            try:
+                file_to_load = dp.ensure_file(_pkl_file)
+                full_results_df = pd.read_pickle(file_to_load)
+            except AssertionError:
+                print(f'\nFailed to load {_pkl_file}')
+                print(f'Will generate {_pkl_file} and save')
+                with mp.Pool(processes=cores) as pool:
+                    result = pool.starmap(self.generate_graph_df,
+                                          itertools.product(SIMILARITY_FUNCTIONS.values(), PREDICTORS))
+                pool.close()
+                full_results_df = pd.concat(result, axis=0)
+                full_results_df.to_pickle(_pkl_file)
+        else:
+            with mp.Pool(processes=cores) as pool:
+                result = pool.starmap(self.generate_graph_df,
+                                      itertools.product(SIMILARITY_FUNCTIONS.values(), PREDICTORS))
+            pool.close()
+            full_results_df = pd.concat(result, axis=0)
+            full_results_df.to_pickle(_pkl_file)
+        return full_results_df
+
+
+def plot_graphs(df: pd.DataFrame, corpus):
+    # print(df)
+    df['result'] = pd.to_numeric(df['result'])
+    df['lambda'] = pd.to_numeric(df['lambda'])
+
+    for simi, _df in df.groupby('sim_func'):
+        fig = plt.figure(figsize=(16.0, 10.0))  # in inches!
+        print(simi)
+        print(_df.drop('sim_func', axis=1).set_index('lambda').groupby('predictor')['result'])
+        mar = 0
+        for predictor, pdf in _df.drop('sim_func', axis=1).set_index('lambda').groupby('predictor'):
+            # if predictor in SKIP:
+            #     continue
+            pdf['result'].plot(legend=True, title=f'{corpus}-{simi}', style=MARKERS_STYLE[mar], label=predictor,
+                               linewidth=2, markersize=15, mew=5)
+            plt.legend()
+            mar += 1
+        plt.xlabel('$\\lambda$')
+        plt.ylabel("Pearson's $\\rho$")
+        plt.ylabel('Correlation')
+        # plt.savefig(f'../../plot_now/{corpus}-{simi}.png')
         plt.show()
+
+    # fig, ax = plt.subplots()
+    # for predictor, _df in df.groupby('predictor'):
+    #     fig = plt.figure(figsize=(16.0, 10.0))  # in inches!
+    #     mar = 0
+    #     for simi, pdf in _df.drop('predictor', axis=1).set_index('lambda').groupby('sim_func'):
+    #         pdf['result'].plot(legend=True, title=f'{corpus}-{predictor}', style=MARKERS_STYLE[mar], label=simi,
+    #                            linewidth=2, markersize=15, mew=5)
+    #         plt.legend()
+    #         mar += 1
+    #     plt.xlabel('$\\lambda$')
+    #     plt.ylabel("Pearson's $\\rho$")
+    #     plt.savefig(f'../../plot_now/{corpus}-{predictor.replace("/", "_")}.png')
+    #     plt.show()
+
+
+def plot_sim_graph(df: pd.DataFrame, simi, corpus):
+    df['result'] = pd.to_numeric(df['result'])
+    df['lambda'] = pd.to_numeric(df['lambda'])
+    fig = plt.figure(figsize=(16.0, 10.0))  # in inches!
+    _df = df.set_index('sim_func').loc[simi].set_index('lambda', drop=True)
+    mar = 0
+    for predictor, pdf in _df.groupby('predictor'):
+        pdf['result'].plot(legend=True, title=f'{corpus}-{simi}', style=MARKERS_STYLE[mar], label=predictor,
+                           linewidth=2, markersize=15, mew=5)
+        plt.legend()
+        mar += 1
+    plt.show()
+
+
+def add_sub_plot(df, ax, marker, markersize=None, markerfacecolor=None, color='None', linestyle='None', linewidth=None,
+                 mew=None):
+    df.set_index('lambda').plot(legend=True, marker=marker, markersize=markersize, linestyle=linestyle, color=color,
+                                markerfacecolor=markerfacecolor, grid=False, linewidth=linewidth, mew=mew, ax=ax)
+    plt.legend()
 
 
 def main(args):
     corpus = args.corpus
-    predictor = args.predictor
-    sim_function = args.function
-    # generate = args.generate
+    generate = args.generate
+    load_cache = args.nocache
 
-    # # Debugging
-    # corpus = 'ROBUST'
-    # predictor = 'wig'
-    # sim_function = 'rbo'
+    # Debugging
+    corpus = 'ROBUST'
+    # corpus = 'ClueWeb12B'
 
-    res_gen = GenerateResults(predictor, corpus, sim_function)
-    res_gen.generate_full_set_results()
+    cores = mp.cpu_count() - 1
+
+    res_gen = GenerateResults(corpus, load_from_pkl=load_cache)
+    df = res_gen.generate_results_df(cores=cores)
+    plot_sim_graph(df, 'rbo', corpus)
+    # plot_graphs(df, corpus)
+    # print(os.getcwd())
 
 
 if __name__ == '__main__':
