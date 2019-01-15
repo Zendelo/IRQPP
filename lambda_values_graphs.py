@@ -37,13 +37,16 @@ NUMBER_OF_DOCS = (5, 10, 25, 50, 100, 250, 500, 1000)
 SIMILARITY_FUNCTIONS = {'Jac_coefficient': 'jac', 'Top_Docs_overlap': 'sim', 'RBO_EXT_100': 'rbo',
                         'RBO_FUSED_EXT_100': 'rbof'}
 # Filter out filled markers and marker settings that do nothing.
-MARKERS = ['x', '+', 'v', '3', 'X']
+MARKERS = ['+', '3', 'x', '2', 'd', 'X', 'v']
 LINE_STYLES = ['-', ':', '--']
-MARKERS_STYLE = [''.join(i) for i in itertools.product(MARKERS, LINE_STYLES)]
+MARKERS_STYLE = [''.join(i) for i in itertools.product(LINE_STYLES, MARKERS)]
 LAMBDA = np.linspace(start=0, stop=1, num=11)
 MARKERS = ['-^', '-v', '-D', '-x', '-h', '-H', 'p-', 's-', '--v', '--1', '--2', '--D', '--x', '--h', '--H', '^-.',
            '-.v', '1-.', '2-.', '-.D', '-.x', '-.h', '-.H', '3-.', '4-.', 's-.', 'p-.', '+-.', '*-.']
-SKIP = {'clarity', 'preret/MaxVarTFIDF', 'preret/MaxIDF', 'uef/clarity'}
+
+COLORS = ['#2a88aa', '#85B5D6', 'darkslategrey', '#1F77B4', '#49565b', 'C0']
+NAMES_DICT = {'rbo': 'Ref-RBO', 'sim': 'Ref-Overlap', 'wig': 'WIG', 'rsd': 'RSD', 'preret/AvgSCQTFIDF': 'AvgSCQ',
+              'preret/AvgVarTFIDF': 'AvgVar', 'uef/clarity': 'UEF(Clarity)'}
 
 
 class GenerateResults:
@@ -152,7 +155,7 @@ def plot_graphs(df: pd.DataFrame, corpus):
             mar += 1
         plt.xlabel('$\\lambda$')
         plt.ylabel("Pearson's $\\rho$")
-        plt.ylabel('Correlation')
+        # plt.ylabel('Correlation')
         # plt.savefig(f'../../plot_now/{corpus}-{simi}.png')
         plt.show()
 
@@ -171,17 +174,35 @@ def plot_graphs(df: pd.DataFrame, corpus):
     #     plt.show()
 
 
+#     _df = vars_df.loc[:, ['topic', 'qid', 'Variations']]
+#     ram_plot(_df, ax, 2, color='#2a88aa', markersize=10, mew=2)
+#     _df = vars_df.loc[:, ['topic', 'qid', 'Average']]
+#     ram_plot(_df, ax, '', markerfacecolor='None', linestyle='-', color='darkslategrey', markersize=18, linewidth=3)
+#     _df = vars_df.loc[:, ['topic', 'qid', 'Title']]
+#     ram_plot(_df, ax, 'o', color='k', markersize=8, markerfacecolor='#49565b')
+
+
 def plot_sim_graph(df: pd.DataFrame, simi, corpus):
     df['result'] = pd.to_numeric(df['result'])
     df['lambda'] = pd.to_numeric(df['lambda'])
+    df['lambda'] = df['lambda'].values[::-1]
     fig = plt.figure(figsize=(16.0, 10.0))  # in inches!
     _df = df.set_index('sim_func').loc[simi].set_index('lambda', drop=True)
+    if corpus == 'ClueWeb12B':
+        corpus = 'CW12'
+        _df = _df.loc[_df['predictor'].isin(['wig', 'rsd', 'preret/AvgSCQTFIDF'])]
+    elif corpus == 'ROBUST':
+        _df = _df.loc[_df['predictor'].isin(['uef/clarity', 'rsd', 'preret/AvgVarTFIDF'])]
     mar = 0
+    print(_df)
     for predictor, pdf in _df.groupby('predictor'):
-        pdf['result'].plot(legend=True, title=f'{corpus}-{simi}', style=MARKERS_STYLE[mar], label=predictor,
-                           linewidth=2, markersize=15, mew=5)
+        pdf = pdf.rename(NAMES_DICT).rename(NAMES_DICT, axis=1)
+        pdf['result'].plot(legend=True, title=f'{corpus} {NAMES_DICT[simi]}', style=MARKERS_STYLE[mar],
+                           label=NAMES_DICT[predictor], linewidth=2, markersize=15, mew=5, color=COLORS[mar])
         plt.legend()
         mar += 1
+    plt.xlabel('$\\lambda$')
+    plt.ylabel("Pearson's $\\rho$")
     plt.show()
 
 
@@ -199,13 +220,13 @@ def main(args):
 
     # Debugging
     # corpus = 'ROBUST'
-    # corpus = 'ClueWeb12B'
+    corpus = 'ClueWeb12B'
 
     cores = mp.cpu_count() - 1
 
     res_gen = GenerateResults(corpus, load_from_pkl=load_cache)
     df = res_gen.generate_results_df(cores=cores)
-    # plot_sim_graph(df, 'sim', corpus)
+    plot_sim_graph(df, 'rbo', corpus)
     # plot_graphs(df, corpus)
     # print(os.getcwd())
 
