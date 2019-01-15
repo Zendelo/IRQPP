@@ -63,7 +63,7 @@ def filter_quant_variants(qdf: pd.DataFrame, apdb: dt.ResultsReader, q):
             # For the low quantile, 0 AP variants are removed
             _df = _df[_df['ap'] > 0]
         q_vals = _df.quantile(q=q)
-        _qvars = _df.loc[(_df['ap'] >= q_vals['ap'].min()) & (_df['ap'] <= q_vals['ap'].max())]
+        _qvars = _df.loc[(_df['ap'] > q_vals['ap'].min()) & (_df['ap'] <= q_vals['ap'].max())]
         _list.extend(_qvars.index.tolist())
     _res_df = qdf.loc[qdf['qid'].isin(_list)]
     return _res_df
@@ -239,26 +239,19 @@ def plot_variants_ap(qdf: pd.DataFrame, apdb: dt.ResultsReader, qdf_title: pd.Da
     vars_df = add_topic_to_qdf(_ap_vars_df)
     vars_df = vars_df.drop('text', axis=1)
     title_df = _ap_title_df.drop(['text'], axis=1).rename({'ap': 'Title', 'qid': 'topic'}, axis=1)
-    topics_mean = vars_df.groupby('topic').mean().rename({'ap': 'Average'}, axis=1)
-    vars_df = vars_df.merge(topics_mean, on='topic')
+    # topics_mean = vars_df.groupby('topic').mean().rename({'ap': 'Average'}, axis=1)
+    topics_median = vars_df.groupby('topic').median().rename({'ap': 'Median'}, axis=1)
+    vars_df = vars_df.merge(topics_median, on='topic')
     vars_df = vars_df.merge(title_df, on='topic').rename({'ap': 'Variations'}, axis=1)
     vars_df['topic'] = vars_df['topic'].astype('category')
-    # _list = []
-    # for i in [0, 0.25, 0.5, 0.75, 1]:
-    #     _sr = vars_df.groupby('topic')['ap'].quantile(i, interpolation='higher')
-    #     _sr.name = f'{i}_Q'
-    #     _list.append(_sr)
-    # _df = pd.concat(_list, axis=1)
-    # vars_df = vars_df.merge(_df, on='topic')
-    vars_df = vars_df.sort_values('Average')
+
+    # vars_df = vars_df.sort_values('Average')
+    vars_df = vars_df.sort_values('Median')
     fig, ax = plt.subplots()
-    # for i, m, c in zip([0, 0.25, 0.5, 0.75, 1], ['_', '2', '+', '1', '_'],
-    #                    ['royalblue', 'palevioletred', 'mediumvioletred', 'm', 'blue']):
-    #     _df = vars_df.loc[:, ['topic', 'qid', f'{i}_Q']]
-    #     ram_plot(_df, ax, m, color=c)
+
     _df = vars_df.loc[:, ['topic', 'qid', 'Variations']]
     ram_plot(_df, ax, 2, color='#2a88aa', markersize=10, mew=2)
-    _df = vars_df.loc[:, ['topic', 'qid', 'Average']]
+    _df = vars_df.loc[:, ['topic', 'qid', 'Median']]
     ram_plot(_df, ax, '', markerfacecolor='None', linestyle='-', color='darkslategrey', markersize=18, linewidth=3)
     _df = vars_df.loc[:, ['topic', 'qid', 'Title']]
     ram_plot(_df, ax, 'o', color='k', markersize=8, markerfacecolor='#49565b')
@@ -346,12 +339,14 @@ def main(args):
 
     filter_functions_dict = {'top': filter_top_queries, 'low': filter_low_queries, 'medl': filter_medl_queries,
                              'medh': filter_medh_queries}
-    quantiles_dict = {'low': [0, 0.33], 'med': [0.33, 0.66], 'top': [0.66, 1]}
+    # quantiles_dict = {'low': [0, 0.33], 'med': [0.33, 0.66], 'top': [0.66, 1]}
+    quantiles_dict = {'low': [0, 0.5], 'high': [0.5, 1]}
 
     # # Uncomment for Debugging !!!!!
     # print('\n\n\n----------!!!!!!!!!!!!--------- Debugging Mode ----------!!!!!!!!!!!!---------\n\n\n')
     # # quant_variants = 'low'
-    # corpus = 'ClueWeb12B'
+    # # corpus = 'ClueWeb12B'
+    # corpus = 'ROBUST'
     # ap_file = dt.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/raw/QLmap1000')
     # queries_txt_file = dt.ensure_file(f'~/QppUqvProj/data/{corpus}/queries_{corpus}_UQV_full.txt')
     # plot_vars = True
@@ -383,6 +378,7 @@ def main(args):
                 title_ap_file = dt.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/basic/QLmap1000')
                 title_ap = dt.ResultsReader(title_ap_file, 'ap')
                 plot_variants_ap(qdb.queries_df, apdb, title_queries_df, title_ap, corpus)
+                return
 
         # # In order to convert the vid (variants ID) to qid, uncomment next line
         # queries_df = convert_vid_to_qid(queries_df)
