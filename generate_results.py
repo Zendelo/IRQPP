@@ -739,10 +739,10 @@ class GenerateTable:
             table = table.replace('\\midrule', f'\\midrule \n \\multirow{{5}}{{*}}{{{_predictor.upper()}}}')
             table = table.replace('\\toprule', f'\\toprule \n & & \\multicolumn{{5}}{{c}}{{Similarity Functions}} \\\\')
             print(table, end='')
-            with mp.Pool(processes=mp.cpu_count() - 1) as pool:
+            with mp.Pool(processes=mp.cpu_count()) as pool:
                 result = pool.map(partial(self.cv.calc_reference_per_predictor, query_group=qgroup, oracle=oracle),
                                   PREDICTORS[1:] + UEF_PREDICTORS)
-            for _df, _max in result:
+            for (_df, _max), predictor in zip(result, PREDICTORS[1:] + UEF_PREDICTORS):
                 # _df, _max = self.cv.calc_reference_per_predictor(predictor, qgroup, oracle)
                 _list.append(_df)
                 tables_max_vals.append(_max)
@@ -750,8 +750,8 @@ class GenerateTable:
                                      index_names=False, column_format='lcccccc')
                 table = table.replace('\\begin{tabular}{lcccccc}', '')
                 table = table.replace('\\end{tabular}', '')
-                # table = table.replace(f'{predictor.upper()}', '')
-                # table = table.replace('\\toprule', '\\multirow{{5}}{{*}}{{{}}}'.format(predictor.upper()))
+                table = table.replace(f'{predictor.upper()}', '')
+                table = table.replace('\\toprule', '\\multirow{{5}}{{*}}{{{}}}'.format(predictor.upper()))
                 print(table, end='')
 
             _df, _max = self.cv.calc_sim_ref_per_group(qgroup)
