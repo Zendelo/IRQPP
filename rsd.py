@@ -2,39 +2,27 @@ import argparse
 import glob
 import itertools
 import multiprocessing as mp
-import os
-import random
-from functools import partial
-from subprocess import run
-from collections import defaultdict
 import pickle
-import timeit
+import random
+from collections import defaultdict
+from functools import partial
 from math import sqrt
-import scipy.stats as st
 
 import numpy as np
 import pandas as pd
-from Crypto.Util import number
+import scipy.stats as st
 
 import dataparser as dp
 from Timer.timer import Timer
-from crossval import CrossValidation
-from query_features import features_loader
-import matplotlib.pyplot as plt
 
 parser = argparse.ArgumentParser(description='RSD(wig) predictor',
-                                 usage='Input QL(q|d) scores and queries files',
+                                 usage='Change the paths in the code in order to predict UQV/Base queries',
                                  epilog='Generates the RSD predictor scores')
 
-# parser.add_argument('results', metavar='QL(q|d)_results_file', help='The QL results file for the documents scores')
-# parser.add_argument('corpus_scores', metavar='QLC', help='logqlc QL Corpus scores of the queries')
-# parser.add_argument('queries', metavar='queries_txt_file', default='data/ROBUST/queries.txt',
-#                     help='The queries txt file')
-# parser.add_argument('-d', '--docs', metavar='Docs', type=int, default=None, help='Number of documents')
 parser.add_argument('-c', '--corpus', default=None, help='The corpus to be used', choices=['ROBUST', 'ClueWeb12B'])
 
 NUMBER_OF_DOCS = [5, 10, 25, 50, 100, 250, 500, 1000]
-LIST_LENGTH = [5, 10, 25, 50, 100, 250, 500, 1000]
+LIST_LENGTH = [5, 10, 25, 50, 100, 250, 500]
 
 
 def random_sampling(list_length, df):
@@ -72,7 +60,7 @@ class RSD:
         self.res_df = results_obj.data_df
         self.corpus_df = corpus_scores_obj.data_df
         self.rm_prob_df = rm_probabilities_df
-        self.predictions = defaultdict(float)
+        # self.predictions = defaultdict(float)
         # pd.Series the index is a rank of a doc, value is its probability
         self.probabilities_sr = generate_probabilities_sr(number_of_docs)
         self.docs_num = number_of_docs
@@ -149,6 +137,7 @@ class RSD:
         return sqrt(sum(_scores_list))
 
     def calc_nperp(self):
+        """This method implements the calculation of nperp(q|R) as it's defined in section 2.4"""
         entropy_df = self.rm_prob_df.groupby('qid').aggregate(st.entropy, base=2).fillna(0)
         n_q_df = self.rm_prob_df.groupby('qid').count()
         nperp_df = entropy_df.apply(lambda x: 2 ** x) / n_q_df.apply(lambda x: 2 ** np.log2(x))
@@ -162,6 +151,7 @@ class RSD:
                                       columns=[f'score-{self.docs_num}+{self.list_length}'])
 
     def calc_normalized_scores(self):
+        """This method implements the calculation of the normalized scores as it's defined in section 2.4 eq (2)"""
         nperp_df = self.calc_nperp()
         raw_scores_df = self.calc_raw_scores()
         raw_div_corp_df = raw_scores_df.div(self.corpus_df['score'].abs(), axis=0, level='qid')
@@ -171,6 +161,8 @@ class RSD:
 
 
 def read_rm_prob_files(data_dir, number_of_docs):
+    """The function creates a DF from files, the probabilities are p(w|RM1) for all query words
+    If a query term doesn't appear in the file, it's implies p(w|R)=0"""
     data_files = glob.glob(f'{data_dir}/probabilities-{number_of_docs}+*')
     _list = []
     for _file in data_files:
@@ -198,42 +190,24 @@ def run_predictions(number_of_docs, list_length, queries_obj, results_obj, corpu
 
 
 def main(args):
-    # results_file = args.results
-    # corpus_scores_file = args.corpus_scores
-    # queries_file = args.queries
-    # number_of_docs = args.docs
     corpus = args.corpus
 
-    # corpus = 'ROBUST'
+    queries_file = dp.ensure_file(f'~/QppUqvProj/data/{corpus}/queries_{corpus}_UQV_full.xml')
+    results_file = dp.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/raw/QL.res')
+    corpus_scores_file = dp.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/raw/logqlc.res')
+    rm_probabilities_dir = dp.ensure_dir(f'~/QppUqvProj/Results/{corpus}/uqvPredictions/raw/rsd/data')
 
-    # queries_file = dp.ensure_file(f'~/QppUqvProj/data/{corpus}/queries_{corpus}_UQV_full.xml')
-    # results_file = dp.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/raw/QL.res')
-    # corpus_scores_file = dp.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/raw/logqlc.res')
-    # rm_probabilities_dir = dp.ensure_dir(f'~/QppUqvProj/Results/{corpus}/uqvPredictions/raw/rsd/data')
-
-    queries_file = dp.ensure_file(f'~/QppUqvProj/data/{corpus}/queries.xml')
-    results_file = dp.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/basic/QL.res')
-    corpus_scores_file = dp.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/basic/logqlc.res')
-    rm_probabilities_dir = dp.ensure_dir(f'~/QppUqvProj/Results/{corpus}/basicPredictions/title/rsd/data')
+    # queries_file = dp.ensure_file(f'~/QppUqvProj/data/{corpus}/queries.xml')
+    # results_file = dp.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/basic/QL.res')
+    # corpus_scores_file = dp.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/basic/logqlc.res')
+    # rm_probabilities_dir = dp.ensure_dir(f'~/QppUqvProj/Results/{corpus}/basicPredictions/title/rsd/data')
 
     queries_obj = dp.QueriesXMLParser(queries_file)
-    # queries_obj = dp.QueriesTextParser(queries_file)
     results_obj = dp.ResultsReader(results_file, 'trec')
     corpus_scores_obj = dp.ResultsReader(corpus_scores_file, 'predictions')
 
     cores = mp.cpu_count() - 1
     uqv = True if 'uqv' in queries_file.split('/')[-1].lower() else False
-
-    # rm_prob_df = read_rm_prob_files(rm_probabilities_dir, 50)
-
-    # dev_pred = RSD(number_of_docs=50, list_length=30, queries_obj=queries_obj, results_obj=results_obj,
-    #                corpus_scores_obj=corpus_scores_obj, rm_probabilities_df=rm_prob_df, corpus=corpus,
-    #                uqv=uqv, load_cache=True)
-    # dev_pred.calc_normalized_scores()
-
-    # run_predictions(number_of_docs=50, list_length=30, queries_obj=queries_obj, results_obj=results_obj,
-    #                 corpus_scores_obj=corpus_scores_obj, rm_probabilities_dir=rm_probabilities_dir, corpus=corpus,
-    #                 uqv=uqv, load_cache=True)
 
     with mp.Pool(processes=cores) as pool:
         predictor = pool.starmap(

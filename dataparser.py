@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import csv
+import glob
 import multiprocessing as mp
 import os
 import sys
@@ -316,3 +317,18 @@ def convert_vid_to_qid(df: pd.DataFrame):
         _df = df
     _df.rename(index=lambda x: f'{x.split("-")[0]}', inplace=True)
     return _df
+
+
+def read_rm_prob_files(data_dir, number_of_docs, clipping='*'):
+    """The function creates a DF from files, the probabilities are p(w|RM1) for all query words
+    If a query term doesn't appear in the file, it's implies p(w|R)=0"""
+    data_files = glob.glob(f'{data_dir}/probabilities-{number_of_docs}+{clipping}')
+    if len(data_files) < 1:
+        data_files = glob.glob(f'{data_dir}/probabilities-{number_of_docs}')
+    _list = []
+    for _file in data_files:
+        _col = f'{_file.rsplit("/")[-1].rsplit("-")[-1]}'
+        _df = pd.read_table(_file, names=['qid', 'term', _col], sep=' ')
+        _df = _df.astype({'qid': str}).set_index(['qid', 'term'])
+        _list.append(_df)
+    return pd.concat(_list, axis=1).fillna(0)
