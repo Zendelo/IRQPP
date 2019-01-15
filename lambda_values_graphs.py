@@ -79,7 +79,7 @@ class GenerateResults:
         for lam in LAMBDA:
             for sim, pred in itertools.product(SIMILARITY_FUNCTIONS.values(), PREDICTORS):
                 dest_dir = dp.ensure_dir(f'{self.results_dir}/{sim}/{pred}/lambda-{lam}/predictions')
-                destination_dirs[sim, pred, f'{lam:.1f}'] = dest_dir
+                destination_dirs[sim, pred, f'{lam:.2f}'] = dest_dir
                 src_dir = dp.ensure_dir(f'{self.raw_res_base_dir}/{sim}/{pred}/predictions')
                 prediction_files = glob(f'{src_dir}/predictions-*+lambda+{lam}')
                 for _file in prediction_files:
@@ -96,7 +96,7 @@ class GenerateResults:
             _dict['lambda'].append(lambda_param)
 
         for lam in LAMBDA:
-            lambda_param = f'{lam:.1f}'
+            lambda_param = f'{lam:.2f}'
             result = self._calc_cv_result(similarity, predictor, lambda_param)
             append_to_full_results_dict(result, lambda_param)
         return pd.DataFrame.from_dict(_dict)
@@ -198,14 +198,14 @@ def main(args):
     load_cache = args.nocache
 
     # Debugging
-    corpus = 'ROBUST'
+    # corpus = 'ROBUST'
     # corpus = 'ClueWeb12B'
 
     cores = mp.cpu_count() - 1
 
     res_gen = GenerateResults(corpus, load_from_pkl=load_cache)
     df = res_gen.generate_results_df(cores=cores)
-    plot_sim_graph(df, 'rbo', corpus)
+    # plot_sim_graph(df, 'sim', corpus)
     # plot_graphs(df, corpus)
     # print(os.getcwd())
 
