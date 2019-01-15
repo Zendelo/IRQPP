@@ -21,7 +21,7 @@ parser.add_argument('-c', '--corpus', default='ROBUST', type=str, help='corpus (
 parser.add_argument('-g', '--group', help='group of queries to predict',
                     choices=['top', 'low', 'medh', 'medl', 'title'])
 parser.add_argument('--quantile', help='quantile of query variants to use for prediction', default=None,
-                    choices=['all', 'low', 'low-0', 'med', 'top'])
+                    choices=['all', 'low', 'low-0', 'high'])
 parser.add_argument('-l', '--load', default=None, type=str, help='features file to load')
 parser.add_argument('--generate', help="generate new features file", action="store_true")
 parser.add_argument('--predict', help="generate new predictions", action="store_true")
@@ -158,6 +158,7 @@ class QueryFeatureFactory:
         cls.queries_topic_file = dp.ensure_file(_queries_topic_file)
 
         _fused_results_file = f'{_corpus_res_dir}/test/fusion/QL.res'
+        _fused_results_file = f'{_corpus_res_dir}/test/fusion/all_wo_title_fused_QL.res'
         cls.fused_results_file = dp.ensure_file(_fused_results_file)
 
         # cls.output_dir = dp.ensure_dir(f'{_graphs_res_dir}/test/raw/')
@@ -373,7 +374,7 @@ def load_full_features_df(corpus, queries_group, quantile):
     pkl_dir = dp.ensure_dir(f'~/QppUqvProj/Results/{corpus}/test/ref/pkl_files/')
     _list = []
     last_df = pd.DataFrame()
-    for n in NUMBER_OF_DOCS:
+    for n in {10, 25, 50, 100, 250, 500}:
         _file = f'{pkl_dir}/{queries_group}_queries_{corpus}_RBO_{n}_TopDocs_{n}.pkl'
         try:
             dp.ensure_file(_file)
@@ -385,7 +386,7 @@ def load_full_features_df(corpus, queries_group, quantile):
     df = pd.concat(_list + [last_df], axis=1)
     _path = f'~/QppUqvProj/Results/{corpus}/test/ref'
     _path = dp.ensure_dir(_path)
-    features_obj.divide_by_size(df).reset_index().to_json(
+    return features_obj.divide_by_size(df).reset_index().to_json(
         f'{_path}/{queries_group}_query_{quantile}_variations_features_{corpus}_uqv.JSON')
 
 
@@ -400,9 +401,10 @@ def main(args):
     number_of_vars = args.vars
 
     # Debugging
-    corpus = 'ClueWeb12B'
-    queries_group = 'title'
-    quantile = 'all'
+    # corpus = 'ClueWeb12B'
+    # corpus = 'ROBUST'
+    # queries_group = 'title'
+    # quantile = 'all'
     # testing_feat = QueryFeatureFactory('ROBUST', 'title', 'all')
     # norm_features_df = testing_feat.generate_features()
     # norm_features_df.reset_index().to_json('query_features_{}_uqv.JSON'.format(corpus))
