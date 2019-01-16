@@ -494,7 +494,7 @@ class CrossVal:
         ref_dir = f'{self.base_dir}/uqvPredictions/referenceLists'
         ap_file = os.path.normpath(f'{self.test_dir}/ref/QLmap1000-{qgroup}')
         ensure_file(ap_file)
-        for quant in ['all', 'med', 'top', 'low', 'low-0']:
+        for quant in QUANTILES:
             # list to save results for a specific predictor with different quantile variations
             _quant_res = list()
             _index = list()
@@ -512,7 +512,7 @@ class CrossVal:
             sr.index = _index
             _results[quant] = sr
         res_df = pd.DataFrame.from_dict(_results, orient='index')
-        res_df = res_df.reindex(index=['all', 'med', 'top', 'low', 'low-0'])
+        res_df = res_df.reindex(index=QUANTILES)
         res_df.index = res_df.index.str.title()
         res_df.index.name = 'Quantile'
         res_df.reset_index(inplace=True)
