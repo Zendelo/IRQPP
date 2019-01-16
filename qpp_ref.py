@@ -16,7 +16,6 @@ from query_features import features_loader
 
 LAMBDA = np.linspace(start=0, stop=1, num=11)
 C_PARAMETERS = [0.01, 0.1, 1, 10]
-NUM_DOCS = [5, 10, 25, 50, 100, 250, 500, 1000]
 
 PREDICTORS_WO_QF = ['clarity', 'wig', 'nqc', 'smv', 'rsd', 'uef/clarity', 'uef/wig', 'uef/nqc', 'uef/smv']
 PRE_RET_PREDICTORS = ['preret/AvgIDF', 'preret/AvgSCQTFIDF', 'preret/AvgVarTFIDF', 'preret/MaxIDF',
@@ -38,7 +37,7 @@ parser.add_argument('--uef', help='Add this if the predictor is in uef framework
 parser.add_argument('-g', '--group', help='group of queries to predict',
                     choices=['top', 'low', 'title', 'medh', 'medl'])
 parser.add_argument('--quantile', help='quantile of query variants to use for prediction', default='all',
-                    choices=['all', 'low', 'low-0', 'med', 'top'])
+                    choices=['all', 'low', 'low-0', 'high'])
 parser.add_argument('--corr_measure', default='pearson', type=str, choices=['pearson', 'spearman', 'kendall'],
                     help='features JSON file to load')
 parser.add_argument('--generate', help='use ltr to generate SVM-Rank predictions, or calc to calc predictions',
@@ -523,9 +522,10 @@ def main(args):
     # fine_tune = args.fine
 
     # # Debug
+    # print('\n------+++^+++------ Debugging !! ------+++^+++------\n')
     # predictor = 'wig'
     # corpus = 'ROBUST'
-    # quantile = 'all'
+    # quantile = 'high'
     # queries_group = 'title'
     # generate = 'calc'
 

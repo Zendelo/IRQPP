@@ -29,6 +29,7 @@ PREDICTORS = PRE_RET_PREDICTORS + PREDICTORS
 SIM_REF_PREDICTORS = {'jcP': 'Jaccard', 'topDocsP': 'TopDocs', 'rboP': 'RBO', 'FrboP': 'RBO-F', 'geo': 'GEO'}
 NUM_DOCS = [5, 10, 25, 50, 100, 250, 500, 1000]
 LIST_CUT_OFF = [5, 10, 25, 50, 100]
+QUANTILES = ['all', 'high', 'low', 'low-0']
 # AGGREGATE_FUNCTIONS = ['avg', 'max', 'med', 'min', 'std', 'combsum']
 AGGREGATE_FUNCTIONS = ['avg', 'max', 'med', 'std']
 SINGLE_FUNCTIONS = ['title', 'top', 'low', 'medh']
@@ -453,7 +454,7 @@ class CrossVal:
         _mean = cv_obj.calc_test_results()
         max_list.append(_mean)
 
-        for quant in ['all', 'med', 'top', 'low', 'low-0']:
+        for quant in QUANTILES:
 
             if oracle:
                 predictions_dir = f'{self.base_dir}/uqvPredictions/referenceLists/{query_group}/{quant}_vars/oracle'
@@ -479,7 +480,7 @@ class CrossVal:
             _results[quant] = sr
 
         res_df = pd.DataFrame.from_dict(_results, orient='index')
-        res_df = res_df.reindex(index=['all', 'med', 'top', 'low', 'low-0'])
+        res_df = res_df.reindex(index=QUANTILES)
         res_df.index = res_df.index.str.title()
         res_df.index.name = 'Quantile'
         res_df.reset_index(inplace=True)
@@ -739,11 +740,12 @@ class GenerateTable:
             table = table.replace('\\midrule', f'\\midrule \n \\multirow{{5}}{{*}}{{{_predictor.upper()}}}')
             table = table.replace('\\toprule', f'\\toprule \n & & \\multicolumn{{5}}{{c}}{{Similarity Functions}} \\\\')
             print(table, end='')
-            with mp.Pool(processes=mp.cpu_count()) as pool:
-                result = pool.map(partial(self.cv.calc_reference_per_predictor, query_group=qgroup, oracle=oracle),
-                                  PREDICTORS[1:] + UEF_PREDICTORS)
-            for (_df, _max), predictor in zip(result, PREDICTORS[1:] + UEF_PREDICTORS):
-                # _df, _max = self.cv.calc_reference_per_predictor(predictor, qgroup, oracle)
+            # with mp.Pool(processes=mp.cpu_count() - 1) as pool:
+            #     result = pool.map(partial(self.cv.calc_reference_per_predictor, query_group=qgroup, oracle=oracle),
+            #                       PREDICTORS[1:] + UEF_PREDICTORS)
+            # for (_df, _max), predictor in zip(result, PREDICTORS[1:] + UEF_PREDICTORS):
+            for predictor in PREDICTORS[1:] + UEF_PREDICTORS:
+                _df, _max = self.cv.calc_reference_per_predictor(predictor, qgroup, oracle)
                 _list.append(_df)
                 tables_max_vals.append(_max)
                 table = _df.to_latex(header=False, multirow=False, multicolumn=False, index=False, escape=False,

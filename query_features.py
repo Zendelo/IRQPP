@@ -374,7 +374,7 @@ def load_full_features_df(corpus, queries_group, quantile):
     pkl_dir = dp.ensure_dir(f'~/QppUqvProj/Results/{corpus}/test/ref/pkl_files/')
     _list = []
     last_df = pd.DataFrame()
-    for n in {10, 25, 50, 100, 250, 500}:
+    for n in {5, 10, 25, 50, 100}:
         _file = f'{pkl_dir}/{queries_group}_queries_{corpus}_RBO_{n}_TopDocs_{n}.pkl'
         try:
             dp.ensure_file(_file)
