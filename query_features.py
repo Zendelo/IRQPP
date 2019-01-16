@@ -291,6 +291,8 @@ class QueryFeatureFactory:
                   f'features and save')
             _df = self._calc_features()
             _df.to_pickle(_file_name)
+        n = self.top_docs_overlap
+        _df[f'Top_{n}_Docs_overlap'] = _df[f'Top_{n}_Docs_overlap'] / n
         return _df
 
     def __get_pkl_file_name(self):
