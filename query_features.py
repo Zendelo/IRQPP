@@ -309,6 +309,8 @@ class QueryFeatureFactory:
         else:
             _df = self._calc_features()
             _df.to_pickle(_file)
+            n = self.top_docs_overlap
+            _df[f'Top_{n}_Docs_overlap'] = _df[f'Top_{n}_Docs_overlap'] / n
         return self.divide_by_size(_df)
         # return _df
         # return self._soft_max_scores(_df)
