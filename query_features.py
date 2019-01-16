@@ -403,9 +403,10 @@ def main(args):
 
     # Debugging
     # corpus = 'ClueWeb12B'
-    corpus = 'ROBUST'
-    queries_group = 'title'
-    quantile = 'all'
+    # corpus = 'ROBUST'
+    # print('\n------+++^+++------ Debugging !! ------+++^+++------\n')
+    # queries_group = 'title'
+    # quantile = 'all'
     # testing_feat = QueryFeatureFactory('ROBUST', 'title', 'all')
     # norm_features_df = testing_feat.generate_features()
     # norm_features_df.reset_index().to_json('query_features_{}_uqv.JSON'.format(corpus))
