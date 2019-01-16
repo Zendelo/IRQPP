@@ -374,11 +374,12 @@ def load_full_features_df(corpus, queries_group, quantile):
     pkl_dir = dp.ensure_dir(f'~/QppUqvProj/Results/{corpus}/test/ref/pkl_files/')
     _list = []
     last_df = pd.DataFrame()
-    for n in {5, 10, 25, 50, 100}:
+    for n in {5, 10, 25, 50, 100, 250, 500}:
         _file = f'{pkl_dir}/{queries_group}_queries_{corpus}_RBO_{n}_TopDocs_{n}.pkl'
         try:
             dp.ensure_file(_file)
             _df = pd.read_pickle(_file).set_index(['topic', 'qid'])
+            _df[f'Top_{n}_Docs_overlap'] = _df[f'Top_{n}_Docs_overlap'] / n
             _list.append(_df.drop('Jac_coefficient', axis=1))
             last_df = _df['Jac_coefficient']
         except AssertionError:
@@ -402,9 +403,9 @@ def main(args):
 
     # Debugging
     # corpus = 'ClueWeb12B'
-    # corpus = 'ROBUST'
-    # queries_group = 'title'
-    # quantile = 'all'
+    corpus = 'ROBUST'
+    queries_group = 'title'
+    quantile = 'all'
     # testing_feat = QueryFeatureFactory('ROBUST', 'title', 'all')
     # norm_features_df = testing_feat.generate_features()
     # norm_features_df.reset_index().to_json('query_features_{}_uqv.JSON'.format(corpus))
