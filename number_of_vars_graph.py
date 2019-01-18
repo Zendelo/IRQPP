@@ -12,7 +12,7 @@ from Timer.timer import Timer
 from crossval import CrossValidation
 from qpp_ref import QueryPredictionRef
 from queries_pre_process import filter_n_top_queries, filter_n_low_queries, add_topic_to_qdf
-from query_features import QueryFeatureFactory
+from query_features import QueryFeatureFactory, run_features_process, load_full_features_df
 
 # Define the Font for the plots
 plt.rcParams.update({'font.size': 15, 'font.family': 'serif', 'font.weight': 'normal'})
@@ -23,6 +23,7 @@ parser = argparse.ArgumentParser(description='Results generator for QPP with Ref
 
 parser.add_argument('-c', '--corpus', default=None, help='The corpus to be used', choices=['ROBUST', 'ClueWeb12B'])
 parser.add_argument('--generate', action='store_true')
+parser.add_argument('--plot', action='store_true', help='Plot graphs')
 parser.add_argument('--nocache', action='store_false', help='Add this option in order to generate all pkl files')
 
 PREDICTORS_WO_QF = ['clarity', 'wig', 'nqc', 'smv', 'rsd', 'uef/clarity', 'uef/wig', 'uef/nqc', 'uef/smv']
@@ -33,8 +34,9 @@ PRE_RET_PREDICTORS = ['preret/AvgIDF', 'preret/AvgSCQTFIDF', 'preret/AvgVarTFIDF
 
 PREDICTORS = PREDICTORS_WO_QF + PREDICTORS_QF + PRE_RET_PREDICTORS
 PREDICTORS.remove('rsd')
+# PREDICTORS = ['preret/AvgSCQTFIDF', 'preret/MaxIDF', 'uef/clarity', 'wig']
 
-NUMBER_OF_DOCS = (5, 10, 25, 50, 100, 250, 500, 1000)
+NUMBER_OF_DOCS = (5, 10, 25, 50, 100, 250, 500)
 SIMILARITY_FUNCTIONS = {'Jac_coefficient': 'jac', 'Top_10_Docs_overlap': 'sim', 'RBO_EXT_100': 'rbo',
                         'RBO_FUSED_EXT_100': 'rbof'}
 # Filter out filled markers and marker settings that do nothing.
@@ -43,16 +45,13 @@ LINE_STYLES = ['-', ':', '--']
 MARKERS_STYLE = [''.join(i) for i in itertools.product(MARKERS, LINE_STYLES)]
 
 
-def plot_graphs(df: pd.DataFrame):
+def plot_graphs(_df: pd.DataFrame):
+    # df = _df.loc[_df['predictor'].isin(['wig', 'uef/clarity', 'preret/AvgSCQTFIDF', 'preret/AvgVarTFIDF'])]
+    df = _df.loc[_df['predictor'].isin(['wig'])]
+    df = df.loc[df['sim_func'].isin(['rbo', 'sim'])]
     df['result'] = pd.to_numeric(df['result'])
+
     for index, _df in df.groupby(['direction', 'sim_func']):
-        _df = _df.set_index('n_vars')
-        _dict = {}
-        for predictor, sub_df in _df.groupby('predictor')['result']:
-            _dict[predictor] = sub_df
-        _df = pd.DataFrame(_dict)
-        _df.plot(style=MARKERS_STYLE[:len(_df.columns)], grid=True,
-                 title=f'Direction: {index[0].capitalize()} Similarity function: {index[1].upper()}')
         plt.xlabel('Maximum Number of Variants')
         plt.ylabel('Correlation')
         plt.show()
@@ -103,7 +102,7 @@ class GraphsFactory:
             _dir = dp.ensure_dir(f'{self.data_dir}/{direct}/features')
             _feat_obj = QueryFeatureFactory(corpus=self.corpus, queries_group='title', vars_quantile='all',
                                             graphs=direct, n=n)
-            _df = _feat_obj.generate_features(self.load_from_pkl)
+            _df = load_full_features_df(features_factory_obj=_feat_obj)
             _df.reset_index().to_json(f'{_dir}/title_query_{n}_variations_features_{self.corpus}_uqv.JSON')
 
     def generate_sim_predictions(self, k):
@@ -177,9 +176,9 @@ class GraphsFactory:
         _df = pd.DataFrame.from_dict(_dict)
         return _df
 
-    def generate_results_df(self, cores=None):
+    def generate_results_df(self, cores=None, load_from_pkl=None):
         _pkl_file = f'{self.data_dir}/pkl_files/full_results_df_{self.max_n}_{self.corpus}_{self.corr_measure}.pkl'
-        if self.load_from_pkl:
+        if load_from_pkl:
             try:
                 file_to_load = dp.ensure_file(_pkl_file)
                 full_results_df = pd.read_pickle(file_to_load)
@@ -208,9 +207,13 @@ def main(args):
     corpus = args.corpus
     generate = args.generate
     load_cache = args.nocache
+    plot = args.plot
 
+    # Debugging
+    # print('\n------+++^+++------ Debugging !! ------+++^+++------\n')
     # corpus = 'ROBUST'
     # corpus = 'ClueWeb12B'
+    # generate = True
 
     if not corpus:
         return
@@ -219,11 +222,12 @@ def main(args):
     # testing.generate_results_df(4)
     # exit()
 
+    cores = mp.cpu_count() - 1
+
     if generate:
         for n in range(1, testing.max_n + 1):
             testing.create_query_files(n)
 
-        cores = mp.cpu_count() - 1
         """The first run will generate the pkl files, all succeeding runs will load and use it"""
         testing.generate_features(1)
         with mp.Pool(processes=cores) as pool:
@@ -234,11 +238,12 @@ def main(args):
             pool.map(testing.generate_qpp_reference_predictions, PREDICTORS)
             print('Finished QppRef generation')
         pool.close()
-
-    full_results_df = testing.generate_results_df()
+    load_from_pkl = not generate
+    full_results_df = testing.generate_results_df(load_from_pkl=load_from_pkl, cores=cores)
     print(full_results_df)
 
-    # plot_graphs(full_results_df)
+    if plot:
+        plot_graphs(full_results_df)
 
 
 if __name__ == '__main__':
