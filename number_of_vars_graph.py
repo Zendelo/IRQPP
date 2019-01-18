@@ -12,7 +12,7 @@ from Timer.timer import Timer
 from crossval import CrossValidation
 from qpp_ref import QueryPredictionRef
 from queries_pre_process import filter_n_top_queries, filter_n_low_queries, add_topic_to_qdf
-from query_features import QueryFeatureFactory, run_features_process, load_full_features_df
+from query_features import QueryFeatureFactory, load_full_features_df
 
 # Define the Font for the plots
 plt.rcParams.update({'font.size': 15, 'font.family': 'serif', 'font.weight': 'normal'})
