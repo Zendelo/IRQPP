@@ -32,13 +32,17 @@ PREDICTORS_QF = ['qf', 'uef/qf']
 PRE_RET_PREDICTORS = ['preret/AvgIDF', 'preret/AvgSCQTFIDF', 'preret/AvgVarTFIDF', 'preret/MaxIDF',
                       'preret/MaxSCQTFIDF', 'preret/MaxVarTFIDF']
 
-PREDICTORS = PREDICTORS_WO_QF + PREDICTORS_QF + PRE_RET_PREDICTORS
-PREDICTORS.remove('rsd')
-# PREDICTORS = ['preret/AvgSCQTFIDF', 'preret/MaxIDF', 'uef/clarity', 'wig']
+# PREDICTORS = PREDICTORS_WO_QF + PREDICTORS_QF + PRE_RET_PREDICTORS
+# PREDICTORS.remove('rsd')
+PREDICTORS = ['preret/AvgSCQTFIDF', 'preret/MaxIDF', 'uef/clarity', 'wig']
 
 NUMBER_OF_DOCS = (5, 10, 25, 50, 100, 250, 500)
-SIMILARITY_FUNCTIONS = {'Jac_coefficient': 'jac', 'Top_10_Docs_overlap': 'sim', 'RBO_EXT_100': 'rbo',
-                        'RBO_FUSED_EXT_100': 'rbof'}
+# SIMILARITY_FUNCTIONS = {'Jac_coefficient': 'jac', 'Top_10_Docs_overlap': 'sim', 'RBO_EXT_100': 'rbo',
+#                         'RBO_FUSED_EXT_100': 'rbof'}
+
+SIMILARITY_FUNCTIONS = {'Top_10_Docs_overlap': 'sim', 'RBO_EXT_100': 'rbo'}
+
+
 # Filter out filled markers and marker settings that do nothing.
 MARKERS = ['x', '+', 'v', '3', 'X']
 LINE_STYLES = ['-', ':', '--']
@@ -164,7 +168,8 @@ class GraphsFactory:
             _dict['n_vars'].append(_n)
             _dict['result'].append(_mean)
 
-        mean = self.basic_results_dict.get(predictor, self.calc_single_query_result(predictor))
+        mean = self.basic_results_dict.get(predictor, None)
+        assert mean, f'self.basic_results_dict couldn\'t get {predictor}'
         append_to_full_results_dict(mean, 0)
         _dir = f'{self.results_dir}/{direct}'
         for n in range(1, self.max_n + 1):
@@ -222,7 +227,7 @@ def main(args):
     # testing.generate_results_df(4)
     # exit()
 
-    cores = mp.cpu_count() - 1
+    cores = mp.cpu_count() - 3
 
     if generate:
         for n in range(1, testing.max_n + 1):
@@ -231,11 +236,11 @@ def main(args):
         """The first run will generate the pkl files, all succeeding runs will load and use it"""
         testing.generate_features(1)
         with mp.Pool(processes=cores) as pool:
-            pool.map(testing.generate_features, range(2, testing.max_n + 1))
+            # pool.map(testing.generate_features, range(2, testing.max_n + 1))
             print('Finished features generating')
-            pool.map(testing.generate_sim_predictions, NUMBER_OF_DOCS)
+            # pool.map(testing.generate_sim_predictions, NUMBER_OF_DOCS)
             print('Finished sim predictions')
-            pool.map(testing.generate_qpp_reference_predictions, PREDICTORS)
+            # pool.map(testing.generate_qpp_reference_predictions, PREDICTORS)
             print('Finished QppRef generation')
         pool.close()
     load_from_pkl = not generate
