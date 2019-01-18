@@ -28,7 +28,7 @@ parser.add_argument('--predict', help="generate new predictions", action="store_
 parser.add_argument('--graphs', default=None, help="generate new features for graphs", choices=['asce', 'desc'])
 parser.add_argument('-v', '--vars', default=None, type=int, help="number of variations, valid with graphs")
 
-NUMBER_OF_DOCS = (5, 10, 25, 50, 100, 250, 500, 1000)
+NUMBER_OF_DOCS = (5, 10, 25, 50, 100, 250, 500)
 
 
 def jaccard_coefficient(st1: str, st2: str):
@@ -211,7 +211,8 @@ class QueryFeatureFactory:
         return _df
 
     def _filter_queries(self, df):
-        df.reset_index(inplace=True)
+        if 'qid' in df.index.names:
+            df.reset_index(inplace=True)
         # Remove the topic queries
         _df = df.loc[df['qid'].isin(self.variations_data.queries_df['qid'])]
         # Filter only the relevant quantile variations
@@ -373,12 +374,33 @@ def run_predictions_process(n, corpus, queries_group, quantile):
     return sim_ref_pred
 
 
-def load_full_features_df(corpus, queries_group, quantile):
-    features_obj = QueryFeatureFactory(corpus, queries_group, quantile)
+def run_features_process(n, corpus, queries_group, quantile):
+    sim_ref_pred = QueryFeatureFactory(corpus, queries_group, quantile, rbo_top=n, top_docs_overlap=n)
+    df = sim_ref_pred.generate_features()
+    return df.drop('Jac_coefficient', axis=1)
+
+
+def load_full_features_df(**kwargs):
+    """
+    :param kwargs: corpus, queries_group, quantile or features_factory_obj: QueryFeatureFactory() object
+    :return: pd.DataFrame that contains all the features values
+    """
+    corpus = kwargs.get('corpus', None)
+    queries_group = kwargs.get('queries_group', None)
+    quantile = kwargs.get('quantile', None)
+    features_factory_obj = kwargs.get('features_factory_obj', None)
+    if features_factory_obj:
+        features_obj = features_factory_obj
+        corpus = features_obj.corpus
+        queries_group = features_obj.queries_group
+    else:
+        assert corpus and queries_group and quantile, f"Can't create a factory object from Corpus={corpus}, " \
+            f"Queries group={queries_group}, Variations Quantile={quantile}"
+        features_obj = QueryFeatureFactory(corpus, queries_group, quantile)
     pkl_dir = dp.ensure_dir(f'~/QppUqvProj/Results/{corpus}/test/ref/pkl_files/')
     _list = []
     last_df = pd.DataFrame()
-    for n in {5, 10, 25, 50, 100, 250, 500}:
+    for n in NUMBER_OF_DOCS:
         _file = f'{pkl_dir}/{queries_group}_queries_{corpus}_RBO_{n}_TopDocs_{n}.pkl'
         try:
             dp.ensure_file(_file)
@@ -389,10 +411,7 @@ def load_full_features_df(corpus, queries_group, quantile):
         except AssertionError:
             print(f'!! Warning !! The file {_file} is missing')
     df = pd.concat(_list + [last_df], axis=1)
-    _path = f'~/QppUqvProj/Results/{corpus}/test/ref'
-    _path = dp.ensure_dir(_path)
-    return features_obj.divide_by_size(df).reset_index().to_json(
-        f'{_path}/{queries_group}_query_{quantile}_variations_features_{corpus}_uqv.JSON')
+    return features_obj.divide_by_size(df)
 
 
 def main(args):
@@ -419,9 +438,15 @@ def main(args):
     cores = mp.cpu_count() - 1
 
     if generate:
-        testing_feat = QueryFeatureFactory(corpus, queries_group, quantile)
-        norm_features_df = testing_feat.generate_features()
+        n = NUMBER_OF_DOCS[0]
+        sim_ref_pred = QueryFeatureFactory(corpus, queries_group, quantile, rbo_top=n, top_docs_overlap=n)
+        df = sim_ref_pred.generate_features()
+        with mp.Pool(processes=cores) as pool:
+            norm_features_list = pool.map(
+                partial(run_features_process, corpus=corpus, queries_group=queries_group, quantile=quantile),
+                NUMBER_OF_DOCS[1:])
 
+        norm_features_df = pd.concat(norm_features_list + [df], axis=1)
         _path = f'~/QppUqvProj/Results/{corpus}/test/ref'
         _path = dp.ensure_dir(_path)
         norm_features_df.reset_index().to_json(
@@ -446,7 +471,10 @@ def main(args):
         print(features_df)
 
     else:
-        load_full_features_df(corpus, queries_group, quantile)
+        _path = f'~/QppUqvProj/Results/{corpus}/test/ref'
+        _path = dp.ensure_dir(_path)
+        df = load_full_features_df(corpus=corpus, queries_group=queries_group, quantile=quantile)
+        df.reset_index().to_json(f'{_path}/{queries_group}_query_{quantile}_variations_features_{corpus}_uqv.JSON')
 
 
 if __name__ == '__main__':
