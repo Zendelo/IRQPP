@@ -178,7 +178,7 @@ class QueryPredictionRef:
             f'{_graphs_dat_dir}/features/{qgroup}_query_{n}_variations_features_{corpus}_uqv.JSON')
 
         cls.geo_mean_file = dp.ensure_file(
-            f'QppUqvProj/Results/{corpus}/uqvPredictions/raw/geo/predictions/predictions-10000')
+            f'QppUqvProj/Results/{corpus}/uqvPredictions/raw/geo/predictions/predictions-20000')
 
         # The variations file is used in the filter function - it consists of all the vars w/o the query at hand
         cls.query_vars_file = dp.ensure_file(f'{_graphs_dat_dir}/queries/queries_wo_{qgroup}_{n}_vars.txt')
@@ -188,6 +188,9 @@ class QueryPredictionRef:
         cls.queries2predict_file = dp.ensure_file(_queries2predict)
 
         cls.real_ap_file = dp.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/raw/QLmap1000')
+
+        cls.geo_predictions_dir = dp.ensure_dir(
+            f'{_corpus_res_dir}/referenceLists/{qgroup}/all_vars/sim_as_pred/geo/predictions')
 
     def __initialize_features_df(self, quantile_vars, features_df):
         """This method filters from features df only the ones conjunction with the relevant variations
@@ -524,8 +527,8 @@ def main(args):
     # # Debug
     # print('\n------+++^+++------ Debugging !! ------+++^+++------\n')
     # predictor = 'wig'
-    # corpus = 'ROBUST'
-    # quantile = 'high'
+    # corpus = 'ClueWeb12B'
+    # quantile = 'all'
     # queries_group = 'title'
     # generate = 'calc'
 
