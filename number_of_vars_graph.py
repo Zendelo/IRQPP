@@ -15,7 +15,8 @@ from queries_pre_process import filter_n_top_queries, filter_n_low_queries, add_
 from query_features import QueryFeatureFactory, load_full_features_df
 
 # Define the Font for the plots
-plt.rcParams.update({'font.size': 15, 'font.family': 'serif', 'font.weight': 'normal'})
+plt.rcParams.update({'font.size': 50, 'font.family': 'serif', 'font.weight': 'normal'})
+# plt.rcParams.update({'font.size': 10, 'font.family': 'serif', 'font.weight': 'normal'})
 
 parser = argparse.ArgumentParser(description='Results generator for QPP with Reference lists graphs',
                                  usage='',
@@ -32,32 +33,45 @@ PREDICTORS_QF = ['qf', 'uef/qf']
 PRE_RET_PREDICTORS = ['preret/AvgIDF', 'preret/AvgSCQTFIDF', 'preret/AvgVarTFIDF', 'preret/MaxIDF',
                       'preret/MaxSCQTFIDF', 'preret/MaxVarTFIDF']
 
-# PREDICTORS = PREDICTORS_WO_QF + PREDICTORS_QF + PRE_RET_PREDICTORS
-# PREDICTORS.remove('rsd')
-PREDICTORS = ['preret/AvgSCQTFIDF', 'preret/MaxIDF', 'uef/clarity', 'wig']
+PREDICTORS = PREDICTORS_WO_QF + PREDICTORS_QF + PRE_RET_PREDICTORS
+PREDICTORS.remove('rsd')
+# PREDICTORS = ['preret/AvgSCQTFIDF', 'preret/MaxIDF', 'uef/clarity', 'wig']
 
 NUMBER_OF_DOCS = (5, 10, 25, 50, 100, 250, 500)
 # SIMILARITY_FUNCTIONS = {'Jac_coefficient': 'jac', 'Top_10_Docs_overlap': 'sim', 'RBO_EXT_100': 'rbo',
 #                         'RBO_FUSED_EXT_100': 'rbof'}
 
-SIMILARITY_FUNCTIONS = {'Top_10_Docs_overlap': 'sim', 'RBO_EXT_100': 'rbo'}
+SIMILARITY_FUNCTIONS = {'Top_Docs_overlap': 'sim', 'RBO': 'rbo'}
+
+MARKERS = ['+', 'x', '.', '*', 'X', 'v']
+LINE_STYLES = ['-', '--', ':', ':']
+# MARKERS_STYLE = [''.join(i) for i in itertools.product(LINE_STYLES, MARKERS)]
+# MARKERS = ['-^', '-v', '-D', '-x', '-h', '-H', 'p-', 's-', '--v', '--1', '--2', '--D', '--x', '--h', '--H', '^-.',
+#            '-.v', '1-.', '2-.', '-.D', '-.x', '-.h', '-.H', '3-.', '4-.', 's-.', 'p-.', '+-.', '*-.']
+
+COLORS = ['#2A88AA', '#93BEDB', '#203D78', '#60615C', '#E57270']
+# COLORS = ['#1D2735', '#135960', '#2F8F6D', '#8DC05F']
+NAMES_DICT = {'rbo': 'Ref-RBO', 'sim': 'Ref-Overlap', 'wig': 'WIG', 'rsd': 'RSD', 'preret/AvgSCQTFIDF': 'AvgSCQ',
+              'preret/AvgVarTFIDF': 'AvgVar', 'uef/clarity': 'UEF(Clarity)', 'preret/MaxIDF': 'MaxIDF',
+              'asce': 'Ascending', 'desc': 'Descending', 'ClueWeb12B': 'CW12', 'ROBUST': 'ROBUST'}
 
 
-# Filter out filled markers and marker settings that do nothing.
-MARKERS = ['x', '+', 'v', '3', 'X']
-LINE_STYLES = ['-', ':', '--']
-MARKERS_STYLE = [''.join(i) for i in itertools.product(MARKERS, LINE_STYLES)]
-
-
-def plot_graphs(_df: pd.DataFrame):
-    # df = _df.loc[_df['predictor'].isin(['wig', 'uef/clarity', 'preret/AvgSCQTFIDF', 'preret/AvgVarTFIDF'])]
-    df = _df.loc[_df['predictor'].isin(['wig'])]
-    df = df.loc[df['sim_func'].isin(['rbo', 'sim'])]
-    df['result'] = pd.to_numeric(df['result'])
-
-    for index, _df in df.groupby(['direction', 'sim_func']):
-        plt.xlabel('Maximum Number of Variants')
-        plt.ylabel('Correlation')
+def plot_graphs(_df: pd.DataFrame, simi, corpus):
+    _df['result'] = pd.to_numeric(_df['result'])
+    df = _df.loc[(_df['predictor'].isin(PREDICTORS)) & (_df['sim_func'] == simi)]
+    for direction, sub_df in df.groupby('direction'):
+        mar = 0
+        for predictor, pdf in sub_df.drop('direction', axis=1).groupby('predictor'):
+            pdf.set_index('n_vars')['result'].plot(legend=True,
+                                                   title=f'{NAMES_DICT[corpus]} {NAMES_DICT[direction]}',
+                                                   marker=MARKERS[mar], linestyle=LINE_STYLES[mar],
+                                                   label=NAMES_DICT[predictor], linewidth=5, markersize=15, mew=1,
+                                                   # markerfacecolor='None',
+                                                   color=COLORS[mar])
+            plt.xlabel('# of reference queries')
+            plt.ylabel("Pearson")
+            plt.legend()
+            mar += 1
         plt.show()
 
 
@@ -217,8 +231,9 @@ def main(args):
     # Debugging
     # print('\n------+++^+++------ Debugging !! ------+++^+++------\n')
     # corpus = 'ROBUST'
-    # corpus = 'ClueWeb12B'
+    corpus = 'ClueWeb12B'
     # generate = True
+    plot = True
 
     if not corpus:
         return
@@ -227,7 +242,7 @@ def main(args):
     # testing.generate_results_df(4)
     # exit()
 
-    cores = mp.cpu_count() - 3
+    cores = mp.cpu_count() - 1
 
     if generate:
         for n in range(1, testing.max_n + 1):
@@ -236,11 +251,11 @@ def main(args):
         """The first run will generate the pkl files, all succeeding runs will load and use it"""
         testing.generate_features(1)
         with mp.Pool(processes=cores) as pool:
-            # pool.map(testing.generate_features, range(2, testing.max_n + 1))
+            pool.map(testing.generate_features, range(2, testing.max_n + 1))
             print('Finished features generating')
-            # pool.map(testing.generate_sim_predictions, NUMBER_OF_DOCS)
+            pool.map(testing.generate_sim_predictions, NUMBER_OF_DOCS)
             print('Finished sim predictions')
-            # pool.map(testing.generate_qpp_reference_predictions, PREDICTORS)
+            pool.map(testing.generate_qpp_reference_predictions, PREDICTORS)
             print('Finished QppRef generation')
         pool.close()
     load_from_pkl = not generate
@@ -248,7 +263,7 @@ def main(args):
     print(full_results_df)
 
     if plot:
-        plot_graphs(full_results_df)
+        plot_graphs(full_results_df, 'rbo', corpus)
 
 
 if __name__ == '__main__':
