@@ -242,7 +242,7 @@ def main(args):
     if not corpus:
         return
 
-    testing = GraphsFactory(corpus, max_n=40, load_from_pkl=load_cache)
+    testing = GraphsFactory(corpus, max_n=40, load_from_pkl=load_cache, queries_group=queries_group)
     # testing.generate_results_df(4)
     # exit()
 
