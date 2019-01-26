@@ -161,9 +161,8 @@ class QueryPredictionRef:
         cls.vars_results_dir = dp.ensure_dir(f'{_corpus_res_dir}/raw/{predictor}/predictions/')
 
         # Prediction results of the queries to be predicted
-        if qgroup == 'title':
-            _orig_dir = dp.ensure_dir(f'~/QppUqvProj/Results/{corpus}/basicPredictions/title')
-            cls.base_results_dir = f'{_orig_dir}/{predictor}/predictions/'
+        _orig_dir = dp.ensure_dir(f'~/QppUqvProj/Results/{corpus}/basicPredictions/{qgroup}')
+        cls.base_results_dir = f'{_orig_dir}/{predictor}/predictions/'
 
         # The directory to save the new results
         cls.output_dir = dp.ensure_dir(f'{_graphs_base_dir}/referenceLists/{qgroup}/{direct}/{n}_vars')

@@ -15,14 +15,16 @@ from queries_pre_process import filter_n_top_queries, filter_n_low_queries, add_
 from query_features import QueryFeatureFactory, load_full_features_df
 
 # Define the Font for the plots
-plt.rcParams.update({'font.size': 50, 'font.family': 'serif', 'font.weight': 'normal'})
-# plt.rcParams.update({'font.size': 10, 'font.family': 'serif', 'font.weight': 'normal'})
+plt.rcParams.update({'font.size': 45, 'font.family': 'serif', 'font.weight': 'normal'})
+# plt.rcParams.update({'font.size': 55, 'font.family': 'serif', 'font.weight': 'normal'})
 
 parser = argparse.ArgumentParser(description='Results generator for QPP with Reference lists graphs',
                                  usage='',
                                  epilog='')
 
 parser.add_argument('-c', '--corpus', default=None, help='The corpus to be used', choices=['ROBUST', 'ClueWeb12B'])
+parser.add_argument('-g', '--queries_group', default='title', help='The queries group to be used',
+                    choices=['title', 'top', 'low', 'med'])
 parser.add_argument('--generate', action='store_true')
 parser.add_argument('--plot', action='store_true', help='Plot graphs')
 parser.add_argument('--nocache', action='store_false', help='Add this option in order to generate all pkl files')
@@ -33,9 +35,9 @@ PREDICTORS_QF = ['qf', 'uef/qf']
 PRE_RET_PREDICTORS = ['preret/AvgIDF', 'preret/AvgSCQTFIDF', 'preret/AvgVarTFIDF', 'preret/MaxIDF',
                       'preret/MaxSCQTFIDF', 'preret/MaxVarTFIDF']
 
-PREDICTORS = PREDICTORS_WO_QF + PREDICTORS_QF + PRE_RET_PREDICTORS
-PREDICTORS.remove('rsd')
-# PREDICTORS = ['preret/AvgSCQTFIDF', 'preret/MaxIDF', 'uef/clarity', 'wig']
+# PREDICTORS = PREDICTORS_WO_QF + PRE_RET_PREDICTORS
+# PREDICTORS.remove('rsd')
+PREDICTORS = ['preret/AvgSCQTFIDF', 'preret/MaxIDF', 'uef/clarity', 'wig']
 
 NUMBER_OF_DOCS = (5, 10, 25, 50, 100, 250, 500)
 # SIMILARITY_FUNCTIONS = {'Jac_coefficient': 'jac', 'Top_10_Docs_overlap': 'sim', 'RBO_EXT_100': 'rbo',
@@ -76,10 +78,11 @@ def plot_graphs(_df: pd.DataFrame, simi, corpus):
 
 
 class GraphsFactory:
-    def __init__(self, corpus, max_n=20, corr_measure='pearson', load_from_pkl=True):
+    def __init__(self, corpus, max_n=20, corr_measure='pearson', load_from_pkl=True, queries_group='title'):
+        self.group = queries_group
         self.corr_measure = corr_measure
         self.load_from_pkl = load_from_pkl
-        self.__set_paths(corpus)
+        self.__set_paths(corpus, queries_group)
         self.corpus = corpus
         self.queries_obj = dp.QueriesTextParser(self.queries_file)
         self.queries_obj.queries_df = add_topic_to_qdf(self.queries_obj.queries_df)
@@ -89,28 +92,28 @@ class GraphsFactory:
         self.__initialize_basic_results_dict()
 
     @classmethod
-    def __set_paths(cls, corpus):
+    def __set_paths(cls, corpus, group):
         _corpus_test_dir = dp.ensure_dir(f'~/QppUqvProj/Results/{corpus}/test/')
 
         # Basic predictions dir
-        cls.basic_predictions_dir = dp.ensure_dir(f'~/QppUqvProj/Results/{corpus}/basicPredictions/title/')
+        cls.basic_predictions_dir = dp.ensure_dir(f'~/QppUqvProj/Results/{corpus}/basicPredictions/{group}/')
         # AP file to pick variations according to AP
         cls.raw_ap_file = dp.ensure_file(f'{_corpus_test_dir}/raw/QLmap1000')
         # AP file for the cross validation process
-        cls.query_ap_file = dp.ensure_file(f'{_corpus_test_dir}/ref/QLmap1000-title')
+        cls.query_ap_file = dp.ensure_file(f'{_corpus_test_dir}/ref/QLmap1000-{group}')
         # CV folds mapping file
         cls.cv_map_file = dp.ensure_file(f'{_corpus_test_dir}/2_folds_30_repetitions.json')
         # Queries file with all the variations except the ones to be predicted
-        cls.queries_file = dp.ensure_file(f'~/QppUqvProj/data/{corpus}/queries_{corpus}_UQV_wo_title.txt')
+        cls.queries_file = dp.ensure_file(f'~/QppUqvProj/data/{corpus}/queries_{corpus}_UQV_wo_{group}.txt')
         # The data dir for the Graphs
         cls.data_dir = dp.ensure_dir(f'~/QppUqvProj/Graphs/{corpus}/data')
         # The results base dir for the Graphs
-        cls.results_dir = dp.ensure_dir(f'~/QppUqvProj/Graphs/{corpus}/referenceLists/title')
+        cls.results_dir = dp.ensure_dir(f'~/QppUqvProj/Graphs/{corpus}/referenceLists/{group}')
 
     def create_query_files(self, n):
         for direction, func in {('asce', filter_n_low_queries), ('desc', filter_n_top_queries)}:
             _dir = dp.ensure_dir(f'{self.data_dir}/{direction}/queries')
-            _file = f'{_dir}/queries_wo_title_{n}_vars.txt'
+            _file = f'{_dir}/queries_wo_{self.group}_{n}_vars.txt'
             _df = func(self.queries_obj.queries_df, self.raw_ap_obj, n)
             _df[['qid', 'text']].to_csv(_file, sep=":", header=False, index=False)
 
@@ -118,10 +121,10 @@ class GraphsFactory:
         print(f'\n---Generating Features for {n} vars---\n')
         for direct in {'asce', 'desc'}:
             _dir = dp.ensure_dir(f'{self.data_dir}/{direct}/features')
-            _feat_obj = QueryFeatureFactory(corpus=self.corpus, queries_group='title', vars_quantile='all',
+            _feat_obj = QueryFeatureFactory(corpus=self.corpus, queries_group=self.group, vars_quantile='all',
                                             graphs=direct, n=n)
             _df = load_full_features_df(features_factory_obj=_feat_obj)
-            _df.reset_index().to_json(f'{_dir}/title_query_{n}_variations_features_{self.corpus}_uqv.JSON')
+            _df.reset_index().to_json(f'{_dir}/{self.group}_query_{n}_variations_features_{self.corpus}_uqv.JSON')
 
     def generate_sim_predictions(self, k):
         print(f'\n---Generating sim predictions {k} docs---\n')
@@ -129,8 +132,8 @@ class GraphsFactory:
         for direct in {'asce', 'desc'}:
             _dir = dp.ensure_dir(f'{self.data_dir}/{direct}')
             for n in range(1, self.max_n + 1):
-                sim_ref_pred = QueryFeatureFactory(self.corpus, queries_group='title', vars_quantile='all', rbo_top=k,
-                                                   top_docs_overlap=k, graphs=direct, n=n)
+                sim_ref_pred = QueryFeatureFactory(self.corpus, queries_group=self.group, vars_quantile='all',
+                                                   rbo_top=k, top_docs_overlap=k, graphs=direct, n=n)
                 sim_ref_pred.generate_predictions(load_pickle)
                 load_pickle = True
 
@@ -139,8 +142,8 @@ class GraphsFactory:
         for direct in {'asce', 'desc'}:
             _dir = dp.ensure_dir(f'{self.data_dir}/{direct}')
             for n in range(1, self.max_n + 1):
-                qpp_ref = QueryPredictionRef(predictor, self.corpus, qgroup='title', vars_quantile='all', graphs=direct,
-                                             n=n)
+                qpp_ref = QueryPredictionRef(predictor, self.corpus, qgroup=self.group, vars_quantile='all',
+                                             graphs=direct, n=n)
                 qpp_ref.calc_queries()
 
     def __initialize_basic_results_dict(self):
@@ -227,13 +230,14 @@ def main(args):
     generate = args.generate
     load_cache = args.nocache
     plot = args.plot
+    queries_group = args.queries_group
 
     # Debugging
     # print('\n------+++^+++------ Debugging !! ------+++^+++------\n')
     # corpus = 'ROBUST'
-    corpus = 'ClueWeb12B'
+    # corpus = 'ClueWeb12B'
     # generate = True
-    plot = True
+    # plot = True
 
     if not corpus:
         return
@@ -253,8 +257,8 @@ def main(args):
         with mp.Pool(processes=cores) as pool:
             pool.map(testing.generate_features, range(2, testing.max_n + 1))
             print('Finished features generating')
-            pool.map(testing.generate_sim_predictions, NUMBER_OF_DOCS)
-            print('Finished sim predictions')
+            # pool.map(testing.generate_sim_predictions, NUMBER_OF_DOCS)
+            # print('Finished sim predictions')
             pool.map(testing.generate_qpp_reference_predictions, PREDICTORS)
             print('Finished QppRef generation')
         pool.close()

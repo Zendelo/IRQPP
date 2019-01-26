@@ -158,7 +158,7 @@ class QueryFeatureFactory:
         cls.queries_topic_file = dp.ensure_file(_queries_topic_file)
 
         _fused_results_file = f'{_corpus_res_dir}/test/fusion/QL.res'
-        _fused_results_file = f'{_corpus_res_dir}/test/fusion/all_wo_title_fused_QL.res'
+        _fused_results_file = f'{_corpus_res_dir}/test/fusion/all_wo_{qgroup}_fused_QL.res'
         cls.fused_results_file = dp.ensure_file(_fused_results_file)
 
         # cls.output_dir = dp.ensure_dir(f'{_graphs_res_dir}/test/raw/')
