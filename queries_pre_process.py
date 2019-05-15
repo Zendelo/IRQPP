@@ -9,7 +9,15 @@ import numpy as np
 import dataparser as dt
 
 # Define the Font for the plots
-plt.rcParams.update({'font.size': 35, 'font.family': 'serif', 'font.weight': 'normal'})
+# plt.rcParams.update({'font.size': 35, 'font.family': 'serif', 'font.weight': 'normal'})
+
+# Define the Font for the plots
+plt.rcParams.update({'font.size': 40, 'font.family': 'serif', 'font.weight': 'normal'})
+
+"""The next three lines are used to force matplotlib to use font-Type-1 """
+plt.rcParams['ps.useafm'] = True
+plt.rcParams['pdf.use14corefonts'] = True
+plt.rcParams['text.usetex'] = True
 
 # TODO: add logging and qrels file generation for UQV
 
@@ -22,13 +30,22 @@ parser = argparse.ArgumentParser(description='Script for query files pre-process
 parser.add_argument('-t', '--queries', default=None, metavar='queries.txt', help='path to UQV queries txt file')
 parser.add_argument('--remove', default=None, metavar='queries.txt',
                     help='path to queries txt file that will be removed from the final file NON UQV ONLY')
-parser.add_argument('--group', default='title', choices=['low', 'top', 'medh', 'medl'],
+parser.add_argument('--group', default='title', choices=['low', 'top', 'medh', 'medl', 'cref'],
                     help='Return only the <> performing queries of each topic')
-parser.add_argument('--quant', default=None, choices=['low', 'top', 'med'],
+parser.add_argument('--quant', default=None, choices=['low', 'high'],
                     help='Return a quantile of the variants for each topic')
 parser.add_argument('--ap', default=None, metavar='QLmap1000', help='path to queries AP results file')
 parser.add_argument('--stats', action='store_true', help='Print statistics')
 parser.add_argument('--plot_vars', action='store_true', help='Print vars AP graph')
+
+
+def create_overlap_ref_queries(*queries):
+    df = dt.QueriesTextParser(queries[0], 'uqv').queries_df
+    for query_file in queries[1:]:
+        _df = dt.QueriesTextParser(query_file, 'uqv').queries_df
+        df = df.merge(_df, how='inner')
+    print(df)
+    return df
 
 
 def add_original_queries(uqv_obj: dt.QueriesTextParser):
@@ -59,9 +76,9 @@ def filter_quant_variants(qdf: pd.DataFrame, apdb: dt.ResultsReader, q):
     _list = []
     for topic, q_vars in apdb.query_vars.items():
         _df = _apdf.loc[q_vars]
-        if 0 in q:
-            # For the low quantile, 0 AP variants are removed
-            _df = _df[_df['ap'] > 0]
+        # if 0 in q:
+        #     # For the low quantile, 0 AP variants are removed
+        #     _df = _df[_df['ap'] > 0]
         q_vals = _df.quantile(q=q)
         _qvars = _df.loc[(_df['ap'] > q_vals['ap'].min()) & (_df['ap'] <= q_vals['ap'].max())]
         _list.extend(_qvars.index.tolist())
@@ -256,9 +273,9 @@ def plot_variants_ap(qdf: pd.DataFrame, apdb: dt.ResultsReader, qdf_title: pd.Da
     _df = vars_df.loc[:, ['topic', 'qid', 'Title']]
     ram_plot(_df, ax, 'o', color='k', markersize=8, markerfacecolor='#49565b')
 
-    plt.xlabel('Topic')
-    plt.ylabel('AP')
-    plt.title(corpus_shorten(corpus))
+    plt.xlabel('\\textbf{Topic}')
+    plt.ylabel('\\textbf{AP}')
+    plt.title(f'\\textbf{{{corpus_shorten(corpus)}}}')
     plt.show()
 
 
@@ -323,6 +340,57 @@ def calc_statistics(qdf: pd.DataFrame, apdb: dt.ResultsReader, title_queries_df:
     plot_robust_histograms(quant_variants_dict) if corpus == 'ROBUST' else plot_cw_histograms(quant_variants_dict)
 
 
+def plot_distribution_estimates():
+    # TODO: implement the conditional probability here p(x)=\sum_{i=1}^{n} p(x|T_i)p(T_i)
+    pass
+
+
+def print_corpus_stats(qdf: pd.DataFrame, apdb: dt.ResultsReader, corpus):
+    pass
+
+
+def print_top_differences(qdf: pd.DataFrame, apdb: dt.ResultsReader, corpus):
+    df = pd.merge(qdf, apdb.data_df, right_index=True, left_on='qid')
+    df = add_topic_to_qdf(df).set_index('qid')
+    sr_top_10 = df.groupby('topic')['ap'].nlargest(11)
+    grpd = sr_top_10.groupby('topic')
+    topic_max_query = grpd.nth(0)
+    topic_second_query = grpd.nth(1)
+    topic_third_query = grpd.nth(3)
+    topic_fifth_query = grpd.nth(5)
+    topic_tnh_query = grpd.nth(10)
+    first_diff = topic_max_query.sub(topic_second_query).div(topic_second_query) * 100
+    third_diff = topic_max_query.sub(topic_second_query).div(topic_third_query) * 100
+    fifth_diff = topic_max_query.sub(topic_second_query).div(topic_fifth_query) * 100
+    tnh_diff = topic_max_query.sub(topic_second_query).div(topic_tnh_query) * 100
+
+    print(f'Corpus - {corpus}\n')
+    print(f'Difference of the first var after the Max Var {first_diff.dropna().mean(0):.2f}%')
+    print(f'Difference of the 3rd var after the Max Var {third_diff.dropna().mean(0):.2f}%')
+    print(f'Difference of the 5th var after the Max Var {fifth_diff.dropna().mean(0):.2f}%')
+    print(f'Difference of the 10th var after the Max Var {tnh_diff.dropna().mean(0):.2f}%\n')
+
+    one_mean = topic_max_query - topic_second_query
+    three_mean = topic_max_query - (grpd.head(4).groupby('topic').sum() - topic_max_query) / 3
+    five_mean = topic_max_query - (grpd.head(6).groupby('topic').sum() - topic_max_query) / 5
+    ten_mean = topic_max_query - (grpd.head(11).groupby('topic').sum() - topic_max_query) / 10
+    # one_diff = (topic_max_query - one_mean) * 100 / one_mean
+    print(f'Difference of average of 1: {one_mean.mean():.2f}')
+    print(f'Difference of average over 3: {three_mean.mean():.2f}')
+    print(f'Difference of average over 5: {five_mean.mean():.2f}')
+    print(f'Difference of average over 10: {ten_mean.mean():.2f}\n')
+
+    diff_1 = one_mean.div(topic_second_query) * 100
+    diff_3 = three_mean.div((grpd.head(4).groupby('topic').sum() - topic_max_query) / 3) * 100
+    diff_5 = three_mean.div((grpd.head(6).groupby('topic').sum() - topic_max_query) / 5) * 100
+    diff_10 = three_mean.div((grpd.head(11).groupby('topic').sum() - topic_max_query) / 10) * 100
+
+    print(f'Difference of average of 1: {diff_1.mean():.2f}%')
+    print(f'Difference of average over 3: {diff_3.mean():.2f}%')
+    print(f'Difference of average over 5: {diff_5.mean():.2f}%')
+    print(f'Difference of average over 10: {diff_10.mean():.2f}%')
+
+
 def corpus_shorten(corpus):
     corp = 'ROBUST' if corpus == 'ROBUST' else 'CW12'
     return corp
@@ -342,18 +410,28 @@ def main(args):
     # quantiles_dict = {'low': [0, 0.33], 'med': [0.33, 0.66], 'top': [0.66, 1]}
     quantiles_dict = {'low': [0, 0.5], 'high': [0.5, 1]}
 
-    # # Uncomment for Debugging !!!!!
+    # Uncomment for Debugging !!!!!
     # print('\n\n\n----------!!!!!!!!!!!!--------- Debugging Mode ----------!!!!!!!!!!!!---------\n\n\n')
     # # quant_variants = 'low'
-    # # corpus = 'ClueWeb12B'
+    # corpus = 'ClueWeb12B'
     # corpus = 'ROBUST'
     # ap_file = dt.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/raw/QLmap1000')
     # queries_txt_file = dt.ensure_file(f'~/QppUqvProj/data/{corpus}/queries_{corpus}_UQV_full.txt')
+    # queries_txt_file_wo_title = dt.ensure_file(f'~/QppUqvProj/data/{corpus}/queries_{corpus}_UQV_wo_title.txt')
+    # queries_txt_file_wo_top = dt.ensure_file(f'~/QppUqvProj/data/{corpus}/queries_{corpus}_UQV_wo_top.txt')
+    # queries_txt_file_wo_low = dt.ensure_file(f'~/QppUqvProj/data/{corpus}/queries_{corpus}_UQV_wo_low.txt')
+    # queries_txt_file_wo_med = dt.ensure_file(f'~/QppUqvProj/data/{corpus}/queries_{corpus}_UQV_wo_medh.txt')
     # plot_vars = True
+
+    # df = create_overlap_ref_queries(queries_txt_file_wo_top, queries_txt_file_wo_low, queries_txt_file_wo_med,
+    #                                 queries_txt_file_wo_title)
+    # write_queries_to_files(df, corpus, 'cref')
+    # exit()
 
     corpus = 'ROBUST' if 'ROBUST' in queries_txt_file else 'ClueWeb12B'
     if queries_txt_file:
         qdb = dt.QueriesTextParser(queries_txt_file, 'uqv')
+        df = add_topic_to_qdf(qdb.queries_df)
         qdb.queries_df = remove_duplicates(qdb)
         if queries_to_remove:
             qdb_rm = dt.QueriesTextParser(queries_to_remove)
@@ -380,11 +458,13 @@ def main(args):
                 plot_variants_ap(qdb.queries_df, apdb, title_queries_df, title_ap, corpus)
                 return
 
+        print_top_differences(qdb.queries_df, apdb, corpus)
+
         # # In order to convert the vid (variants ID) to qid, uncomment next line
         # queries_df = convert_vid_to_qid(queries_df)
 
-        write_queries_to_files(qdb.queries_df, corpus=corpus, queries_group=queries_group, quantile=quant_variants,
-                               remove=queries_to_remove)
+        # write_queries_to_files(qdb.queries_df, corpus=corpus, queries_group=queries_group, quantile=quant_variants,
+        #                        remove=queries_to_remove)
 
 
 if __name__ == '__main__':
