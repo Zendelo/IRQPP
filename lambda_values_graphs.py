@@ -15,8 +15,13 @@ from Timer.timer import Timer
 from crossval import CrossValidation
 
 # Define the Font for the plots
-plt.rcParams.update({'font.size': 40, 'font.family': 'serif', 'font.weight': 'normal'})
-# plt.rcParams.update({'font.size': 10, 'font.family': 'serif', 'font.weight': 'normal'})
+plt.rcParams.update({'font.size': 45, 'font.family': 'serif'})
+plt.rcParams.update({'font.size': 45, 'font.family': 'serif', 'font.weight': 'normal'})
+
+"""The next three lines are used to force matplotlib to use font-Type-1 """
+plt.rcParams['ps.useafm'] = True
+plt.rcParams['pdf.use14corefonts'] = True
+plt.rcParams['text.usetex'] = True
 
 parser = argparse.ArgumentParser(description='Query Prediction Using Reference lists',
                                  usage='python3.6 qpp_ref.py -c CORPUS ... <parameter files>',
@@ -37,8 +42,8 @@ PREDICTORS = PRE_RET_PREDICTORS + PREDICTORS_WO_QF
 SIMILARITY_FUNCTIONS = {'Jac_coefficient': 'jac', 'Top_Docs_overlap': 'sim', 'RBO_EXT_100': 'rbo',
                         'RBO_FUSED_EXT_100': 'rbof'}
 # Filter out filled markers and marker settings that do nothing.
-MARKERS = ['|', 'x', '.', '*', 'X', 'v']
-LINE_STYLES = ['-', '-', '-', '--']
+MARKERS = ['+', 'x', '.', '*', 'X', 'v']
+LINE_STYLES = ['--', '-', ':', ':']
 # MARKERS_STYLE = [''.join(i) for i in itertools.product(LINE_STYLES, MARKERS)]
 LAMBDA = np.linspace(start=0, stop=1, num=11)
 # MARKERS = ['-^', '-v', '-D', '-x', '-h', '-H', 'p-', 's-', '--v', '--1', '--2', '--D', '--x', '--h', '--H', '^-.',
@@ -150,58 +155,38 @@ def plot_graphs(df: pd.DataFrame, corpus):
         for predictor, pdf in _df.drop('sim_func', axis=1).set_index('lambda').groupby('predictor'):
             # if predictor in SKIP:
             #     continue
-            pdf['result'].plot(legend=True, title=f'{corpus}-{simi}', marker=MARKERS[mar], label=predictor,
-                               linewidth=2, markersize=15, mew=5)
+            pdf['result'].plot(legend=True, marker=MARKERS[mar], label=predictor, linewidth=2, markersize=15, mew=5)
             plt.legend()
             mar += 1
-        plt.xlabel('$\\lambda$')
-        plt.ylabel("Pearson")
+        plt.title(f'\\textbf{{{corpus} - {simi}}}')
+        plt.xlabel('$\\mathbf{\\lambda}$')
+        plt.ylabel("\\textbf{Pearson}")
         # plt.ylabel('Correlation')
         # plt.savefig(f'../../plot_now/{corpus}-{simi}.png')
         plt.show()
 
-    # fig, ax = plt.subplots()
-    # for predictor, _df in df.groupby('predictor'):
-    #     fig = plt.figure(figsize=(16.0, 10.0))  # in inches!
-    #     mar = 0
-    #     for simi, pdf in _df.drop('predictor', axis=1).set_index('lambda').groupby('sim_func'):
-    #         pdf['result'].plot(legend=True, title=f'{corpus}-{predictor}', style=MARKERS_STYLE[mar], label=simi,
-    #                            linewidth=2, markersize=15, mew=5)
-    #         plt.legend()
-    #         mar += 1
-    #     plt.xlabel('$\\lambda$')
-    #     plt.ylabel("Pearson's $\\rho$")
-    #     plt.savefig(f'../../plot_now/{corpus}-{predictor.replace("/", "_")}.png')
-    #     plt.show()
-
-
-#     _df = vars_df.loc[:, ['topic', 'qid', 'Variations']]
-#     ram_plot(_df, ax, 2, color='#2a88aa', markersize=10, mew=2)
-#     _df = vars_df.loc[:, ['topic', 'qid', 'Average']]
-#     ram_plot(_df, ax, '', markerfacecolor='None', linestyle='-', color='darkslategrey', markersize=18, linewidth=3)
-#     _df = vars_df.loc[:, ['topic', 'qid', 'Title']]
-#     ram_plot(_df, ax, 'o', color='k', markersize=8, markerfacecolor='#49565b')
-
 
 def plot_sim_graph(orig_df: pd.DataFrame, simi, corpus):
+    corpus_names = {'ClueWeb12B': 'CW12', 'ROBUST': 'ROBUST'}
     df = orig_df.set_index('sim_func')
     df['result'] = pd.to_numeric(df['result'])
     df['lambda'] = pd.to_numeric(df['lambda'])
     df['lambda'] = df['lambda'].values[::-1]
-    fig = plt.figure(figsize=(16.0, 10.0))  # in inches!
+    # fig = plt.figure(figsize=(16.0, 10.0))  # in inches!
     _df = df.loc[simi].set_index('lambda', drop=True)
     _df = _df.loc[_df['predictor'].isin(['uef/clarity', 'wig', 'preret/AvgSCQTFIDF', 'preret/MaxIDF'])]
     mar = 0
     print(_df)
     for predictor, pdf in _df.groupby('predictor'):
         pdf = pdf.rename(NAMES_DICT).rename(NAMES_DICT, axis=1)
-        pdf['result'].plot(legend=True, title=f'{corpus} {NAMES_DICT[simi]}', marker=MARKERS[mar],
-                           linestyle=LINE_STYLES[mar], label=NAMES_DICT[predictor], linewidth=5, markersize=15, mew=1,
+        pdf['result'].plot(legend=True, marker=MARKERS[mar],
+                           linestyle=LINE_STYLES[mar], label=NAMES_DICT[predictor], linewidth=5, markersize=30, mew=3,
                            color=COLORS[mar])
         plt.legend()
         mar += 1
-    plt.xlabel('$\\lambda$')
-    plt.ylabel("Pearson")
+    plt.title(f'\\textbf{{{corpus_names[corpus]} {NAMES_DICT[simi]}}}')
+    plt.xlabel('$\\mathbf{\\lambda}$')
+    plt.ylabel("\\textbf{Pearson}")
     plt.show()
 
 
@@ -225,8 +210,7 @@ def main(args):
 
     res_gen = GenerateResults(corpus, load_from_pkl=load_cache)
     df = res_gen.generate_results_df(cores=cores)
-    print(df)
-    # plot_sim_graph(df, 'rbo', corpus)
+    plot_sim_graph(df, 'rbo', corpus)
     # plot_graphs(df, corpus)
     # print(os.getcwd())
 
