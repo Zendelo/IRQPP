@@ -156,7 +156,8 @@ class CrossValidation:
             ('{}/simple_results_vector_for_{}_folds_{}_repetitions_{}.json'.format(self.output_dir, self.k, self.rep,
                                                                                    self.ap_func)))
         mean = np.mean(test_results)
-        # print('{:.3f}'.format(mean))
+        print(test_results)
+        print('{:.3f}'.format(mean))
         return f'{mean:.3f}'
 
     def calc_corr_df(self, df):
