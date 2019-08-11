@@ -16,7 +16,11 @@ from query_features import QueryFeatureFactory, load_full_features_df
 
 # Define the Font for the plots
 plt.rcParams.update({'font.size': 45, 'font.family': 'serif', 'font.weight': 'normal'})
-# plt.rcParams.update({'font.size': 55, 'font.family': 'serif', 'font.weight': 'normal'})
+
+"""The next three lines are used to force matplotlib to use font-Type-1 """
+plt.rcParams['ps.useafm'] = True
+plt.rcParams['pdf.use14corefonts'] = True
+plt.rcParams['text.usetex'] = True
 
 parser = argparse.ArgumentParser(description='Results generator for QPP with Reference lists graphs',
                                  usage='',
@@ -58,20 +62,21 @@ NAMES_DICT = {'rbo': 'Ref-RBO', 'sim': 'Ref-Overlap', 'wig': 'WIG', 'rsd': 'RSD'
               'asce': 'Ascending', 'desc': 'Descending', 'ClueWeb12B': 'CW12', 'ROBUST': 'ROBUST'}
 
 
-def plot_graphs(_df: pd.DataFrame, simi, corpus):
+def plot_graphs(_df: pd.DataFrame, simi, corpus, group='Title'):
+    _df['result'] = _df['result'].replace('nan', '0')
     _df['result'] = pd.to_numeric(_df['result'])
     df = _df.loc[(_df['predictor'].isin(PREDICTORS)) & (_df['sim_func'] == simi)]
     for direction, sub_df in df.groupby('direction'):
         mar = 0
         for predictor, pdf in sub_df.drop('direction', axis=1).groupby('predictor'):
             pdf.set_index('n_vars')['result'].plot(legend=True,
-                                                   title=f'{NAMES_DICT[corpus]} {NAMES_DICT[direction]}',
+                                                   title=f'\\textbf{{{NAMES_DICT[corpus]} {NAMES_DICT[direction]}}}',
                                                    marker=MARKERS[mar], linestyle=LINE_STYLES[mar],
                                                    label=NAMES_DICT[predictor], linewidth=5, markersize=15, mew=1,
                                                    # markerfacecolor='None',
                                                    color=COLORS[mar])
-            plt.xlabel('# of reference queries')
-            plt.ylabel("Pearson")
+            plt.xlabel('\\textbf{\\# of reference queries}')
+            plt.ylabel("\\textbf{Pearson}")
             plt.legend()
             mar += 1
         plt.show()
@@ -199,7 +204,8 @@ class GraphsFactory:
         return _df
 
     def generate_results_df(self, cores=None, load_from_pkl=None):
-        _pkl_file = f'{self.data_dir}/pkl_files/full_results_df_{self.max_n}_{self.corpus}_{self.corr_measure}_{self.group}.pkl'
+        # _pkl_file = f'{self.data_dir}/pkl_files/full_results_df_{self.max_n}_{self.corpus}_{self.corr_measure}_{self.group}.pkl'
+        _pkl_file = f'{self.data_dir}/pkl_files/full_results_df_{self.max_n}_{self.corpus}_{self.corr_measure}.pkl'
         if load_from_pkl:
             try:
                 file_to_load = dp.ensure_file(_pkl_file)
@@ -236,6 +242,7 @@ def main(args):
     # print('\n------+++^+++------ Debugging !! ------+++^+++------\n')
     # corpus = 'ROBUST'
     # corpus = 'ClueWeb12B'
+    # queries_group = 'low'
     # generate = True
     # plot = True
 
@@ -267,7 +274,7 @@ def main(args):
     print(full_results_df)
 
     if plot:
-        plot_graphs(full_results_df, 'rbo', corpus)
+        plot_graphs(full_results_df, 'rbo', corpus, queries_group)
 
 
 if __name__ == '__main__':
