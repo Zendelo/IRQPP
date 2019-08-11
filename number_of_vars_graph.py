@@ -199,7 +199,7 @@ class GraphsFactory:
         return _df
 
     def generate_results_df(self, cores=None, load_from_pkl=None):
-        _pkl_file = f'{self.data_dir}/pkl_files/full_results_df_{self.max_n}_{self.corpus}_{self.corr_measure}.pkl'
+        _pkl_file = f'{self.data_dir}/pkl_files/full_results_df_{self.max_n}_{self.corpus}_{self.corr_measure}_{self.group}.pkl'
         if load_from_pkl:
             try:
                 file_to_load = dp.ensure_file(_pkl_file)
