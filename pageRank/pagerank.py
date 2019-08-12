@@ -187,7 +187,9 @@ def main(args):
     if predictor and corpus:
         if predictor == 'all':
             with mp.Pool(processes=cores) as pool:
-                pool.starmap(partial(process_calc_pr, corpus=corpus, load=load), PREDICTORS)
+                pool.map(partial(process_calc_pr, corpus=corpus, load=load), PREDICTORS)
+        else:
+            process_calc_pr(predictor, corpus, load)
 
 
 if __name__ == '__main__':
