@@ -12,12 +12,12 @@ import dataparser as dt
 # plt.rcParams.update({'font.size': 35, 'font.family': 'serif', 'font.weight': 'normal'})
 
 # Define the Font for the plots
-plt.rcParams.update({'font.size': 40, 'font.family': 'serif', 'font.weight': 'normal'})
+plt.rcParams.update({'font.size': 40, 'font.family': 'Hind Guntur', 'font.weight': 'normal'})
 
 """The next three lines are used to force matplotlib to use font-Type-1 """
-plt.rcParams['ps.useafm'] = True
-plt.rcParams['pdf.use14corefonts'] = True
-plt.rcParams['text.usetex'] = True
+# plt.rcParams['ps.useafm'] = True
+# plt.rcParams['pdf.use14corefonts'] = True
+# plt.rcParams['text.usetex'] = True
 
 # TODO: add logging and qrels file generation for UQV
 
@@ -273,9 +273,12 @@ def plot_variants_ap(qdf: pd.DataFrame, apdb: dt.ResultsReader, qdf_title: pd.Da
     _df = vars_df.loc[:, ['topic', 'qid', 'Title']]
     ram_plot(_df, ax, 'o', color='k', markersize=8, markerfacecolor='#49565b')
 
-    plt.xlabel('\\textbf{Topic}')
-    plt.ylabel('\\textbf{AP}')
-    plt.title(f'\\textbf{{{corpus_shorten(corpus)}}}')
+    # plt.xlabel('\\textbf{Topic}')
+    # plt.ylabel('\\textbf{AP}')
+    # plt.title(f'\\textbf{{{corpus_shorten(corpus)}}}')
+    plt.xlabel('Topic')
+    plt.ylabel('AP')
+    # plt.title(f'{corpus_shorten(corpus)}')
     plt.show()
 
 

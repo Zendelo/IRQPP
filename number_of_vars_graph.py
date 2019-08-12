@@ -274,6 +274,7 @@ def main(args):
     print(full_results_df)
 
     if plot:
+        # plot_graphs(full_results_df, 'sim', corpus, queries_group)
         plot_graphs(full_results_df, 'rbo', corpus, queries_group)
 
 

@@ -1,8 +1,7 @@
 import argparse
-import os
 import glob
+import os
 from subprocess import run
-from collections import defaultdict
 
 import numpy as np
 import pandas as pd
@@ -11,9 +10,6 @@ from Timer.timer import Timer
 from crossval import CrossValidation
 from dataparser import ResultsReader, ensure_dir
 from features import features_loader
-
-# TODO: implement the UEF addition
-# TODO: Find the problem with the UEF on CW - and solve it
 
 parser = argparse.ArgumentParser(description='LTR (SVMRank) data sets Generator',
                                  usage='python3.6 learningsets.py -c CORPUS ... <parameter files>',
@@ -33,6 +29,8 @@ parser.add_argument('--fine',
                     action="store_true")
 
 C_list = [0.01, 0.1, 1, 10, 100]
+
+
 # C_list = [0.01, 0.1, 1, 10]
 
 
@@ -130,7 +128,7 @@ class LearningDataSets:
             print(string, file=text_file)
 
     def run_svm_fine_tune(self):
-        svm_learn = 'svmRank/svm_rank_learn'
+        svm_learn = '~/svmRank/svm_rank_learn'
         svm_classify = '~/svmRank/svm_rank_classify'
         models_dir = self.output_dir.replace('datasets', 'models')
         ensure_dir(models_dir)
@@ -152,7 +150,7 @@ class LearningDataSets:
 
     def run_svm(self):
         c = '1'
-        svm_learn = 'svmRank/svm_rank_learn'
+        svm_learn = '~/svmRank/svm_rank_learn'
         svm_classify = '~/svmRank/svm_rank_classify'
         models_dir = self.output_dir.replace('datasets', 'models')
         ensure_dir(models_dir)

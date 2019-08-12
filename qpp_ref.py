@@ -37,7 +37,7 @@ parser.add_argument('--uef', help='Add this if the predictor is in uef framework
 parser.add_argument('-g', '--group', help='group of queries to predict',
                     choices=['top', 'low', 'title', 'medh', 'medl'])
 parser.add_argument('--quantile', help='quantile of query variants to use for prediction', default='all',
-                    choices=['all', 'low', 'low-0', 'high'])
+                    choices=['all', 'low', 'low-0', 'high', 'cref'])
 parser.add_argument('--corr_measure', default='pearson', type=str, choices=['pearson', 'spearman', 'kendall'],
                     help='features JSON file to load')
 parser.add_argument('--generate', help='use ltr to generate SVM-Rank predictions, or calc to calc predictions',

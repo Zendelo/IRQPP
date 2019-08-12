@@ -75,7 +75,7 @@ def main(args):
     qlc_res_file = args.QLCresults
     x = CombSUM(ql_res_file, qlc_res_file)
     x.calc_scores()
-    # x.average_qlc()
+    x.average_qlc()
 
 
 if __name__ == '__main__':

@@ -82,7 +82,7 @@ class QueryFeatureFactory:
         cls.title_res_file = os.path.normpath(_title_results_file)
         dp.ensure_file(cls.title_res_file)
 
-        _queries_full_file = f'{_corpus_dat_dir}/queries_{corpus}_UQV_full.txt'
+        _queries_full_file = f'{_corpus_dat_dir}/queries_{corpus}_UQV_full.stemmed.txt'
 
         cls.queries_full_file = dp.ensure_file(_queries_full_file)
 

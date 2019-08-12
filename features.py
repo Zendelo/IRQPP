@@ -159,6 +159,7 @@ def features_loader(file_to_load, corpus):
     features_df = pd.read_json(file, dtype={'topic': str, 'qid': str})
     features_df.reset_index(drop=True, inplace=True)
     features_df.set_index(['topic', 'qid'], inplace=True)
+    features_df.rename(index=lambda x: x.split('-')[0], level=0, inplace=True)
     features_df.sort_values(['topic', 'qid'], axis=0, inplace=True)
     return features_df
 
