@@ -21,7 +21,7 @@ parser.add_argument('-c', '--corpus', default='ROBUST', type=str, help='corpus (
 parser.add_argument('-g', '--group', help='group of queries to predict',
                     choices=['top', 'low', 'medh', 'medl', 'title'])
 parser.add_argument('--quantile', help='quantile of query variants to use for prediction', default=None,
-                    choices=['all', 'low', 'low-0', 'high'])
+                    choices=['all', 'low', 'low-0', 'high', 'cref'])
 parser.add_argument('-l', '--load', default=None, type=str, help='features file to load')
 parser.add_argument('--generate', help="generate new features file", action="store_true")
 parser.add_argument('--predict', help="generate new predictions", action="store_true")
@@ -158,7 +158,7 @@ class QueryFeatureFactory:
         cls.queries_topic_file = dp.ensure_file(_queries_topic_file)
 
         _fused_results_file = f'{_corpus_res_dir}/test/fusion/QL.res'
-        _fused_results_file = f'{_corpus_res_dir}/test/fusion/all_wo_{qgroup}_fused_QL.res'
+        # _fused_results_file = f'{_corpus_res_dir}/test/fusion/all_wo_{qgroup}_fused_QL.res'
         cls.fused_results_file = dp.ensure_file(_fused_results_file)
 
         # cls.output_dir = dp.ensure_dir(f'{_graphs_res_dir}/test/raw/')
