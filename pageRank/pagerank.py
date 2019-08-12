@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 import dataparser as dp
-from topic_graph_features import features_loader
+from pageRank.topic_graph_features import features_loader
 from Timer.timer import Timer
 from crossval import CrossValidation
 
@@ -143,6 +143,7 @@ class PageRank:
         results to files"""
         for hyper_params, full_df in self.dict_all_options_stochastic.items():
             sim_func, lambda_param = (s.split('-')[1] for s in hyper_params.split('+'))
+            full_df_pr_list = []
             for pred_score in self.prediction_scores:
                 print(f'Working on the combination {sim_func}: {pred_score} lambda={lambda_param}')
                 _score_list = []
@@ -169,11 +170,14 @@ class PageRank:
                             print(
                                 f'Topic {topic} has failed to converge, finished with: diff={diff} epsilon={epsilon}\n')
                     _score_list.append(pr_sr)
-                res_df = pd.concat(_score_list)
-                self._write_results(res_df, sim_func, pred_score.split('_')[1], lambda_param)
+                res_sr = pd.concat(_score_list)
+                res_sr.name = pred_score
+                full_df_pr_list.append(res_sr)
+                # self._write_results(res_df, sim_func, pred_score.split('_')[1], lambda_param)
+            # _full_df_pr = pd.concat(full_df_pr_list, axis=1)
 
     def _write_results(self, res_df: pd.Series, sim_func, pred_score, lambda_param):
-        dir_path = dp.ensure_dir(f'{self.output_dir}/{sim_func}/{self.predictor}/predictions/')
+        dir_path = dp.ensure_dir(f'{self.output_dir}/raw/{sim_func}/{self.predictor}/predictions/')
         file_name = f'predictions-{pred_score}+lambda+{lambda_param}'
         res_df.to_csv(path=f'{dir_path}/{file_name}', index=True, sep=' ', float_format='%f')
 
