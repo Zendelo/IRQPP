@@ -1,19 +1,19 @@
 import argparse
 import multiprocessing as mp
-from functools import partial
 import pickle
 
+import networkx as nx
 import numpy as np
 import pandas as pd
+from functools import partial
 
 import dataparser as dp
-from pageRank.topic_graph_features import features_loader
 from Timer.timer import Timer
 from crossval import CrossValidation
+from pageRank.topic_graph_features import features_loader
 
 parser = argparse.ArgumentParser(description='PageRank UQV Generator',
-                                 usage='python3.7 pagerank.py -c CORPUS',
-                                 epilog='Unless --generate is given, will try loading the file')
+                                 usage='python3.7 pagerank.py -c CORPUS')
 
 parser.add_argument('-c', '--corpus', default='ROBUST', type=str, help='corpus (index) to work with',
                     choices=['ROBUST', 'ClueWeb12B'])
@@ -31,6 +31,7 @@ parser.add_argument('--nocache', help="add this option to avoid loading from cac
 # parser.add_argument('--predict', help="generate new predictions", action="store_true")
 
 LAMBDA = np.linspace(start=0, stop=1, num=11)
+PREDICTORS = ['clarity', 'wig', 'nqc', 'smv', 'rsd', 'qf', 'uef/clarity', 'uef/wig', 'uef/nqc', 'uef/smv', 'uef/qf']
 
 
 class PageRank:
@@ -138,48 +139,35 @@ class PageRank:
         norm_df = (df / z_n)
         return norm_df
 
-    def calc_pagerank(self, epsilon=1e-04):
+    def calc_pagerank(self):
         """The method will calculate the PR scores for the entire set, with all the hyper parameters and write the
         results to files"""
         for hyper_params, full_df in self.dict_all_options_stochastic.items():
             sim_func, lambda_param = (s.split('-')[1] for s in hyper_params.split('+'))
-            full_df_pr_list = []
             for pred_score in self.prediction_scores:
                 print(f'Working on the combination {sim_func}: {pred_score} lambda={lambda_param}')
+                stime = Timer('testing')
                 _score_list = []
                 for topic, _df in full_df[pred_score].groupby('topic'):
-                    # Set all the PR values to be 1/N
-                    _initial_pr = 1 / len(_df.index.unique('dest'))
-                    # Create a Series that holds the PR scores for each query node
-                    pr_sr = pd.Series(data=_initial_pr, index=_df.index.unique('dest'))
-                    _pr_dict = {}
-                    diff = 1
-                    timeout = 100
-                    while diff > epsilon and timeout > 0:
-                        for dest_node, incoming_weights_df in _df.groupby('dest'):
-                            _pr_dict[dest_node] = incoming_weights_df.mul(pr_sr, level='src').sum()
-                        _pr_sr = pd.Series(_pr_dict)
-                        _diff_sr = pr_sr.subtract(_pr_sr, level='dest').abs()
-                        diff = _diff_sr.sum()
-                        pr_sr = _pr_sr
-                        timeout -= 1
-                        # If the PR hasn't converged, it will print a message and continue
-                        if timeout == 0:
-                            print(
-                                f'\n-------> The combination {sim_func}: {pred_score} lambda={lambda_param} Timed Out!')
-                            print(
-                                f'Topic {topic} has failed to converge, finished with: diff={diff} epsilon={epsilon}\n')
-                    _score_list.append(pr_sr)
-                res_sr = pd.concat(_score_list)
-                res_sr.name = pred_score
-                full_df_pr_list.append(res_sr)
-                # self._write_results(res_df, sim_func, pred_score.split('_')[1], lambda_param)
-            # _full_df_pr = pd.concat(full_df_pr_list, axis=1)
+                    df = pd.DataFrame(_df)
+                    df = df.reset_index().drop('topic', axis=1).pivot(index='src', columns='dest')
+                    df.columns = df.columns.droplevel(0)
+                    graph = nx.from_pandas_adjacency(df, nx.DiGraph)
+                    pr_dict = nx.pagerank_numpy(graph, alpha=1)
+                    _score_list.append(pd.Series(pr_dict))
+                pr_sr = pd.concat(_score_list)
+                self._write_results(pr_sr, sim_func, pred_score.split('_')[1], lambda_param)
+                stime.stop()
 
     def _write_results(self, res_df: pd.Series, sim_func, pred_score, lambda_param):
         dir_path = dp.ensure_dir(f'{self.output_dir}/raw/{sim_func}/{self.predictor}/predictions/')
         file_name = f'predictions-{pred_score}+lambda+{lambda_param}'
         res_df.to_csv(path=f'{dir_path}/{file_name}', index=True, sep=' ', float_format='%f')
+
+
+def process_calc_pr(predictor, corpus, load):
+    pr_obj = PageRank(corpus, predictor, load=load)
+    pr_obj.calc_pagerank()
 
 
 def main(args):
@@ -195,11 +183,11 @@ def main(args):
     # print('\n\n\n------------!!!!!!!---------- Debugging Mode ------------!!!!!!!----------\n\n\n')
     # predictor = input('What predictor should be used for debugging?\n')
     # corpus = 'ROBUST'
-
     cores = mp.cpu_count() - 1
     if predictor and corpus:
-        pr_obj = PageRank(corpus, predictor, load=load)
-        pr_obj.calc_pagerank()
+        if predictor == 'all':
+            with mp.Pool(processes=cores) as pool:
+                pool.starmap(partial(process_calc_pr, corpus=corpus, load=load), PREDICTORS)
 
 
 if __name__ == '__main__':
