@@ -149,8 +149,8 @@ class CrossValidation:
             test_results.append(test_result)
         full_results_df = pd.DataFrame(full_results)
         full_results_df.to_json(
-            '{}/full_results_vector_for_{}_folds_{}_repetitions_{}.json'.format(self.output_dir, self.k, self.rep,
-                                                                                self.ap_func))
+            '{}/full_results_vector_for_{}_folds_{}_repetitions_{}_{}.json'.format(self.output_dir, self.k, self.rep,
+                                                                                self.ap_func, self.test))
         simple_results_df = pd.Series(simple_results)
         simple_results_df.to_json(
             ('{}/simple_results_vector_for_{}_folds_{}_repetitions_{}.json'.format(self.output_dir, self.k, self.rep,
