@@ -15,12 +15,15 @@ from queries_pre_process import filter_n_top_queries, filter_n_low_queries, add_
 from query_features import QueryFeatureFactory, load_full_features_df
 
 # Define the Font for the plots
-plt.rcParams.update({'font.size': 45, 'font.family': 'serif', 'font.weight': 'normal'})
+# plt.rcParams.update({'font.size': 45, 'font.family': 'serif', 'font.weight': 'normal'})
+
+# Define the Font for the plots
+plt.rcParams.update({'font.size': 35, 'font.family': 'Hind Guntur', 'font.weight': 'normal'})
 
 """The next three lines are used to force matplotlib to use font-Type-1 """
-plt.rcParams['ps.useafm'] = True
-plt.rcParams['pdf.use14corefonts'] = True
-plt.rcParams['text.usetex'] = True
+# plt.rcParams['ps.useafm'] = True
+# plt.rcParams['pdf.use14corefonts'] = True
+# plt.rcParams['text.usetex'] = True
 
 parser = argparse.ArgumentParser(description='Results generator for QPP with Reference lists graphs',
                                  usage='',
@@ -70,13 +73,13 @@ def plot_graphs(_df: pd.DataFrame, simi, corpus, group='Title'):
         mar = 0
         for predictor, pdf in sub_df.drop('direction', axis=1).groupby('predictor'):
             pdf.set_index('n_vars')['result'].plot(legend=True,
-                                                   title=f'\\textbf{{{NAMES_DICT[corpus]} {NAMES_DICT[direction]}}}',
+                                                   #title=f'{NAMES_DICT[corpus]} {NAMES_DICT[direction]} - {NAMES_DICT[simi]}',
                                                    marker=MARKERS[mar], linestyle=LINE_STYLES[mar],
                                                    label=NAMES_DICT[predictor], linewidth=5, markersize=15, mew=1,
                                                    # markerfacecolor='None',
                                                    color=COLORS[mar])
-            plt.xlabel('\\textbf{\\# of reference queries}')
-            plt.ylabel("\\textbf{Pearson}")
+            plt.xlabel('# of reference queries')
+            plt.ylabel("Pearson")
             plt.legend()
             mar += 1
         plt.show()
