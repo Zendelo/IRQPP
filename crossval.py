@@ -10,7 +10,8 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import RepeatedKFold
 
-from dataparser import ResultsReader, ensure_dir
+import dataparser as dp
+# from dataparser import ResultsReader, ensure_dir
 
 # TODO: change the functions to work with pandas methods such as idxmax
 # TODO: Consider change to the folds file to be more convenient for pandas DF
@@ -42,7 +43,7 @@ class CrossValidation:
         predictions_dir = os.path.abspath(os.path.normpath(os.path.expanduser(predictions_dir)))
         assert os.listdir(predictions_dir), f'{predictions_dir} is empty'
         self.output_dir = predictions_dir.replace('predictions', 'evaluation')
-        ensure_dir(self.output_dir)
+        dp.ensure_dir(self.output_dir)
         if ap_file:
             self.full_set = self._build_full_set(predictions_dir, ap_file)
             if '-' in ap_file:
@@ -77,11 +78,11 @@ class CrossValidation:
         list_ = []
         for file_ in all_files:
             fname = file_.split('-')[-1]
-            df = ResultsReader(file_, 'predictions').data_df
+            df = dp.ResultsReader(file_, 'predictions').data_df
             df = df.rename(columns={"score": f'score_{fname}'})
             list_.append(df)
         if ap_file:
-            ap_df = ResultsReader(ap_file, 'ap').data_df
+            ap_df = dp.ResultsReader(ap_file, 'ap').data_df
             list_.append(ap_df)
         full_set = pd.concat(list_, axis=1, sort=True)
         assert not full_set.empty, f'The Full set DF is empty, make sure that {predictions_dir} is not empty'
