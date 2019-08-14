@@ -42,7 +42,8 @@ class PageRank:
         self.norm_similarity_features_df = self.__normalize_similarity()
         self.similarity_measures = self.similarity_features_df.columns.tolist()
         self.var_cv = CrossValidation(file_to_load=self.folds, predictions_dir=self.vars_results_dir)
-        self.norm_prediction_scores = self.__normalize_predictions()
+        # self.norm_prediction_scores = self.__normalize_predictions()
+        self.raw_prediction_scores = self.__raw_predictions()
         self.prediction_scores = self.var_cv.full_set.columns.tolist()
         self.full_raw_weights_df = self.__initialize_full_weights_df()
         self.dict_all_options = self._set_weights()
@@ -90,12 +91,19 @@ class PageRank:
         _features_df = features_loader(self.corpus, self.features)
         return _features_df
 
+    # def __initialize_full_weights_df(self):
+    #     """This method merges the df of the normalized prediction scores with the normalized similarity features df,
+    #     adding the prediction score to the relevant destination query-node"""
+    #     _var_scores_df = pd.merge(left=self.norm_similarity_features_df,
+    #                               right=self.norm_prediction_scores.reset_index('topic', drop=True), left_on='dest',
+    #                               how='left', right_index=True)
+    #     return _var_scores_df
+
     def __initialize_full_weights_df(self):
         """This method merges the df of the normalized prediction scores with the normalized similarity features df,
         adding the prediction score to the relevant destination query-node"""
         _var_scores_df = pd.merge(left=self.norm_similarity_features_df,
-                                  right=self.norm_prediction_scores.reset_index('topic', drop=True), left_on='dest',
-                                  how='left', right_index=True)
+                                  right=self.raw_prediction_scores, left_on='dest', how='left', right_index=True)
         return _var_scores_df
 
     def _set_weights(self):
@@ -111,7 +119,7 @@ class PageRank:
 
     def _normalize_rows(self):
         """This method will normalize the weights of each row in the matrix W to be equal to 1 in order to make it
-        a legal right stochastic matrix. The rows of matrix W are all the outgoing edges from src node i"""
+        a legal right-stochastic matrix. The rows of matrix W are all the outgoing edges from src node i"""
         _dict = {}
         for params, df in self.dict_all_options.items():
             _list = []
@@ -131,6 +139,18 @@ class PageRank:
         z_n = df.groupby(['topic']).sum()
         norm_df = (df.groupby(['topic', 'qid']).sum() / z_n)
         return norm_df
+
+    def __raw_predictions(self):
+        """This method will normalize the predictions scores """
+        df = self.var_cv.full_set.reset_index()
+        # Add topic column to the scores df
+        # for topic, _ in self.similarity_features_df.groupby('topic'):
+        #     df.loc[df['qid'].str.startswith(topic), 'topic'] = topic
+        # df.set_index(['topic', 'qid'], inplace=True)
+        df.set_index('qid', inplace=True)
+        # z_n = df.groupby(['topic']).sum()
+        # norm_df = (df.groupby(['topic', 'qid']).sum() / z_n)
+        return df
 
     def __normalize_similarity(self):
         """This method will normalize the predictions scores """
@@ -179,10 +199,10 @@ def main(args):
     if uef:
         predictor = f'uef/{predictor}'
 
-    # # Debugging
-    # print('\n\n\n------------!!!!!!!---------- Debugging Mode ------------!!!!!!!----------\n\n\n')
-    # predictor = input('What predictor should be used for debugging?\n')
-    # corpus = 'ROBUST'
+    # Debugging
+    print('\n\n\n------------!!!!!!!---------- Debugging Mode ------------!!!!!!!----------\n\n\n')
+    predictor = input('What predictor should be used for debugging?\n')
+    corpus = 'ROBUST'
     cores = mp.cpu_count() - 1
     if predictor and corpus:
         if predictor == 'all':
