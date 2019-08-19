@@ -106,7 +106,10 @@ def add_topic_to_qdf_from_apdb(qdf, apdb):
 def add_topic_to_qdf(qdf: pd.DataFrame):
     """This functions will add a topic column to the queries DF"""
     if 'topic' not in qdf.columns:
-        qdf = qdf.assign(topic=lambda x: x.qid.apply(lambda y: y.split('-')[0]))
+        if 'qid' in qdf.columns:
+            qdf = qdf.assign(topic=lambda x: x.qid.apply(lambda y: y.split('-')[0]))
+        else:
+            qdf = qdf.reset_index().assign(topic=lambda x: x.qid.apply(lambda y: y.split('-')[0]))
     return qdf
 
 
