@@ -25,7 +25,7 @@ parser.add_argument('-c', '--corpus', default='ROBUST', type=str, help='corpus (
 #                     choices=['all', 'low', 'med', 'top'])
 parser.add_argument('-l', '--load', default=None, type=str, help='features file to load')
 parser.add_argument('--generate', help="generate new features file", action="store_true")
-parser.add_argument('--predict', help="generate new predictions", action="store_true")
+# parser.add_argument('--predict', help="generate new predictions", action="store_true")
 
 
 def jaccard_coefficient(st1: str, st2: str):
