@@ -50,28 +50,28 @@ class ResultsReader:
 
     def __read_results_data_2(self):
         """Assuming data is a res with 2 columns, 'Qid Score'"""
-        data_df = pd.read_table(self.data, delim_whitespace=True, header=None, index_col=0,
-                                names=['qid', 'score'],
-                                dtype={'qid': str, 'score': np.float64})
+        data_df = pd.read_csv(self.data, delim_whitespace=True, header=None, index_col=0,
+                              names=['qid', 'score'],
+                              dtype={'qid': str, 'score': np.float64})
         data_df.index = data_df.index.astype(str)
         data_df.sort_values(by=['qid', 'score'], ascending=[True, False], inplace=True)
         return data_df
 
     def __read_ap_data_2(self):
         """Assuming data is a res with 2 columns, 'Qid AP'"""
-        data_df = pd.read_table(self.data, delim_whitespace=True, header=None, index_col=0,
-                                names=['qid', 'ap'],
-                                dtype={'qid': str, 'ap': np.float64})
+        data_df = pd.read_csv(self.data, delim_whitespace=True, header=None, index_col=0,
+                              names=['qid', 'ap'],
+                              dtype={'qid': str, 'ap': np.float64})
         data_df.sort_values(by=['qid', 'ap'], ascending=[True, False], inplace=True)
         data_df.index = data_df.index.astype(str)
         return data_df
 
     def __read_results_data_4(self):
         """Assuming data is a res with 4 columns, 'Qid entropy cross_entropy Score'"""
-        data_df = pd.read_table(self.data, delim_whitespace=True, header=None, index_col=0,
-                                names=['qid', 'entropy', 'cross_entropy', 'score'],
-                                dtype={'qid': str, 'score': np.float64, 'entropy': np.float64,
-                                       'cross_entropy': np.float64})
+        data_df = pd.read_csv(self.data, delim_whitespace=True, header=None, index_col=0,
+                              names=['qid', 'entropy', 'cross_entropy', 'score'],
+                              dtype={'qid': str, 'score': np.float64, 'entropy': np.float64,
+                                     'cross_entropy': np.float64})
         data_df = data_df.filter(['qid', 'score'], axis=1)
         data_df.index = data_df.index.astype(str)
         data_df.sort_values(by=['qid', 'score'], ascending=[True, False], inplace=True)
@@ -79,10 +79,10 @@ class ResultsReader:
 
     def __read_trec_data(self):
         """Assuming data is a trec format results file with 6 columns, 'Qid entropy cross_entropy Score'"""
-        data_df = pd.read_table(self.data, delim_whitespace=True, header=None, index_col=0,
-                                names=['qid', 'Q0', 'docID', 'docRank', 'docScore', 'ind'],
-                                dtype={'qid': str, 'Q0': str, 'docID': str, 'docRank': int, 'docScore': float,
-                                       'ind': str})
+        data_df = pd.read_csv(self.data, delim_whitespace=True, header=None, index_col=0,
+                              names=['qid', 'Q0', 'docID', 'docRank', 'docScore', 'ind'],
+                              dtype={'qid': str, 'Q0': str, 'docID': str, 'docRank': int, 'docScore': float,
+                                     'ind': str})
         data_df = data_df.filter(['qid', 'docID', 'docRank', 'docScore'], axis=1)
         data_df.index = data_df.index.astype(str)
         data_df.sort_values(by=['qid', 'docRank'], ascending=True, inplace=True)
