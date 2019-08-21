@@ -35,7 +35,7 @@ PREDICTORS = ['clarity', 'wig', 'nqc', 'smv', 'rsd', 'qf', 'uef/clarity', 'uef/w
 
 
 class PageRank:
-    def __init__(self, corpus, predictor, load=True):
+    def __init__(self, corpus, predictor, load=False):
         self.corpus = corpus
         self.__set_paths(corpus, predictor)
         self.similarity_features_df = self.__initialize_features_df()
