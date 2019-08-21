@@ -812,6 +812,7 @@ class GenerateTable:
 
     def print_pagerank_latex_table(self):
         _df = self.cv.calc_pagerank_scores()
+        _df.to_pickle(f'{self.corpus}_pagerank_scores_df.pkl')
         print(_df.to_latex(header=True, multirow=False, multicolumn=False, index=False, escape=False,
                            index_names=False, column_format='lccc'))
 
