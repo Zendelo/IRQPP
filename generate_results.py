@@ -61,7 +61,8 @@ parser.add_argument('--qtype', default='basic', type=str, help='The type of quer
 parser.add_argument('-m', '--measure', default='pearson', type=str,
                     help='default correlation measure type is pearson', choices=['pearson', 'spearman', 'kendall'], )
 parser.add_argument('-t', '--table', type=str, default='all', help='the LaTeX table to be printed',
-                    choices=['basic', 'single', 'aggregated', 'fusion', 'referenceLists', 'SimRefPred', 'all'])
+                    choices=['basic', 'single', 'aggregated', 'fusion', 'referenceLists', 'SimRefPred', 'pageRank',
+                             'all'])
 parser.add_argument('--generate', help="generate new predictions", action="store_true")
 parser.add_argument('--lists', help="generate new lists", action="store_true")
 parser.add_argument('--svm', help="generate SVM predictions", action="store_true")
@@ -868,10 +869,10 @@ def main(args):
     # Stores true if oracle tables should be printed for the QPP-Reference similarity model
     oracle = args.oracle
 
-    # Debugging - should be in comment when not debugging !
-    print('\n------+++^+++------ Debugging !! ------+++^+++------\n')
-    corpus = 'ROBUST'
-    table = 'pageRank'
+    # # Debugging - should be in comment when not debugging !
+    # print('\n------+++^+++------ Debugging !! ------+++^+++------\n')
+    # corpus = 'ROBUST'
+    # table = 'pageRank'
 
     base_dir = '~/QppUqvProj/Results/{}'.format(corpus)
     cv_map_file = '{}/test/2_folds_30_repetitions.json'.format(base_dir)
