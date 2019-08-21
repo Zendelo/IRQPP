@@ -37,32 +37,44 @@ def calc_stats(full_df: pd.DataFrame, ap_df: pd.DataFrame):
         worst_results.append(pd.DataFrame.from_dict(worst_result, orient='index'))
     best_df = pd.concat(best_results, axis=1)
     worst_df = pd.concat(worst_results, axis=1)
-    best_df.to_pickle('best_results.pkl')
-    worst_df.to_pickle('worst_results.pkl')
     return best_df, worst_df
 
 
-def main(corpus, similarity, predictor):
+def calc_scores(corpus, similarity, predictor):
     cv_folds = dp.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/2_folds_30_repetitions.json')
     ap_file = dp.ensure_file(f'~/QppUqvProj/Results/{corpus}/test/raw/QLmap1000')
+    pkl_dir = dp.ensure_dir(f'~/QppUqvProj/Results/{corpus}/test/pageRank/pkl_files/{predictor}')
     predictions_dir = dp.ensure_dir(
-        f'~/QppUqvProj/Results/{corpus}/uqvPredictions/referenceLists/pageRank/raw/{similarity}/{predictor}/predictions/')
+        f'~/QppUqvProj/Results/{corpus}/uqvPredictions/referenceLists/pageRank/raw/{similarity}/{predictor}/predictions')
+    # results_dir = dp.ensure_dir(
+    #     f'QppUqvProj/Results/{corpus}/uqvPredictions/referenceLists/pageRank/scores/{similarity}/{predictor}/predictions')
     ap_obj = dp.ResultsReader(ap_file, 'ap')
     ap_df = add_topic_to_qdf(ap_obj.data_df)
     cv_obj = CrossValidation(predictions_dir=predictions_dir, file_to_load=cv_folds)
     full_results_df = add_topic_to_qdf(cv_obj.full_set)
+    best_file = f'{pkl_dir}/{similarity}_best_results.pkl'
+    worst_file = f'{pkl_dir}/{similarity}_worst_results.pkl'
     try:
-        best_file = dp.ensure_file('best_results.pkl')
-        best_df = pd.read_pickle(best_file)
+        best_df = pd.read_pickle(dp.ensure_file(best_file))
+        worst_df = pd.read_pickle(dp.ensure_file(worst_file))
     except AssertionError:
         best_df, worst_df = calc_stats(full_results_df, ap_df)
-    print(best_df)
+        best_df.to_pickle(best_file)
+        worst_df.to_pickle(worst_file)
+    cv_obj.full_set = best_df
+    best_score = cv_obj.calc_test_results()
+    cv_obj.__delattr__('corrs_df')
+    cv_obj.full_set = worst_df
+    worst_score = cv_obj.calc_test_results()
+    return best_score, worst_score
 
 
 if __name__ == '__main__':
+    # Debugging
+    print('\n\n\n------------!!!!!!!---------- Debugging Mode ------------!!!!!!!----------\n\n\n')
+    predictor = input('What predictor should be used for debugging?\n')
     corpus = 'ROBUST'
     similarity = 'Jac_coefficient'
-    predictor = 'wig'
     timer = Timer('Total time')
-    main(corpus, similarity, predictor)
+    calc_scores(corpus, similarity, predictor)
     timer.stop()

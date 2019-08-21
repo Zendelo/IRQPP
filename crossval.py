@@ -11,6 +11,7 @@ import pandas as pd
 from sklearn.model_selection import RepeatedKFold
 
 import dataparser as dp
+
 # from dataparser import ResultsReader, ensure_dir
 
 # TODO: change the functions to work with pandas methods such as idxmax
@@ -60,7 +61,10 @@ class CrossValidation:
             self.file_name = self._generate_k_folds()
             self.__load_k_folds()
         if ap_file:
+            self.calc_function = self.calc_corr_df
             self.corrs_df = self.__calc_correlations()
+        else:
+            self.calc_function = self.calc_scores_df
 
     @staticmethod
     def _build_full_set(predictions_dir, ap_file=None):
@@ -119,15 +123,22 @@ class CrossValidation:
                 test_queries = np.array(self.data_sets_map[set_id][subset]['test']).astype(str)
                 train_set = self.full_set.loc[train_queries]
                 test_set = self.full_set.loc[test_queries]
-                corr_results[set_id][subset] = {'train': self.calc_corr_df(train_set),
-                                                'test': self.calc_corr_df(test_set)}
+                corr_results[set_id][subset] = {'train': self.calc_function(train_set),
+                                                'test': self.calc_function(test_set)}
         corrs_df = pd.DataFrame(corr_results)
-        corrs_df.to_json('{}/correlations_for_{}_folds_{}_repetitions_{}.json'.format(self.output_dir, self.k, self.rep,
-                                                                                      self.ap_func))
+        try:
+            corrs_df.to_json(
+                '{}/correlations_for_{}_folds_{}_repetitions_{}.json'.format(self.output_dir, self.k, self.rep,
+                                                                             self.ap_func))
+        except AttributeError:
+            corrs_df.to_json(
+                '{}/correlations_for_{}_folds_{}_repetitions_pageRank.json'.format(self.output_dir, self.k, self.rep))
         return corrs_df
 
     def calc_test_results(self):
-        sets = self.corrs_df.columns
+        if not hasattr(self, 'corrs_df'):
+            self.corrs_df = self.__calc_correlations()
+        sets = self.data_sets_map.columns
         full_results = defaultdict(dict)
         simple_results = defaultdict()
         test_results = []
@@ -149,13 +160,24 @@ class CrossValidation:
             simple_results['set {}'.format(set_id)] = test_result
             test_results.append(test_result)
         full_results_df = pd.DataFrame(full_results)
-        full_results_df.to_json(
-            '{}/full_results_vector_for_{}_folds_{}_repetitions_{}_{}.json'.format(self.output_dir, self.k, self.rep,
-                                                                                self.ap_func, self.test))
+        try:
+            full_results_df.to_json(
+                '{}/full_results_vector_for_{}_folds_{}_repetitions_{}_{}.json'.format(self.output_dir, self.k,
+                                                                                       self.rep, self.ap_func,
+                                                                                       self.test))
+        except AttributeError:
+            full_results_df.to_json(
+                '{}/full_results_vector_for_{}_folds_{}_repetitions_pageRank_{}.json'.format(self.output_dir, self.k,
+                                                                                             self.rep, self.test))
+
         simple_results_df = pd.Series(simple_results)
-        simple_results_df.to_json(
-            ('{}/simple_results_vector_for_{}_folds_{}_repetitions_{}.json'.format(self.output_dir, self.k, self.rep,
-                                                                                   self.ap_func)))
+        try:
+            simple_results_df.to_json(('{}/simple_results_vector_for_{}_folds_{}_repetitions_{}.json'.format(
+                self.output_dir, self.k, self.rep, self.ap_func)))
+        except AttributeError:
+            simple_results_df.to_json(('{}/simple_results_vector_for_{}_folds_{}_repetitions_pageRank.json'.format(
+                self.output_dir, self.k, self.rep)))
+
         mean = np.mean(test_results)
         print(test_results)
         print('{:.3f}'.format(mean))
@@ -169,6 +191,9 @@ class CrossValidation:
             else:
                 continue
         return dict_
+
+    def calc_scores_df(self, df):
+        return df.mean().to_dict()
 
     @staticmethod
     def read_eval_results(results_file):
@@ -198,6 +223,15 @@ def main(args):
     load_file = args.load
     generate = args.generate
     predictions_dir = args.predictions
+
+    # Debugging
+    print('\n\n\n------------!!!!!!!---------- Debugging Mode ------------!!!!!!!----------\n\n\n')
+    predictor = input('What predictor should be used for debugging?\n')
+    corpus = 'ROBUST'
+    labeled_file = f'/home/olegzendel/QppUqvProj/Results/{corpus}/test/ref/QLmap1000-title'
+    load_file = f'/home/olegzendel/QppUqvProj/Results/{corpus}/test/2_folds_30_repetitions.json'
+    predictions_dir = f'/home/olegzendel/QppUqvProj/Results/{corpus}/uqvPredictions/referenceLists/title/all_vars/general/jac/{predictor}/predictions/'
+
     if generate:
         y = CrossValidation(k=splits, rep=repeats, predictions_dir=predictions_dir, load=False,
                             test=correlation_measure, ap_file=labeled_file)

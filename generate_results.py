@@ -12,31 +12,36 @@ import pandas as pd
 
 from Timer.timer import Timer
 from crossval import CrossValidation
+import pageRank.pr_eval as pr
 
-# TODO: Add a check that all necessary files exist on startup (to avoid later crash)
+# TODO: Add a check that all necessary files exist on startup (to avoid later crush)
 # TODO: Add parallelization where possible
-# TODO: Go over all codes and make sure no implicit sorted files assumptions exist
 # TODO: Create a single set_paths class method and replace all the paths with parameters
 # TODO: Replace the print functions with logger output
 
 PREDICTORS = ['clarity', 'nqc', 'wig', 'smv', 'qf', 'rsd']
-UEF_PREDICTORS = ['uef/{}'.format(p) for p in PREDICTORS]
-UEF_PREDICTORS.remove('uef/smv')
-UEF_PREDICTORS.remove('uef/rsd')
+# UEF_PREDICTORS = ['uef/{}'.format(p) for p in PREDICTORS]
+# UEF_PREDICTORS.remove('uef/smv')
+# UEF_PREDICTORS.remove('uef/rsd')
 PRE_RET_PREDICTORS = ['preret/AvgIDF', 'preret/AvgSCQTFIDF', 'preret/AvgVarTFIDF', 'preret/MaxIDF',
                       'preret/MaxSCQTFIDF', 'preret/MaxVarTFIDF']
-PREDICTORS = PRE_RET_PREDICTORS + PREDICTORS
+# PREDICTORS = PRE_RET_PREDICTORS + PREDICTORS
+# PREDICTORS = ['preret/AvgSCQTFIDF', 'preret/MaxIDF', 'wig']
+UEF_PREDICTORS = ['uef/clarity']
+# SIM_REF_PREDICTORS = {'jcP': 'Jaccard', 'topDocsP': 'TopDocs', 'rboP': 'RBO', 'FrboP': 'RBO-F', 'geo': 'GEO'}
 SIM_REF_PREDICTORS = {'jcP': 'Jaccard', 'topDocsP': 'TopDocs', 'rboP': 'RBO', 'FrboP': 'RBO-F', 'geo': 'GEO'}
 NUM_DOCS = [5, 10, 25, 50, 100, 250, 500, 1000]
 LIST_CUT_OFF = [5, 10, 25, 50, 100]
-QUANTILES = ['all', 'high', 'low', 'low-0']
+QUANTILES = ['all', 'high', 'low-0', 'cref']
 # AGGREGATE_FUNCTIONS = ['avg', 'max', 'med', 'min', 'std', 'combsum']
 AGGREGATE_FUNCTIONS = ['avg', 'max', 'med', 'std']
-SINGLE_FUNCTIONS = ['title', 'top', 'low', 'medh']
+# SINGLE_FUNCTIONS = ['title', 'top', 'low', 'medh']
+SINGLE_FUNCTIONS = ['top', 'low', 'medh', 'title']
 CORR_MEASURES = ['pearson', 'kendall']
 REFERENCE_FUNCTIONS = ['uni', 'jac', 'sim', 'rbo', 'rbof', 'geo']
 REFERENCE_TITLES = ['Uniform', 'Jaccard', 'TopDocs', 'RBO', 'RBO-F', 'GEO']
-QUERY_GROUPS = {'title': 'Title', 'top': 'MaxAP', 'low': 'MinAP', 'medh': 'MedHiAP', 'medl': 'MedLoAP'}
+# QUERY_GROUPS = {'title': 'Title', 'top': 'MaxAP', 'low': 'MinAP', 'medh': 'MedHiAP', 'medl': 'MedLoAP'}
+QUERY_GROUPS = {'top': 'MaxAP', 'low': 'MinAP', 'medh': 'MedHiAP', 'title': 'Title'}
 SPLITS = 2
 REPEATS = 30
 
@@ -598,6 +603,30 @@ class CrossVal:
         res_df.insert(loc=0, column='Function', value='basic')
         return res_df
 
+    def calc_pagerank_scores(self):
+        corpus = 'ROBUST' if 'ROBUST' in self.base_dir else 'ClueWeb12B'
+        results = defaultdict()
+        for predictor in PREDICTORS:
+            scores_best = {}
+            scores_worst = {}
+            for similarity in ['Jac_coefficient', 'RBO_EXT_100', 'RBO_FUSED_EXT_100', 'Top_10_Docs_overlap']:
+                _score_best, _score_worst = pr.calc_scores(corpus, similarity, predictor)
+                scores_best[similarity] = _score_best
+                scores_worst[similarity] = _score_worst
+            b_sr = pd.Series(scores_best)
+            w_sr = pd.Series(scores_worst)
+            b_sr.name = 'score_best'
+            w_sr.name = 'score_worst'
+            results[predictor] = pd.DataFrame([b_sr, w_sr])
+        res_df = pd.concat(results)
+        # _uef_predictors = ['uef({})'.format(p) for p in PREDICTORS]
+        # res_df = res_df.reindex(index=PREDICTORS)
+        # res_df.index = res_df.index.str.upper()
+        res_df.reset_index(inplace=True)
+        # res_df.columns = ['predictor'] + CORR_MEASURES
+        # res_df.insert(loc=0, column='Function', value='basic')
+        return res_df
+
 
 class GenerateTable:
     """The class implements methods to print LaTeX tables"""
@@ -751,7 +780,7 @@ class GenerateTable:
                 table = _df.to_latex(header=False, multirow=False, multicolumn=False, index=False, escape=False,
                                      index_names=False, column_format='lcccccc')
                 table = table.replace('\\begin{tabular}{lcccccc}', '')
-                table = table.replace('\\end{tabular}', '')
+                table = table.replace('\\end{tabular}\n', '')
                 table = table.replace(f'{predictor.upper()}', '')
                 table = table.replace('\\toprule', '\\multirow{{5}}{{*}}{{{}}}'.format(predictor.upper()))
                 print(table, end='')
@@ -779,6 +808,11 @@ class GenerateTable:
             print('\\end{center}')
             print(f'The maximum value in the table is: {max(tables_max_vals)}')
             print('\\end{table} \n')
+
+    def print_pagerank_latex_table(self):
+        _df = self.cv.calc_pagerank_scores()
+        print(_df.to_latex(header=True, multirow=False, multicolumn=False, index=False, escape=False,
+                           index_names=False, column_format='lccc'))
 
 
 def ensure_dir(file_path):
@@ -818,7 +852,8 @@ def main(args):
                        'aggregated': GenerateTable.print_agg_latex_table,
                        'fusion': GenerateTable.print_fused_latex_table,
                        'referenceLists': GenerateTable.print_ref_latex_table,
-                       'SimRefPred': GenerateTable.print_sim_ref_latex_table}
+                       'SimRefPred': GenerateTable.print_sim_ref_latex_table,
+                       'pageRank': GenerateTable.print_pagerank_latex_table}
 
     queries = args.queries
     corpus = args.corpus
@@ -833,10 +868,10 @@ def main(args):
     # Stores true if oracle tables should be printed for the QPP-Reference similarity model
     oracle = args.oracle
 
-    # # Debugging - should be in comment when not debugging !
-    # print('\n------+++^+++------ Debugging !! ------+++^+++------\n')
-    # corpus = 'ClueWeb12B'
-    # table = 'referenceLists'
+    # Debugging - should be in comment when not debugging !
+    print('\n------+++^+++------ Debugging !! ------+++^+++------\n')
+    corpus = 'ROBUST'
+    table = 'pageRank'
 
     base_dir = '~/QppUqvProj/Results/{}'.format(corpus)
     cv_map_file = '{}/test/2_folds_30_repetitions.json'.format(base_dir)
