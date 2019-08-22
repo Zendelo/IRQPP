@@ -27,8 +27,14 @@ def calc_stats(full_df: pd.DataFrame, ap_df: pd.DataFrame):
         for topic, _df in pr_df.groupby('topic'):
             _max_var_ap = max_ap_vars.loc[topic].qid
             _min_var_ap = min_ap_vars.loc[topic].qid
-            pr_of_max = _df.loc[_df['qid'] == _max_var_ap, col].values[0]
-            pr_of_min = _df.loc[_df['qid'] == _min_var_ap, col].values[0]
+            if type(_max_var_ap) is str:
+                pr_of_max = _df.loc[_df['qid'] == _max_var_ap, col].values[0]
+            else:
+                pr_of_max = np.mean(_df.loc[_df['qid'].isin(_max_var_ap), col].values)
+            if type(_min_var_ap) is str:
+                pr_of_min = _df.loc[_df['qid'] == _min_var_ap, col].values[0]
+            else:
+                pr_of_min = np.mean(_df.loc[_df['qid'].isin(_min_var_ap), col].values)
             best_var_score = np.count_nonzero(_df[col] < pr_of_max) / len(_df)
             worst_var_score = np.count_nonzero(_df[col] > pr_of_min) / len(_df)
             best_result[topic] = {col: best_var_score}
@@ -54,13 +60,16 @@ def calc_scores(corpus, similarity, predictor):
     full_results_df = add_topic_to_qdf(cv_obj.full_set)
     best_file = f'{pkl_dir}/{similarity}_best_results.pkl'
     worst_file = f'{pkl_dir}/{similarity}_worst_results.pkl'
-    try:
-        best_df = pd.read_pickle(dp.ensure_file(best_file))
-        worst_df = pd.read_pickle(dp.ensure_file(worst_file))
-    except AssertionError:
-        best_df, worst_df = calc_stats(full_results_df, ap_df)
-        best_df.to_pickle(best_file)
-        worst_df.to_pickle(worst_file)
+    # try:
+    #     best_df = pd.read_pickle(dp.ensure_file(best_file))
+    #     worst_df = pd.read_pickle(dp.ensure_file(worst_file))
+    # except AssertionError:
+    #     best_df, worst_df = calc_stats(full_results_df, ap_df)
+    #     best_df.to_pickle(best_file)
+    #     worst_df.to_pickle(worst_file)
+    best_df, worst_df = calc_stats(full_results_df, ap_df)
+    best_df.to_pickle(best_file)
+    worst_df.to_pickle(worst_file)
     cv_obj.full_set = best_df
     best_score = cv_obj.calc_test_results()
     cv_obj.__delattr__('corrs_df')
