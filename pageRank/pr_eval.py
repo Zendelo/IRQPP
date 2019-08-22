@@ -16,8 +16,8 @@ SIMILARITY_MEASURES = ['Jac_coefficient', 'RBO_EXT_100', 'Top_10_Docs_overlap', 
 
 
 def calc_stats(full_df: pd.DataFrame, ap_df: pd.DataFrame):
-    max_ap_vars = ap_df.groupby('topic').max()
-    min_ap_vars = ap_df.groupby('topic').min()
+    max_ap_vars = ap_df.loc[ap_df.groupby('topic')['ap'].transform(max) == ap_df['ap']].set_index('topic')
+    min_ap_vars = ap_df.loc[ap_df.groupby('topic')['ap'].transform(min) == ap_df['ap']].set_index('topic')
     best_results = []
     worst_results = []
     for col in full_df.set_index(['topic', 'qid']).columns:
