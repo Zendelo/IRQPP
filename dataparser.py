@@ -319,6 +319,16 @@ def convert_vid_to_qid(df: pd.DataFrame):
     return _df
 
 
+def add_topic_to_qdf(qdf: pd.DataFrame):
+    """This functions will add a topic column to the queries DF"""
+    if 'topic' not in qdf.columns:
+        if 'qid' in qdf.columns:
+            qdf = qdf.assign(topic=lambda x: x.qid.apply(lambda y: y.split('-')[0]))
+        else:
+            qdf = qdf.reset_index().assign(topic=lambda x: x.qid.apply(lambda y: y.split('-')[0]))
+    return qdf
+
+
 def read_rm_prob_files(data_dir, number_of_docs, clipping='*'):
     """The function creates a DF from files, the probabilities are p(w|RM1) for all query words
     If a query term doesn't appear in the file, it's implies p(w|R)=0"""
