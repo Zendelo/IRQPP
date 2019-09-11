@@ -128,8 +128,8 @@ class QueriesTextParser:
         :param queries_file: path to txt queries file
         :param kind: 'original' or 'uqv'
         """
-        self.queries_df = pd.read_table(queries_file, delim_whitespace=False, delimiter=':', header=None,
-                                        names=['qid', 'text'], dtype={'qid': str, 'text': str})
+        self.queries_df = pd.read_csv(queries_file, delim_whitespace=False, delimiter=':', header=None,
+                                      names=['qid', 'text'], dtype={'qid': str, 'text': str})
         self.queries_dict = self.__generate_queries_dict()
         self.kind = kind.lower()
         if self.kind == 'uqv':
@@ -189,8 +189,8 @@ class QrelsParser:
         self.queries = queries
         self.uqv = uqv
         self._add_original_queries()
-        self.results_df = pd.read_table(file, delim_whitespace=True, header=None, names=['qid', 'iter', 'docNo', 'rel'],
-                                        dtype={'qid': str, 'iter': int, 'docNo': str, 'rel': int})
+        self.results_df = pd.read_csv(file, delim_whitespace=True, header=None, names=['qid', 'iter', 'docNo', 'rel'],
+                                      dtype={'qid': str, 'iter': int, 'docNo': str, 'rel': int})
         self.results_dict = defaultdict(list)
         self._generate_qrels_dict()
         self.new_results_dict = defaultdict(list)
@@ -338,7 +338,7 @@ def read_rm_prob_files(data_dir, number_of_docs, clipping='*'):
     _list = []
     for _file in data_files:
         _col = f'{_file.rsplit("/")[-1].rsplit("-")[-1]}'
-        _df = pd.read_table(_file, names=['qid', 'term', _col], sep=' ')
+        _df = pd.read_csv(_file, names=['qid', 'term', _col], sep=' ')
         _df = _df.astype({'qid': str}).set_index(['qid', 'term'])
         _list.append(_df)
     return pd.concat(_list, axis=1).fillna(0)
