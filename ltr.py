@@ -1,4 +1,4 @@
- """This code will construct the features vectors for the learning process"""
+"""This code will construct the features vectors for the learning process"""
 
 import argparse
 import glob
@@ -17,6 +17,12 @@ from Timer.timer import Timer
 
 
 def jaccard_coefficient(st1: str, st2: str):
+    """
+    Calculate the Jaccard coefficient between two strings
+    :param st1: string of text
+    :param st2: string of text
+    :return: the jaccard coefficient [0,1] between the input strings
+    """
     st1_set = set(st1.split())
     st2_set = set(st2.split())
     union = st1_set.union(st2_set)
@@ -25,6 +31,12 @@ def jaccard_coefficient(st1: str, st2: str):
 
 
 def list_overlap(x: list, y: list):
+    """
+    Calculate the overlap for the items between 2 lists: (#joint items)/(length of the longest list)
+    :param x: a list of items
+    :param y: a list of items
+    :return: the overlap [0,1] between the input lists
+    """
     list_len = max(len(x), len(y))
     x_set = set(x)
     intersection = x_set.intersection(y)
@@ -32,6 +44,10 @@ def list_overlap(x: list, y: list):
 
 
 class FeaturesFactory:
+    """
+    The class is used to generate train-test data sets for LTR
+    """
+
     def __init__(self, corpus, predictor, **kwargs):
         self.corpus = corpus
         self.predictor = predictor
@@ -64,6 +80,13 @@ class FeaturesFactory:
         return pd.DataFrame(_list)
 
     def calc_list_features(self, overlap_size=100, rbo_size=100):
+        """
+        Calculates list similarity features for all the query pairs (already existing) in the self.features_df.
+        The method calculates the features for the passed list sizes and returns a new df with the result
+        :param overlap_size: size of the list for overlap feature
+        :param rbo_size: size of the list for RBO feature
+        :return: pandas DF, with the calculated features (based on the self.features_df)
+        """
         features_df = self.features_df.set_index(['topic', 'q1', 'q2']).assign(overlap=None, rbo=None)
         for topic, (q1, q2) in self.features_df.set_index('topic').loc[:, ['q1', 'q2']].iterrows():
             over_sim = list_overlap(self.ql_results_obj.get_docs_by_qid(q1, overlap_size),
@@ -76,6 +99,10 @@ class FeaturesFactory:
         return df
 
     def calc_txt_features(self):
+        """
+        Calculates the text similarity features, based on the index in self.features_df
+        :return: pandas DF, with the calculated features (based on the self.features_df)
+        """
         features_df = self.features_df.set_index(['topic', 'q1', 'q2']).assign(jac=None)
         for topic, (q1, q2) in self.features_df.set_index('topic').loc[:, ['q1', 'q2']].iterrows():
             q1_txt = self.queries_obj.queries_df.loc[q1].text
@@ -85,6 +112,10 @@ class FeaturesFactory:
         return features_df
 
     def load_similarity_features_df(self):
+        """
+        Try loading the features df from a file, if fails will generate a new one
+        :return: pandas DF with the similarity features
+        """
         sim_features_file = f'{self.pkl_dir}/similarity_features_df.pkl'
         try:
             df_file = dp.ensure_file(sim_features_file)
@@ -96,6 +127,10 @@ class FeaturesFactory:
         return df
 
     def calc_features_parallel(self):
+        """
+        Creates a Pool and calculates the features using parallel processes
+        :return: pandas DF features
+        """
         with mp.Pool(processes=mp.cpu_count()) as pool:
             result = pool.starmap(self.calc_list_features, ((i, i) for i in {5, 10, 25, 50, 100, 250, 500}))
         pool.close()
