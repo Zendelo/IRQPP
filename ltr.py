@@ -63,21 +63,25 @@ class FeaturesFactory:
                 _list.append({'topic': topic, 'q1': q1, 'q2': q2})
         return pd.DataFrame(_list)
 
-    def calc_features(self, overlap_size=100, rbo_size=100):
-        features_df = self.features_df.set_index(['topic', 'q1', 'q2']).assign(jac=None, overlap=None, rbo=None)
+    def calc_list_features(self, overlap_size=100, rbo_size=100):
+        features_df = self.features_df.set_index(['topic', 'q1', 'q2']).assign(overlap=None, rbo=None)
+        for topic, (q1, q2) in self.features_df.set_index('topic').loc[:, ['q1', 'q2']].iterrows():
+            over_sim = list_overlap(self.ql_results_obj.get_docs_by_qid(q1, overlap_size),
+                                    self.ql_results_obj.get_docs_by_qid(q2, overlap_size))
+            rbo_sim = rbo_dict(self.ql_results_obj.get_res_dict_by_qid(q1, rbo_size),
+                               self.ql_results_obj.get_res_dict_by_qid(q2, rbo_size))['min']
+
+            features_df.loc[topic, q1, q2] = [over_sim, rbo_sim]
+        df = features_df.rename(columns={'overlap': f'overlap_{overlap_size}', 'rbo': f'rbo_{rbo_size}'})
+        return df
+
+    def calc_txt_features(self):
+        features_df = self.features_df.set_index(['topic', 'q1', 'q2']).assign(jac=None)
         for topic, (q1, q2) in self.features_df.set_index('topic').loc[:, ['q1', 'q2']].iterrows():
             q1_txt = self.queries_obj.queries_df.loc[q1].text
             q2_txt = self.queries_obj.queries_df.loc[q2].text
             jac_sim = jaccard_coefficient(q1_txt, q2_txt)
-
-            over_sim = list_overlap(self.ql_results_obj.get_docs_by_qid(q1, overlap_size),
-                                    self.ql_results_obj.get_docs_by_qid(q2, overlap_size))
-
-            rbo_sim = rbo_dict(self.ql_results_obj.get_res_dict_by_qid(q1, rbo_size),
-                               self.ql_results_obj.get_res_dict_by_qid(q2, rbo_size))['min']
-
-            features_df.loc[topic, q1, q2] = [jac_sim, over_sim, rbo_sim]
-        features_df.rename({'overlap': f'overlap_{overlap_size}', 'rbo': f'rbo_{rbo_size}'})
+            features_df.loc[topic, q1, q2] = jac_sim
         return features_df
 
     def load_similarity_features_df(self):
@@ -93,9 +97,10 @@ class FeaturesFactory:
 
     def calc_features_parallel(self):
         with mp.Pool(processes=mp.cpu_count()) as pool:
-            result = pool.starmap(self.calc_features, ((i, i) for i in {5, 10, 25, 50, 100, 250, 500}))
+            result = pool.starmap(self.calc_list_features, ((i, i) for i in {5, 10, 25, 50, 100, 250, 500}))
         pool.close()
-        return pd.concat(result, axis=0)
+        result.append(self.calc_txt_features())
+        return pd.concat(result, axis=1)
 
 
 if __name__ == '__main__':
