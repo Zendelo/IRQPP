@@ -1,4 +1,4 @@
-"""This code will construct the features vectors for the learning process"""
+ """This code will construct the features vectors for the learning process"""
 
 import argparse
 import glob
