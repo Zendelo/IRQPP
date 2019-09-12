@@ -45,12 +45,12 @@ def list_overlap(x: list, y: list):
 
 class FeaturesFactory:
     """
-    The class is used to generate train-test data sets for LTR
+    The class is used to generate full similarity features DF
     """
 
-    def __init__(self, corpus, predictor, **kwargs):
+    def __init__(self, corpus):
         self.corpus = corpus
-        self.predictor = predictor
+        # self.predictor = predictor
         # self.ql_results_file = None
         # self.queries_txt_file = None
         # self.predictions_output_dir = None
@@ -68,7 +68,7 @@ class FeaturesFactory:
         _corpus_dat_dir = dp.ensure_dir(f'~/QppUqvProj/data/{self.corpus}')
         self.ql_results_file = dp.ensure_file(f'{_corpus_res_dir}/test/raw/QL.res')
         self.queries_txt_file = dp.ensure_file(f'{_corpus_dat_dir}/queries_{self.corpus}_UQV_full.stemmed.txt')
-        self.predictions_dir = dp.ensure_dir(f'{_corpus_res_dir}/uqvPredictions/raw/{self.predictor}')
+        # self.predictions_dir = dp.ensure_dir(f'{_corpus_res_dir}/uqvPredictions/raw/{self.predictor}')
         self.pkl_dir = dp.ensure_dir(f'{_corpus_res_dir}/test/raw/pkl_files/')
 
     def initialize_features_df(self):
@@ -138,6 +138,40 @@ class FeaturesFactory:
         return pd.concat(result, axis=1)
 
 
+class DataSetsFactory:
+    """
+    The class is used to generate train-test data sets for LTR
+    """
+
+    def __init__(self, corpus, predictor, similarity_features_df: pd.DataFrame, test_queries='top'):
+        self.corpus = corpus
+        self.predictor = predictor
+        self.test_queries = test_queries
+        self.similarity_features_df = similarity_features_df
+        self.__set_paths()
+        self.test_queries_obj = dp.QueriesTextParser(self.test_queries_file, kind='uqv')
+        # self.test_queries_obj.queries_df = dp.add_topic_to_qdf(self.test_queries_obj.queries_df)
+
+    def __set_paths(self):
+        """This method sets the default paths of the files and the working directories, it assumes the standard naming
+         convention of the project"""
+        _corpus_res_dir = dp.ensure_dir(f'~/QppUqvProj/Results/{self.corpus}')
+        _corpus_dat_dir = dp.ensure_dir(f'~/QppUqvProj/data/{self.corpus}')
+        self.test_queries_file = dp.ensure_file(f'{_corpus_dat_dir}/queries_{self.corpus}_{self.test_queries}.txt')
+        self.ql_results_file = dp.ensure_file(f'{_corpus_res_dir}/test/raw/QL.res')
+        # self.queries_txt_file = dp.ensure_file(f'{_corpus_dat_dir}/queries_{self.corpus}_UQV_full.stemmed.txt')
+        self.predictions_dir = dp.ensure_dir(f'{_corpus_res_dir}/uqvPredictions/raw/{self.predictor}')
+        self.pkl_dir = dp.ensure_dir(f'{_corpus_res_dir}/test/raw/pkl_files/')
+
+    def filter_features_df(self):
+        """
+        Remove the test queries from the features_df
+        """
+        self.similarity_features_df.drop()
+        # df.drop(index='301-1-1', level='q1').head()
+        return self.test_queries_obj.queries_dict.keys()
+
+
 if __name__ == '__main__':
     # Debugging
     # corpus = 'ClueWeb12B'
@@ -145,6 +179,12 @@ if __name__ == '__main__':
     predictor = 'wig'
     print('\n------+++^+++------ Debugging !! ------+++^+++------\n')
 
-    tes = FeaturesFactory(corpus, predictor)
-    # tes.calc_features()
-    print(tes.load_similarity_features_df())
+    similarity_features_obj = FeaturesFactory(corpus)
+    features_df = similarity_features_obj.load_similarity_features_df()
+    # print(features_df)
+
+    data_set_obj = DataSetsFactory(corpus, predictor, features_df)
+    df = data_set_obj.filter_features_df()
+    print(df)
+
+    # df.loc[(df['q1'] == '700-7-1') | (df['q2'] == '700-7-1')]
