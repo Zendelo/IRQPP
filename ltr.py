@@ -167,9 +167,8 @@ class DataSetsFactory:
         """
         Remove the test queries from the features_df
         """
-        self.similarity_features_df.drop()
-        # df.drop(index='301-1-1', level='q1').head()
-        return self.test_queries_obj.queries_dict.keys()
+        test_vids = self.test_queries_obj.queries_dict.keys()
+        return self.similarity_features_df.drop(index=test_vids, level='q1').drop(index=test_vids, level='q2')
 
 
 if __name__ == '__main__':
@@ -186,5 +185,3 @@ if __name__ == '__main__':
     data_set_obj = DataSetsFactory(corpus, predictor, features_df)
     df = data_set_obj.filter_features_df()
     print(df)
-
-    # df.loc[(df['q1'] == '700-7-1') | (df['q2'] == '700-7-1')]
