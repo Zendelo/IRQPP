@@ -304,35 +304,35 @@ class CrossVal:
             # dir of aggregated prediction results
             _predictions_dir = os.path.normpath('{}/{}/predictions'.format(predictions_dir, p))
             # dir of aggregated uef prediction results
-            _uef_predictions_dir = os.path.normpath('{}/uef/{}/predictions'.format(predictions_dir, p))
+            # _uef_predictions_dir = os.path.normpath('{}/uef/{}/predictions'.format(predictions_dir, p))
             # list to save non uef results for a specific predictor with different AP files
             _p_res = list()
             # list to save uef results
-            _uef_p_res = list()
+            # _uef_p_res = list()
             _index = list()
             for agg in AGGREGATE_FUNCTIONS + ['combsum']:
                 ap_score = ensure_file('{}/map1000-{}'.format(test_dir, agg))
                 cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_predictions_dir,
                                          file_to_load=self.cv_map_f, load=True, test=self.corr_measure,
                                          ap_file=ap_score)
-                uef_cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_uef_predictions_dir,
-                                             file_to_load=self.cv_map_f, load=True, test=self.corr_measure,
-                                             ap_file=ap_score)
+                # uef_cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_uef_predictions_dir,
+                #                              file_to_load=self.cv_map_f, load=True, test=self.corr_measure,
+                #                              ap_file=ap_score)
                 mean = cv_obj.calc_test_results()
-                uef_mean = uef_cv_obj.calc_test_results()
+                # uef_mean = uef_cv_obj.calc_test_results()
                 _p_res.append('${}$'.format(mean))
-                _uef_p_res.append('${}$'.format(uef_mean))
+                # _uef_p_res.append('${}$'.format(uef_mean))
                 _index.append(agg)
 
             sr = pd.Series(_p_res)
-            uef_sr = pd.Series(_uef_p_res)
+            # uef_sr = pd.Series(_uef_p_res)
             sr.name = p
             sr.index = _index
             uef_p = 'uef({})'.format(p)
-            uef_sr.name = uef_p
-            uef_sr.index = _index
+            # uef_sr.name = uef_p
+            # uef_sr.index = _index
             _results[p] = sr
-            _results[uef_p] = uef_sr
+            # _results[uef_p] = uef_sr
 
         res_df = pd.DataFrame.from_dict(_results, orient='index')
         _uef_predictors = ['uef({})'.format(p) for p in PREDICTORS]
