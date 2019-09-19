@@ -19,15 +19,16 @@ import pageRank.pr_eval as pr
 # TODO: Create a single set_paths class method and replace all the paths with parameters
 # TODO: Replace the print functions with logger output
 
-PREDICTORS = ['clarity', 'nqc', 'wig', 'smv', 'qf', 'rsd']
-# UEF_PREDICTORS = ['uef/{}'.format(p) for p in PREDICTORS]
-# UEF_PREDICTORS.remove('uef/smv')
+# PREDICTORS = ['clarity', 'nqc', 'wig', 'smv', 'qf', 'rsd']
+PREDICTORS = ['clarity', 'nqc', 'wig', 'smv', 'qf']
+UEF_PREDICTORS = ['uef/{}'.format(p) for p in PREDICTORS]
+UEF_PREDICTORS.remove('uef/smv')
 # UEF_PREDICTORS.remove('uef/rsd')
 PRE_RET_PREDICTORS = ['preret/AvgIDF', 'preret/AvgSCQTFIDF', 'preret/AvgVarTFIDF', 'preret/MaxIDF',
                       'preret/MaxSCQTFIDF', 'preret/MaxVarTFIDF']
-# PREDICTORS = PRE_RET_PREDICTORS + PREDICTORS
+PREDICTORS = PRE_RET_PREDICTORS + PREDICTORS
 # PREDICTORS = ['preret/AvgSCQTFIDF', 'preret/MaxIDF', 'wig']
-UEF_PREDICTORS = ['uef/clarity']
+# UEF_PREDICTORS = ['uef/clarity']
 # SIM_REF_PREDICTORS = {'jcP': 'Jaccard', 'topDocsP': 'TopDocs', 'rboP': 'RBO', 'FrboP': 'RBO-F', 'geo': 'GEO'}
 SIM_REF_PREDICTORS = {'jcP': 'Jaccard', 'topDocsP': 'TopDocs', 'rboP': 'RBO', 'FrboP': 'RBO-F', 'geo': 'GEO'}
 NUM_DOCS = [5, 10, 25, 50, 100, 250, 500, 1000]
@@ -637,12 +638,14 @@ class GenerateTable:
         self.corpus = corpus
 
     def print_agg_latex_table(self):
+        _list = []
         print('\\begin{table}[ht!]')
         print('\\begin{center}')
         print('\\caption{{ {} UQV aggregated {} Correlations}}'.format(self.corpus, self.cv.corr_measure.capitalize()))
 
         _agg = AGGREGATE_FUNCTIONS[0]
         _df = self.cv.calc_aggregated(_agg)
+        _list.append(_df)
         table = _df.to_latex(header=True, multirow=False, multicolumn=False, index=False, escape=False,
                              index_names=False, column_format='clcccccc')
         table = table.replace('\\end{tabular}', '')
@@ -654,6 +657,7 @@ class GenerateTable:
 
         for agg in AGGREGATE_FUNCTIONS[1:] + ['min']:
             _df = self.cv.calc_aggregated(agg)
+            _list.append(_df)
             table = _df.to_latex(header=False, multirow=False, multicolumn=False, index=False, escape=False,
                                  index_names=False, column_format='clcccccc')
             table = table.replace('\\begin{tabular}{clcccccc}', '')
@@ -664,6 +668,9 @@ class GenerateTable:
         print('\\end{tabular}')
         print('\\end{center}')
         print('\\end{table}')
+        full_df = pd.concat(_list, axis=0)
+        print(full_df)
+        full_df.to_pickle(f'{self.corpus}_aggr_queries_full_results_DF.pkl')
 
     def print_fused_latex_table(self):
         _df = self.cv.calc_fusion()

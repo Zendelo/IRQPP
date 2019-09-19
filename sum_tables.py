@@ -760,7 +760,7 @@ def print_quant_table(base_sig='_{\\statSigBase}'):
     # print(df['\\clueTwelve'].to_latex(escape=False, multicolumn_format='c').replace('nan', '-'))
 
 
-def print_quality_table(quantile='cref', method='kendall'):
+def print_quality_table(quantile='cref', method='pearson'):
     rb_files_dict = dict(
         Title=dp.ensure_file(f'~/cur_tables/ROBUST_Title_{method}_queries_full_results_DF.pkl'),
         MinAP=dp.ensure_file(f'~/cur_tables/ROBUST_MinAP_{method}_queries_full_results_DF.pkl'),
@@ -910,6 +910,71 @@ def print_pagerank_table(base_sig='_{\\statSigBase}'):
     print(cw_df_w.to_latex(escape=False, multicolumn_format='c'))
 
 
+def print_topics_table(quantile='cref', method='pearson'):
+    rb_files_dict = dict(
+        Title=dp.ensure_file(f'~/cur_tables/ROBUST_Title_{method}_queries_full_results_DF.pkl'),
+        MinAP=dp.ensure_file(f'~/cur_tables/ROBUST_MinAP_{method}_queries_full_results_DF.pkl'),
+        MaxAP=dp.ensure_file(f'~/cur_tables/ROBUST_MaxAP_{method}_queries_full_results_DF.pkl'),
+        MedHiAP=dp.ensure_file(f'~/cur_tables/ROBUST_MedHiAP_{method}_queries_full_results_DF.pkl'))
+
+    cw_files_dict = dict(
+        Title=dp.ensure_file(f'~/cur_tables/ClueWeb12B_Title_{method}_queries_full_results_DF.pkl'),
+        MinAP=dp.ensure_file(f'~/cur_tables/ClueWeb12B_MinAP_{method}_queries_full_results_DF.pkl'),
+        MaxAP=dp.ensure_file(f'~/cur_tables/ClueWeb12B_MaxAP_{method}_queries_full_results_DF.pkl'),
+        MedHiAP=dp.ensure_file(f'~/cur_tables/ClueWeb12B_MedHiAP_{method}_queries_full_results_DF.pkl'))
+
+    rb_df = read_pkl_files(rb_files_dict).reindex(['Title', 'MaxAP', 'MedHiAP', 'MinAP'], axis=1, level=0)
+    cw_df = read_pkl_files(cw_files_dict).reindex(['Title', 'MaxAP', 'MedHiAP', 'MinAP'], axis=1, level=0)
+
+    _rb_df = mark_significance_to_base_quality(rb_df, 'ROBUST', quantile, 0.05 / 16)
+    _cw_df = mark_significance_to_base_quality(cw_df, 'ClueWeb12B', quantile, 0.05 / 16)
+
+    _rb_df.columns.names = ['group', 'sim']
+    _cw_df.columns.names = ['group', 'sim']
+
+    _rb_df = _rb_df.unstack().reset_index().set_index(['Predictor', 'group']).pivot(columns='sim').reindex(
+        ['\\baseline', MAIN_SIMILARITY], axis=1, level=1)
+    _rb_df.columns = _rb_df.columns.droplevel(0)
+    _cw_df = _cw_df.unstack().reset_index().set_index(['Predictor', 'group']).pivot(columns='sim').reindex(
+        ['\\baseline', MAIN_SIMILARITY], axis=1, level=1)
+    _cw_df.columns = _cw_df.columns.droplevel(0)
+
+    df = pd.concat({'\\robust': _rb_df, '\\clueTwelve': _cw_df}, axis=1) \
+        .reindex(['\\robust', '\\clueTwelve'], axis=1, level=0)
+
+    # for (predictor, query_group), dt_obj in df['\\robust'].iterrows():
+    #     _predictor = PREDICTORS_PATH.get(predictor, predictor.lower())
+    #     _query_group = PREDICTORS_PATH.get(query_group, query_group.lower())
+    #     df.loc[(predictor, query_group), ('\\robust', 'avg_lambda')] = calc_avg_lambda('ROBUST', _predictor,
+    #                                                                                    MAIN_SIMILARITY.lower(),
+    #                                                                                    quantile, _query_group)
+    #
+    # for (predictor, query_group), dt_obj in df['\\clueTwelve'].iterrows():
+    #     _predictor = PREDICTORS_PATH.get(predictor, predictor.lower())
+    #     _query_group = PREDICTORS_PATH.get(query_group, query_group.lower())
+    #     df.loc[(predictor, query_group), ('\\clueTwelve', 'avg_lambda')] = calc_avg_lambda('ClueWeb12B', _predictor,
+    #                                                                                        MAIN_SIMILARITY.lower(),
+    #                                                                                        quantile, _query_group)
+    df['\\robust'] = df['\\robust'].reindex(['\\baseline', 'RBO', 'avg_lambda'], axis=1)
+    df['\\clueTwelve'] = df['\\clueTwelve'].reindex(['\\baseline', 'RBO', 'avg_lambda'], axis=1)
+    df = df.applymap(float_to_str)
+    df = df.applymap(lambda x: f'${x}$')
+    df = df.rename(MACROS_DICT, axis=1).rename(MACROS_DICT)
+
+    for predictor, _df in df.reset_index().groupby('Predictor'):
+        table = _df.to_latex(escape=False, index=False, header=False, index_names=False)
+        table = table.replace(predictor, '{}')
+        table = table.replace('\\toprule\n', '')
+        table = table.replace('\\begin{tabular}{llllll}', f'\\multirow{{4}}{{*}}{{{predictor}}}')
+        table = table.replace('\\bottomrule', '\\midrule')
+        table = table.replace('Low-0', ' Low')
+        table = table.replace('\end{tabular}\n', '')
+        print(table, end='')
+
+    # print(df['\\robust'].to_latex(escape=False, multicolumn_format='c'))
+    # print(df['\\clueTwelve'].to_latex(escape=False, multicolumn_format='c'))
+
+
 def main(args):
     corpus = args.corpus
     oracle = args.oracle
@@ -919,7 +984,8 @@ def main(args):
     # table_type = 'quant'
     # table_type = 'quality'
     # table_type = 'similar'
-    table_type = 'pagerank'
+    table_type = 'aggr'
+    # table_type = 'pagerank'
     # method = 'kendall'
     # corpus = 'ROBUST'
     # corpus = 'ClueWeb12B'
@@ -952,6 +1018,8 @@ def main(args):
         print_similarities_table()
     elif table_type == 'pagerank':
         print_pagerank_table()
+    elif table_type == 'aggr':
+        print_topics_table()
 
 
 if __name__ == '__main__':
