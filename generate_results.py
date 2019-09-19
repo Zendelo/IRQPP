@@ -919,7 +919,7 @@ def main(args):
                     method = calc_functions.get(queries_type, None)
                     assert method is not None, 'No applicable calculation function found for {}'.format(queries_type)
                     method(predict, pred)
-                    method(predict, 'uef/{}'.format(pred))
+                    # method(predict, 'uef/{}'.format(pred))
         else:
             if queries_type == 'single' or queries_type == 'aggregated':
                 method = calc_functions.get(queries_type, None)
