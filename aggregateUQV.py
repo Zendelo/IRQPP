@@ -64,6 +64,11 @@ def main(args: parser):
     predictions_file = args.predictions
     agg_func = args.function
 
+    # # Debugging - should be in comment when not debugging !
+    # print('\n------+++^+++------ Debugging !! ------+++^+++------\n')
+    # predictions_file = '/home/olegzendel/QppUqvProj/Results/ROBUST/uqvPredictions/raw/preret/AvgVarTFIDF/predictions/predictions-AvgVarTFIDF'
+    # agg_func = 'max'
+
     assert not (map_file is None and predictions_file is None), 'No file was given'
 
     if map_file is not None:

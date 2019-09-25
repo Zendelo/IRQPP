@@ -179,8 +179,8 @@ class CrossValidation:
                 self.output_dir, self.k, self.rep)))
 
         mean = np.mean(test_results)
-        print(test_results)
-        print('{:.3f}'.format(mean))
+        # print(test_results)
+        # print('{:.3f}'.format(mean))
         return f'{mean:.3f}'
 
     def calc_corr_df(self, df):

@@ -245,6 +245,14 @@ class GeneratePredictions:
         predictions_dir = self.predictions_dir + 'uef/'
         self.__run_predictor(predictions_dir, predictor_exe, parameters, running_param)
 
+    def generate_preret(self):
+        """Assuming all the previous predictions exist, will generate the pre-retrieval aggregated predictions"""
+        predictor_exe = 'python3 ~/repos/IRQPP/uef/uef.py'
+        parameters = '~/QppUqvProj/Results/{}/test/{}/QL.res'.format(self.corpus, self.qtype)
+        running_param = '-d '
+        predictions_dir = self.predictions_dir + 'uef/'
+        self.__run_predictor(predictions_dir, predictor_exe, parameters, running_param)
+
     def _generate_lists_uef(self):
         predictor_exe = 'python3 ~/repos/IRQPP/addWorkingsetdocs.py'
         parameters = '~/QppUqvProj/Results/{}/test/{}/QL.res'.format(self.corpus, self.qtype)
@@ -260,7 +268,7 @@ class GeneratePredictions:
 
     def calc_aggregations(self, predictor):
         print('----- Calculating {} aggregated predictions results -----'.format(predictor))
-        script = 'python3.6 ~/repos/IRQPP/aggregateUQV.py'
+        script = 'python3.7 ~/repos/IRQPP/aggregateUQV.py'
         raw_dir = os.path.normpath('{}/{}/predictions'.format(self.predictions_dir, predictor))
         res_files = glob.glob('{}/*predictions*'.format(raw_dir))
         for file in res_files:
@@ -300,7 +308,7 @@ class CrossVal:
         predictions_dir = '{}/uqvPredictions/aggregated/{}'.format(self.base_dir, aggregation)
         _results = defaultdict()
 
-        for p in PREDICTORS:
+        for p in PREDICTORS + UEF_PREDICTORS:
             # dir of aggregated prediction results
             _predictions_dir = os.path.normpath('{}/{}/predictions'.format(predictions_dir, p))
             # dir of aggregated uef prediction results
@@ -328,15 +336,15 @@ class CrossVal:
             # uef_sr = pd.Series(_uef_p_res)
             sr.name = p
             sr.index = _index
-            uef_p = 'uef({})'.format(p)
+            # uef_p = 'uef({})'.format(p)
             # uef_sr.name = uef_p
             # uef_sr.index = _index
             _results[p] = sr
             # _results[uef_p] = uef_sr
 
         res_df = pd.DataFrame.from_dict(_results, orient='index')
-        _uef_predictors = ['uef({})'.format(p) for p in PREDICTORS]
-        res_df = res_df.reindex(index=PREDICTORS + _uef_predictors)
+        # _uef_predictors = ['uef({})'.format(p) for p in PREDICTORS]
+        res_df = res_df.reindex(index=PREDICTORS + UEF_PREDICTORS)
         res_df.index.name = 'predictor'
         res_df.index = res_df.index.str.upper()
         res_df.reset_index(inplace=True)
@@ -877,10 +885,14 @@ def main(args):
     # Stores true if oracle tables should be printed for the QPP-Reference similarity model
     oracle = args.oracle
 
-    # # Debugging - should be in comment when not debugging !
+    # Debugging - should be in comment when not debugging !
     # print('\n------+++^+++------ Debugging !! ------+++^+++------\n')
     # corpus = 'ROBUST'
-    # table = 'pageRank'
+    # table = 'aggregated'
+    # predictor = 'all'
+    # queries_type = 'aggregated'
+    # generate = True
+    # calc_predictions = True
 
     base_dir = '~/QppUqvProj/Results/{}'.format(corpus)
     cv_map_file = '{}/test/2_folds_30_repetitions.json'.format(base_dir)
@@ -915,7 +927,7 @@ def main(args):
         assert predictor is not None, 'No predictor was chosen for results calculation'
         if predictor == 'all':
             if queries_type == 'single' or queries_type == 'aggregated':
-                for pred in PREDICTORS:
+                for pred in PREDICTORS + UEF_PREDICTORS:
                     method = calc_functions.get(queries_type, None)
                     assert method is not None, 'No applicable calculation function found for {}'.format(queries_type)
                     method(predict, pred)
