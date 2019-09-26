@@ -245,14 +245,6 @@ class GeneratePredictions:
         predictions_dir = self.predictions_dir + 'uef/'
         self.__run_predictor(predictions_dir, predictor_exe, parameters, running_param)
 
-    def generate_preret(self):
-        """Assuming all the previous predictions exist, will generate the pre-retrieval aggregated predictions"""
-        predictor_exe = 'python3 ~/repos/IRQPP/uef/uef.py'
-        parameters = '~/QppUqvProj/Results/{}/test/{}/QL.res'.format(self.corpus, self.qtype)
-        running_param = '-d '
-        predictions_dir = self.predictions_dir + 'uef/'
-        self.__run_predictor(predictions_dir, predictor_exe, parameters, running_param)
-
     def _generate_lists_uef(self):
         predictor_exe = 'python3 ~/repos/IRQPP/addWorkingsetdocs.py'
         parameters = '~/QppUqvProj/Results/{}/test/{}/QL.res'.format(self.corpus, self.qtype)
@@ -328,7 +320,8 @@ class CrossVal:
                 #                              ap_file=ap_score)
                 mean = cv_obj.calc_test_results()
                 # uef_mean = uef_cv_obj.calc_test_results()
-                _p_res.append('${}$'.format(mean))
+                # _p_res.append('${}$'.format(mean))
+                _p_res.append(mean)
                 # _uef_p_res.append('${}$'.format(uef_mean))
                 _index.append(agg)
 
