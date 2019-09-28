@@ -50,6 +50,8 @@ PREDICTORS_PATH = {'PRERET/AVGIDF': 'preret/AvgIDF', 'preret/AvgIDF': 'preret/Av
                    'PRERET/MAXVARTFIDF': 'preret/MaxVarTFIDF', 'TopDocs': 'sim', 'Uniform': 'uni', 'Jaccard': 'jac',
                    'RBO-F': 'rbof', 'MinAP': 'low', 'MaxAP': 'top', 'MedHiAP': 'medh'}
 SIM_ONLY = {'rbo': 'rboP', 'rbof': 'FrboP', 'jac': 'jcP', 'geo': 'geo', 'sim': 'topDocsP'}
+TOPICS_SELECTED_PREDICTORS = ['UEF/WIG', 'UEF/CLARITY', 'PRERET/AVGSCQTFIDF', 'PRERET/AVGVARTFIDF']
+TOPIC_PREDICTORS = {'avg': '\\avgP', 'max': '\\maxP', 'med': '\\medP', 'std': '\\stdP', 'min': '\\minP'}
 
 ALL_SIMILARITIES = ['Uniform', 'Jaccard', 'GEO', 'RBO-F', 'TopDocs', 'RBO']
 # SELECTED_PREDICTORS = PREDICTORS
@@ -587,6 +589,7 @@ def print_main_table():
 
 
 def mark_bold_row_und_col(_df):
+    _df = _df.astype(float)
     col_indices = _df.idxmax(0)
     row_indices = _df.idxmax(1)
     df = _df.applymap(float_to_str)
@@ -792,19 +795,6 @@ def print_quality_table(quantile='cref', method='pearson'):
     df = pd.concat({'\\robust': _rb_df, '\\clueTwelve': _cw_df}, axis=1) \
         .reindex(['\\robust', '\\clueTwelve'], axis=1, level=0)
 
-    # for (predictor, query_group), dt_obj in df['\\robust'].iterrows():
-    #     _predictor = PREDICTORS_PATH.get(predictor, predictor.lower())
-    #     _query_group = PREDICTORS_PATH.get(query_group, query_group.lower())
-    #     df.loc[(predictor, query_group), ('\\robust', 'avg_lambda')] = calc_avg_lambda('ROBUST', _predictor,
-    #                                                                                    MAIN_SIMILARITY.lower(),
-    #                                                                                    quantile, _query_group)
-    #
-    # for (predictor, query_group), dt_obj in df['\\clueTwelve'].iterrows():
-    #     _predictor = PREDICTORS_PATH.get(predictor, predictor.lower())
-    #     _query_group = PREDICTORS_PATH.get(query_group, query_group.lower())
-    #     df.loc[(predictor, query_group), ('\\clueTwelve', 'avg_lambda')] = calc_avg_lambda('ClueWeb12B', _predictor,
-    #                                                                                        MAIN_SIMILARITY.lower(),
-    #                                                                                        quantile, _query_group)
     df['\\robust'] = df['\\robust'].reindex(['\\baseline', 'RBO', 'avg_lambda'], axis=1)
     df['\\clueTwelve'] = df['\\clueTwelve'].reindex(['\\baseline', 'RBO', 'avg_lambda'], axis=1)
     df = df.applymap(float_to_str)
@@ -911,11 +901,54 @@ def print_pagerank_table(base_sig='_{\\statSigBase}'):
     print(cw_df_w.to_latex(escape=False, multicolumn_format='c'))
 
 
+def _print_topics_table_small(file_path):
+    df_file_path = dp.ensure_file(file_path)
+    df = pd.read_pickle(df_file_path)
+    _df = df.set_index(['predictor', 'predictor-agg']).loc[TOPICS_SELECTED_PREDICTORS]
+    _df = _df.swaplevel().sort_index()
+    _df = mark_max_per_column(_df)
+    df = _df.rename(TOPIC_PREDICTORS).rename(MACROS_DICT).applymap('${}$'.format)
+    print(df.to_latex(escape=False, multicolumn_format='c', multirow=True))
+
+
+def _print_topics_table_full(file_path):
+    df_file_path = dp.ensure_file(file_path)
+    df = pd.read_pickle(df_file_path)
+    _df = df.set_index(['predictor', 'predictor-agg'])
+    _df = _df.swaplevel().reindex(PREDICTORS, level='predictor')
+    _df = mark_max_per_column(_df)
+    df = _df.rename(TOPIC_PREDICTORS).rename(MACROS_DICT).applymap('${}$'.format)
+    print(df.to_latex(escape=False, multicolumn_format='c', multirow=True))
+
+
 def print_topics_table():
-    rb_df_file = dp.ensure_file(f'~/cur_tables/ROBUST_aggr_queries_full_results_DF.pkl')
-    cw_df_file = dp.ensure_file(f'~/cur_tables/ClueWeb12B_aggr_queries_full_results_DF.pkl')
-    rb_df = pd.read_pickle(rb_df_file)
-    cw_df = pd.read_pickle(cw_df_file)
+    print('ROBUST Topics Table')
+    _print_topics_table_small(f'~/cur_tables/ROBUST_aggr_queries_full_results_DF.pkl')
+    print('CW Topics Table')
+    _print_topics_table_small(f'~/cur_tables/ClueWeb12B_aggr_queries_full_results_DF.pkl')
+    print('ROBUST Topics Table')
+    _print_topics_table_full(f'~/cur_tables/ROBUST_aggr_queries_full_results_DF.pkl')
+    print('CW Topics Table')
+    _print_topics_table_full(f'~/cur_tables/ClueWeb12B_aggr_queries_full_results_DF.pkl')
+    # rb_df_file = dp.ensure_file(f'~/cur_tables/ROBUST_aggr_queries_full_results_DF.pkl')
+    # cw_df_file = dp.ensure_file(f'~/cur_tables/ClueWeb12B_aggr_queries_full_results_DF.pkl')
+    # rb_df = pd.read_pickle(rb_df_file)
+    # cw_df = pd.read_pickle(cw_df_file)
+
+    # _rb_df = rb_df.set_index(['predictor', 'predictor-agg']).loc[TOPICS_SELECTED_PREDICTORS]
+    # _rb_df = _rb_df.swaplevel().sort_index()
+    # _rb_df = mark_max_per_column(_rb_df)
+    # rb_df = _rb_df.rename(TOPIC_PREDICTORS).rename(MACROS_DICT).applymap('${}$'.format)
+    # print(rb_df.to_latex(escape=False, multicolumn_format='c', multirow=True))
+    #
+    # _cw_df = cw_df.set_index(['predictor', 'predictor-agg']).loc[TOPICS_SELECTED_PREDICTORS]
+    # _cw_df = _cw_df.swaplevel().sort_index()
+    # _cw_df = mark_max_per_column(_cw_df)
+    # cw_df = _cw_df.rename(TOPIC_PREDICTORS).rename(MACROS_DICT).applymap('${}$'.format)
+    # print(cw_df.to_latex(escape=False, multicolumn_format='c', multirow=True))
+
+    # _rb_df = mark_max_per_df(rb_df)
+    # print(_rb_df.to_latex(escape=False))
 
     # _rb_df = mark_significance_to_base_quality(rb_df, 'ROBUST', quantile, 0.05 / 16)
     # _cw_df = mark_significance_to_base_quality(cw_df, 'ClueWeb12B', quantile, 0.05 / 16)
@@ -973,9 +1006,9 @@ def main(args):
 
     # table_type = 'main'
     # table_type = 'quant'
-    # table_type = 'quality'
+    table_type = 'quality'
     # table_type = 'similar'
-    table_type = 'aggr'
+    # table_type = 'aggr'
     # table_type = 'pagerank'
     # method = 'kendall'
     # corpus = 'ROBUST'
