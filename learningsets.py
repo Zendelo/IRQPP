@@ -78,7 +78,7 @@ class LearningDataSets:
         predictor_resutls = self.results_df[f'score_{param}']
         feat_df = self.features_df.multiply(predictor_resutls, axis=0, level='qid')
         feat_df = feat_df.groupby('topic').sum()
-        # feat_df = feat_df.apply(np.log)
+        feat_df = feat_df.apply(np.log)
         feat_df = feat_df.merge(self.ap_obj.data_df, left_index=True, right_index=True)
         feat_df.insert(0, 'qid', 'qid:1')
         return feat_df
@@ -244,16 +244,17 @@ class LearningDataSets:
 def check_significance(corpus, predictor, alpha=0.05):
     _base_dir = f'~/QppUqvProj/Results/{corpus}/uqvPredictions/aggregated/avg/'
     baseline_dir = dp.ensure_dir(f'{_base_dir}/{predictor}/evaluation/')
-    baseline_file = dp.ensure_file(f'{baseline_dir}/simple_results_vector_for_2_folds_30_repetitions_title.json')
+    baseline_file = dp.ensure_file(f'{baseline_dir}/simple_results_vector_for_2_folds_30_repetitions_avg.json')
     with open(baseline_file) as json_data:
         data = json.load(json_data)
     baseline_sr = pd.DataFrame.from_dict(data, orient='index', columns=['correlation'], dtype=float)
 
     candidate_dir = dp.ensure_dir(f'{_base_dir}/{predictor}/ltr/evaluation/')
-    candidate_file = dp.ensure_file(f'{candidate_dir}/simple_results_vector_for_2_folds_30_repetitions_title.json')
+    candidate_file = dp.ensure_file(f'{candidate_dir}/simple_results_vector_for_2_folds_30_repetitions_ltr.json')
     with open(candidate_file) as json_data:
         data = json.load(json_data)
     candidate_sr = pd.DataFrame.from_dict(data, orient='index', columns=['correlation'], dtype=float)
+    print(f'baseline: {baseline_sr.mean()[0]:.3f}')
     return t_test(baseline_sr, candidate_sr, alpha)
 
 
@@ -265,6 +266,10 @@ def main(args):
     corr_measure = args.corr_measure
     generate = args.generate
     fine_tune = args.fine
+
+    # Debugging
+    # corpus = 'ROBUST'
+    # predictor = 'wig'
 
     assert predictor is not None, 'No predictor was chosen'
     if uef:
