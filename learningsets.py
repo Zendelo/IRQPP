@@ -1,6 +1,7 @@
 import argparse
 import glob
 import os
+import json
 from subprocess import run
 
 import numpy as np
@@ -9,7 +10,9 @@ import pandas as pd
 from Timer.timer import Timer
 from crossval import CrossValidation
 from dataparser import ResultsReader, ensure_dir
+import dataparser as dp
 from features import features_loader
+from sum_tables import t_test
 
 parser = argparse.ArgumentParser(description='LTR (SVMRank) data sets Generator',
                                  usage='python3.6 learningsets.py -c CORPUS ... <parameter files>',
@@ -37,6 +40,8 @@ C_list = [0.01, 0.1, 1, 10, 100]
 class LearningDataSets:
 
     def __init__(self, predictor, corpus, corr_measure='pearson', aggregation='avg', uef=False):
+        self.corpus = corpus
+        self.predictor = predictor
         self.__set_paths(corpus, predictor, aggregation)
         self.ap_obj = ResultsReader(self.ap_file, 'ap')
         self.working_dir = self.results_dir.replace('predictions', 'ltr')
@@ -230,6 +235,26 @@ class LearningDataSets:
         simple_results_df = pd.Series(simple_results)
         simple_results_df.to_json(('{}/simple_results_vector_for_2_folds_30_repetitions_ltr.json'.format(eval_dir)))
         print('mean: {:.3f}'.format(np.mean(_list)))
+        if check_significance(self.corpus, self.predictor):
+            print('significant!')
+        else:
+            print('Not significant!')
+
+
+def check_significance(corpus, predictor, alpha=0.05):
+    _base_dir = f'~/QppUqvProj/Results/{corpus}/uqvPredictions/aggregated/avg/'
+    baseline_dir = dp.ensure_dir(f'{_base_dir}/{predictor}/evaluation/')
+    baseline_file = dp.ensure_file(f'{baseline_dir}/simple_results_vector_for_2_folds_30_repetitions_title.json')
+    with open(baseline_file) as json_data:
+        data = json.load(json_data)
+    baseline_sr = pd.DataFrame.from_dict(data, orient='index', columns=['correlation'], dtype=float)
+
+    candidate_dir = dp.ensure_dir(f'{_base_dir}/{predictor}/ltr/evaluation/')
+    candidate_file = dp.ensure_file(f'{candidate_dir}/simple_results_vector_for_2_folds_30_repetitions_title.json')
+    with open(candidate_file) as json_data:
+        data = json.load(json_data)
+    candidate_sr = pd.DataFrame.from_dict(data, orient='index', columns=['correlation'], dtype=float)
+    return t_test(baseline_sr, candidate_sr, alpha)
 
 
 def main(args):
