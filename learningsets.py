@@ -210,6 +210,7 @@ class LearningDataSets:
     def cross_val(self):
         simple_results = {}
         classification_dir = self.output_dir.replace('datasets', 'classifications')
+        eval_dir = ensure_dir(self.output_dir.replace('datasets', 'evaluation'))
         _list = []
         for set_id in range(1, 31):
             _pair = []
@@ -227,8 +228,7 @@ class LearningDataSets:
             _list.append(avg_res)
             simple_results['set {}'.format(set_id)] = avg_res
         simple_results_df = pd.Series(simple_results)
-        simple_results_df.to_json(('{}/simple_results_vector_for_2_folds_30_repetitions_ltr.json'.format(
-            self.output_dir.replace('classifications', 'evaluation'))))
+        simple_results_df.to_json(('{}/simple_results_vector_for_2_folds_30_repetitions_ltr.json'.format(eval_dir)))
         print('mean: {:.3f}'.format(np.mean(_list)))
 
 
