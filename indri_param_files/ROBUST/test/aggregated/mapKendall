@@ -1,0 +1,75 @@
+ap-max ap-max 
+ 1.0000
+
+ap-min ap-max 
+ 0.4234
+
+ap-avg ap-max 
+ 0.7587
+
+ap-std ap-max 
+ 0.6452
+
+ap-med ap-max 
+ 0.6997
+
+ap-max ap-min 
+ 0.4234
+
+ap-min ap-min 
+ 1.0000
+
+ap-avg ap-min 
+ 0.5890
+
+ap-std ap-min 
+ 0.1181
+
+ap-med ap-min 
+ 0.5756
+
+ap-max ap-avg 
+ 0.7587
+
+ap-min ap-avg 
+ 0.5890
+
+ap-avg ap-avg 
+ 1.0000
+
+ap-std ap-avg 
+ 0.4762
+
+ap-med ap-avg 
+ 0.9024
+
+ap-max ap-std 
+ 0.6452
+
+ap-min ap-std 
+ 0.1181
+
+ap-avg ap-std 
+ 0.4762
+
+ap-std ap-std 
+ 1.0000
+
+ap-med ap-std 
+ 0.4350
+
+ap-max ap-med 
+ 0.6997
+
+ap-min ap-med 
+ 0.5756
+
+ap-avg ap-med 
+ 0.9024
+
+ap-std ap-med 
+ 0.4350
+
+ap-med ap-med 
+ 1.0000
+

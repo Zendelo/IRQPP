@@ -1,0 +1,7 @@
+<parameters>
+<memory>1G</memory>
+<index>/lv_local/home/olegzendel/indices/ClueWeb12B/</index>
+<count>1000</count>
+<trecFormat>true</trecFormat>
+<rule>method:dir,mu:1000</rule>
+</parameters>

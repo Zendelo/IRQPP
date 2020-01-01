@@ -1,0 +1,7 @@
+<parameters>
+	<index>/lv_local/home/olegzendel/indices/ROBUST/</index>
+	<fbTerms>100</fbTerms>
+	<smoothing>method:jm,lambda:0</smoothing>
+	<rule>method:dir,mu:1000</rule>
+</parameters>
+
