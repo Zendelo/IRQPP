@@ -78,6 +78,7 @@ class WIG:
         score_ = self.corp.loc[qid]['score']
         return score_ / sqrt(qlen)
 
+    # Version for log(QL) scores
     def _calc_docs_score(self, qid, qlen, num_docs):
         scores_ = list(self.res.loc[qid]['docScore'].head(num_docs))
         k = min(len(scores_), num_docs)
