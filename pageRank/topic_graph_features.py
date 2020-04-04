@@ -10,7 +10,7 @@ import pandas as pd
 
 import dataparser as dp
 from RBO import rbo_dict
-from Timer.timer import Timer
+from Timer import Timer
 
 parser = argparse.ArgumentParser(description='Features for PageRank UQV query variations Generator',
                                  usage='python3.7 features.py -q queries.txt -c CORPUS',
@@ -25,6 +25,8 @@ parser.add_argument('-c', '--corpus', default='ROBUST', type=str, help='corpus (
 #                     choices=['all', 'low', 'med', 'top'])
 parser.add_argument('-l', '--load', default=None, type=str, help='features file to load')
 parser.add_argument('--generate', help="generate new features file", action="store_true")
+
+
 # parser.add_argument('--predict', help="generate new predictions", action="store_true")
 
 
@@ -71,25 +73,26 @@ class QueryFeatureFactory:
         """This method sets the default paths of the files and the working directories, it assumes the standard naming
          convention of the project"""
         # cls.predictor = predictor
-        _corpus_res_dir = dp.ensure_dir(f'~/QppUqvProj/Results/{corpus}')
-        _corpus_dat_dir = dp.ensure_dir(f'~/QppUqvProj/data/{corpus}')
+        _res_dir, _data_dir = dp.set_environment_paths()
+        cls.res_dir = f'{_res_dir}/{corpus}'
+        cls.dat_dir = f'{_data_dir}/{corpus}'
 
-        _results_file = f'{_corpus_res_dir}/test/raw/QL.res'
+        _results_file = f'{cls.res_dir}/test/raw/QL.res'
         cls.results_file = os.path.normpath(_results_file)
         dp.ensure_file(cls.results_file)
 
-        _title_results_file = f'{_corpus_res_dir}/test/basic/QL.res'
+        _title_results_file = f'{cls.res_dir}/test/basic/QL.res'
         cls.title_res_file = os.path.normpath(_title_results_file)
         dp.ensure_file(cls.title_res_file)
 
-        _queries_full_file = f'{_corpus_dat_dir}/queries_{corpus}_UQV_full.stemmed.txt'
+        _queries_full_file = f'{cls.dat_dir}/queries_{corpus}_UQV_full.stemmed.txt'
 
         cls.queries_full_file = dp.ensure_file(_queries_full_file)
 
-        _fused_results_file = f'{_corpus_res_dir}/test/fusion/QL.res'
+        _fused_results_file = f'{cls.res_dir}/test/fusion/QL.res'
         cls.fused_results_file = dp.ensure_file(_fused_results_file)
 
-        cls.output_dir = dp.ensure_dir(f'{_corpus_res_dir}/test/raw/')
+        cls.output_dir = dp.ensure_dir(f'{cls.res_dir}/test/raw/')
 
     def _create_query_var_pairs(self):
         """This method returns a dictionary where for each key (topic-qid) the value is a list of all possible
@@ -143,7 +146,7 @@ class QueryFeatureFactory:
         _df = pd.DataFrame.from_dict(_dict)
         _df.sort_values(['topic', 'src', 'dest'], inplace=True)
         _df.set_index(['topic', 'src', 'dest'], inplace=True)
-        _test_dir = dp.ensure_dir(f'~/QppUqvProj/Results/{self.corpus}/test/pageRank/')
+        _test_dir = dp.ensure_dir(f'{self.res_dir}/test/pageRank/')
         _df.to_pickle(f'{_test_dir}/{self.corpus}_raw_PageRank_Features.pkl')
         return _df
 
@@ -201,7 +204,7 @@ def main(args):
         testing_feat = QueryFeatureFactory(corpus)
         norm_features_df = testing_feat.generate_features()
 
-        _path = f'~/QppUqvProj/Results/{corpus}/test/pageRank'
+        _path = f'{dp.set_environment_paths()[0]}/{corpus}/test/pageRank'
         _path = dp.ensure_dir(_path)
         norm_features_df.reset_index().to_json(f'{_path}/PageRank_Features.JSON')
 
