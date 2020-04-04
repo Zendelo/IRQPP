@@ -39,6 +39,7 @@ class ResultsReader:
         self.query_vars, self.var_qid = self.__generate_qids_from_res()
 
     def __check_number_of_col(self):
+        """This method assumes the file has no header and at least 2 rows"""
         with open(self.data) as f:
             reader = csv.reader(f, delimiter=' ', skipinitialspace=True)
             try:
@@ -46,6 +47,7 @@ class ResultsReader:
             except StopIteration:
                 sys.exit(f'The file {self.data} is empty')
             num_cols = len(first_row)
+            assert num_cols == len(next(reader)), f'\nThe file {self.data} first row differs from second'
         return int(num_cols)
 
     def __read_results_data_2(self):
@@ -342,3 +344,10 @@ def read_rm_prob_files(data_dir, number_of_docs, clipping='*'):
         _df = _df.astype({'qid': str}).set_index(['qid', 'term'])
         _list.append(_df)
     return pd.concat(_list, axis=1).fillna(0)
+
+
+def set_environment_paths(base_path=None):
+    base_path = base_path if base_path else os.path.dirname(os.path.abspath(__file__))
+    results_dir = ensure_dir(f'{base_path}/QppUqvProj/Results')
+    data_dir = ensure_dir(f'{base_path}/QppUqvProj/data')
+    return results_dir, data_dir

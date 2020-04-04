@@ -1,16 +1,29 @@
 import argparse
 import multiprocessing as mp
 import pickle
+from functools import partial
 
 import networkx as nx
 import numpy as np
 import pandas as pd
-from functools import partial
 
-import dataparser as dp
-from Timer.timer import Timer
+try:
+    import dataparser as dp
+except ModuleNotFoundError:
+    import sys
+    from pathlib import Path
+
+    script_dir = sys.path[0]
+    # Adding the parent directory to the path
+    sys.path.append(str(Path(script_dir).parent))
+    import dataparser as dp
+
+from Timer import Timer
 from crossval import CrossValidation
 from pageRank.topic_graph_features import features_loader
+
+LAMBDA = np.linspace(start=0, stop=1, num=11)
+PREDICTORS = ['clarity', 'wig', 'nqc', 'smv', 'rsd', 'qf', 'uef/clarity', 'uef/wig', 'uef/nqc', 'uef/smv', 'uef/qf']
 
 parser = argparse.ArgumentParser(description='PageRank UQV Generator',
                                  usage='python3.7 pagerank.py -c CORPUS')
@@ -18,9 +31,10 @@ parser = argparse.ArgumentParser(description='PageRank UQV Generator',
 parser.add_argument('-c', '--corpus', default='ROBUST', type=str, help='corpus (index) to work with',
                     choices=['ROBUST', 'ClueWeb12B'])
 parser.add_argument('-p', '--predictor', default=None, type=str, help='Choose the predictor to use',
-                    choices=['clarity', 'wig', 'nqc', 'qf', 'all'])
-parser.add_argument('--uef', help="use the uef version of the predictor", action="store_true")
+                    choices=PREDICTORS + ['all'])
+parser.add_argument('-t', '--parallel', help="number of parallel process to run, 0 for max", default=1, type=int)
 parser.add_argument('--nocache', help="add this option to avoid loading from cache", action="store_false")
+
 
 # parser.add_argument('-g', '--group', help='group of queries to predict',
 #                     choices=['top', 'low', 'medh', 'medl', 'title'])
@@ -29,9 +43,6 @@ parser.add_argument('--nocache', help="add this option to avoid loading from cac
 # parser.add_argument('-l', '--load', default=None, type=str, help='features file to load')
 # parser.add_argument('--generate', help="generate new features file", action="store_true")
 # parser.add_argument('--predict', help="generate new predictions", action="store_true")
-
-LAMBDA = np.linspace(start=0, stop=1, num=11)
-PREDICTORS = ['clarity', 'wig', 'nqc', 'smv', 'rsd', 'qf', 'uef/clarity', 'uef/wig', 'uef/nqc', 'uef/smv', 'uef/qf']
 
 
 class PageRank:
@@ -51,7 +62,7 @@ class PageRank:
             try:
                 # Will try loading a dictionary, if fails will generate and save a new one
                 file_to_load = dp.ensure_file(
-                    f'~/QppUqvProj/Results/{corpus}/test/pageRank/pkl_files/{predictor}/dict_all_options_stochastic.pkl')
+                    f'{self.res_dir}/test/pageRank/pkl_files/{predictor}/dict_all_options_stochastic.pkl')
                 with open(file_to_load, 'rb') as handle:
                     self.dict_all_options_stochastic = pickle.load(handle)
             except AssertionError:
@@ -68,13 +79,14 @@ class PageRank:
         """This method sets the default paths of the files and the working directories, it assumes the standard naming
          convention of the project"""
         cls.predictor = predictor
-
-        _base_dir = f'~/QppUqvProj/Results/{corpus}/uqvPredictions/'
+        _res_dir, _data_dir = dp.set_environment_paths()
+        cls.res_dir = f'{_res_dir}/{corpus}'
+        _base_dir = f'{cls.res_dir}/uqvPredictions/'
         cls.vars_results_dir = dp.ensure_dir(f'{_base_dir}/raw/{cls.predictor}/predictions/')
 
         cls.output_dir = dp.ensure_dir(f'{_base_dir}/referenceLists/pageRank/')
 
-        _test_dir = f'~/QppUqvProj/Results/{corpus}/test'
+        _test_dir = f'{cls.res_dir}/test'
         cls.folds = dp.ensure_file(f'{_test_dir}/2_folds_30_repetitions.json')
 
         # cls.ap_file = dp.ensure_file(f'{_test_dir}/pageRank/QLmap1000')
@@ -82,7 +94,7 @@ class PageRank:
         cls.features = dp.ensure_file(f'{_test_dir}/pageRank/{corpus}_raw_PageRank_Features.pkl')
 
     def __save_new_dictionary(self, corpus, predictor):
-        _dir = dp.ensure_dir(f'~/QppUqvProj/Results/{corpus}/test/pageRank/pkl_files/{predictor}')
+        _dir = dp.ensure_dir(f'{self.res_dir}/test/pageRank/pkl_files/{predictor}')
         with open(f'{_dir}/dict_all_options_stochastic.pkl', 'wb') as handle:
             pickle.dump(self.dict_all_options_stochastic, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
@@ -164,9 +176,10 @@ class PageRank:
         results to files"""
         for hyper_params, full_df in self.dict_all_options_stochastic.items():
             sim_func, lambda_param = (s.split('-')[1] for s in hyper_params.split('+'))
+            print(f'Working on the combination: \n'
+                  f'Similarity: {sim_func} lambda: {lambda_param} predictor: {self.predictor}')
+            stime = Timer('PageRank Calculations')
             for pred_score in self.prediction_scores:
-                print(f'Working on the combination {sim_func}: {pred_score} lambda={lambda_param}')
-                stime = Timer('testing')
                 _score_list = []
                 for topic, _df in full_df[pred_score].groupby('topic'):
                     df = pd.DataFrame(_df)
@@ -177,12 +190,12 @@ class PageRank:
                     _score_list.append(pd.Series(pr_dict))
                 pr_sr = pd.concat(_score_list)
                 self._write_results(pr_sr, sim_func, pred_score.split('_')[1], lambda_param)
-                stime.stop()
+            stime.stop()
 
     def _write_results(self, res_df: pd.Series, sim_func, pred_score, lambda_param):
         dir_path = dp.ensure_dir(f'{self.output_dir}/raw/{sim_func}/{self.predictor}/predictions/')
         file_name = f'predictions-{pred_score}+lambda+{lambda_param}'
-        res_df.to_csv(path=f'{dir_path}/{file_name}', index=True, sep=' ', float_format='%f')
+        res_df.to_csv(path_or_buf=f'{dir_path}/{file_name}', index=True, sep=' ', float_format='%f', header=False)
 
 
 def process_calc_pr(predictor, corpus, load):
@@ -193,17 +206,15 @@ def process_calc_pr(predictor, corpus, load):
 def main(args):
     corpus = args.corpus
     predictor = args.predictor
-    uef = args.uef
     load = args.nocache
+    _cores = args.parallel
 
-    if uef:
-        predictor = f'uef/{predictor}'
+    # # Debugging
+    # print('\n\n\n------------!!!!!!!---------- Debugging Mode ------------!!!!!!!----------\n\n\n')
+    # predictor = input('What predictor should be used for debugging?\n')
+    # corpus = 'ROBUST'
 
-    # Debugging
-    print('\n\n\n------------!!!!!!!---------- Debugging Mode ------------!!!!!!!----------\n\n\n')
-    predictor = input('What predictor should be used for debugging?\n')
-    corpus = 'ROBUST'
-    cores = mp.cpu_count() - 1
+    cores = min(mp.cpu_count() - 1, len(PREDICTORS)) if _cores == 0 else _cores
     if predictor and corpus:
         if predictor == 'all':
             with mp.Pool(processes=cores) as pool:

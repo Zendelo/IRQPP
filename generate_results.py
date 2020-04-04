@@ -613,7 +613,8 @@ class CrossVal:
             scores_best = {}
             scores_worst = {}
             for similarity in ['Jac_coefficient', 'RBO_EXT_100', 'RBO_FUSED_EXT_100', 'Top_10_Docs_overlap']:
-                _score_best, _score_worst = pr.calc_scores(corpus, similarity, predictor)
+                _score_best = pr.best_worst_metric(corpus, similarity, predictor, metric='best', load=True)
+                _score_worst = pr.best_worst_metric(corpus, similarity, predictor, metric='worst', load=True)
                 scores_best[similarity] = _score_best
                 scores_worst[similarity] = _score_worst
             b_sr = pd.Series(scores_best)

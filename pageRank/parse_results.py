@@ -4,7 +4,7 @@ from glob import glob
 import pandas as pd
 
 import dataparser as dp
-from Timer.timer import Timer
+from Timer import Timer
 
 PREDICTORS = ['clarity', 'nqc', 'wig', 'qf', 'uef/clarity', 'uef/nqc', 'uef/wig', 'uef/qf']
 SIMILARITY_FUNCTIONS = ['Jac_coefficient', 'RBO_EXT_100', 'Top_10_Docs_overlap', 'RBO_FUSED_EXT_100']
