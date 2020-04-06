@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3.7
 
 import csv
 import glob
@@ -14,7 +14,7 @@ import pandas as pd
 from lxml import etree
 
 
-# TODO: implement all necessary objects and functions, in order to switch all calculations to work with those classes
+# TODO: Create a Python utils package
 
 class ResultsReader:
     def __init__(self, data_file: str, file_type):
@@ -351,3 +351,10 @@ def set_environment_paths(base_path=None):
     results_dir = ensure_dir(f'{base_path}/QppUqvProj/Results')
     data_dir = ensure_dir(f'{base_path}/QppUqvProj/data')
     return results_dir, data_dir
+
+
+def char_range(a, z):
+    """Creates a generator that iterates the characters from `c1` to `c2`, inclusive."""
+    # ord returns the ASCII value, chr returns the char of ASCII value
+    for c in range(ord(a), ord(z) + 1):
+        yield chr(c)
