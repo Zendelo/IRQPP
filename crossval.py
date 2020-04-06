@@ -108,8 +108,8 @@ class CrossValidation:
                 results[int(count)]['b'] = {'train': train_index, 'test': test_index}
             count += 0.5
         temp = pd.DataFrame(results)
-        temp.to_json('{}_folds_{}_repetitions.json'.format(self.k, self.rep))
-        return '{}_folds_{}_repetitions.json'.format(self.k, self.rep)
+        temp.to_json(f'{self.k}_folds_{self.rep}_repetitions.json')
+        return f'{self.k}_folds_{self.rep}_repetitions.json'
 
     def __load_k_folds(self):
         # self.data_sets_map = pd.read_json(self.file_name).T['a'].apply(pd.Series).rename(
@@ -133,11 +133,9 @@ class CrossValidation:
         corr_df = pd.DataFrame.from_dict(corr_results, orient='index')
         try:
             corr_df.to_pickle(
-                '{}/correlations_for_{}_folds_{}_repetitions_{}.pkl'.format(self.output_dir, self.k, self.rep,
-                                                                            self.ap_func))
+                f'{self.output_dir}/correlations_for_{self.k}_folds_{self.rep}_repetitions_{self.ap_func}.pkl')
         except AttributeError:
-            corr_df.to_pickle(
-                '{}/correlations_for_{}_folds_{}_repetitions_pageRank.pkl'.format(self.output_dir, self.k, self.rep))
+            corr_df.to_pickle(f'{self.output_dir}/correlations_for_{self.k}_folds_{self.rep}_repetitions_pageRank.pkl')
         return corr_df
 
     def calc_test_results(self):
@@ -159,11 +157,11 @@ class CrossValidation:
         try:
             full_results_df.to_json(
                 f'{self.output_dir}/'
-                f'full_results_vector_for_{self.k,}_folds_{self.rep}_repetitions_{self.ap_func}_{self.test}.json')
+                f'full_results_vector_for_{self.k}_folds_{self.rep}_repetitions_{self.ap_func}_{self.test}.json')
         except AttributeError:
             full_results_df.to_json(
                 f'{self.output_dir}/'
-                f'full_results_vector_for_{self.k,}_folds_{self.rep}_repetitions_pageRank_{self.test}.json')
+                f'full_results_vector_for_{self.k}_folds_{self.rep}_repetitions_pageRank_{self.test}.json')
 
         simple_results_df = pd.Series(simple_results)
         try:
@@ -240,16 +238,16 @@ def main(args):
 
     res_dir, data_dir = dp.set_environment_paths()
 
-    # Debugging
-    print('\n\n\n------------!!!!!!!---------- Debugging Mode ------------!!!!!!!----------\n\n\n')
-    # predictor = input('What predictor should be used for debugging?\n')
-    predictor = 'nqc'
-    corpus = 'ROBUST'
-    # corpus = 'ClueWeb12B'
-    res_dir = os.path.join(res_dir, corpus)
-    labeled_file = f'{res_dir}/test/ref/QLmap1000-title'
-    load_file = f'{res_dir}/test/2_folds_30_repetitions.json'
-    predictions_dir = f'{res_dir}/uqvPredictions/referenceLists/title/all_vars/general/jac/{predictor}/predictions/'
+    # # Debugging
+    # print('\n\n\n------------!!!!!!!---------- Debugging Mode ------------!!!!!!!----------\n\n\n')
+    # # predictor = input('What predictor should be used for debugging?\n')
+    # predictor = 'nqc'
+    # corpus = 'ROBUST'
+    # # corpus = 'ClueWeb12B'
+    # res_dir = os.path.join(res_dir, corpus)
+    # labeled_file = f'{res_dir}/test/ref/QLmap1000-title'
+    # load_file = f'{res_dir}/test/2_folds_30_repetitions.json'
+    # predictions_dir = f'{res_dir}/uqvPredictions/referenceLists/title/all_vars/general/jac/{predictor}/predictions/'
 
     if generate:
         y = InterTopicCrossValidation(k=splits, rep=repeats, predictions_dir=predictions_dir, load=False,
