@@ -4,6 +4,7 @@ import argparse
 import glob
 import operator
 import os
+from abc import abstractmethod, ABC
 from collections import defaultdict
 
 import numpy as np
@@ -11,8 +12,6 @@ import pandas as pd
 from sklearn.model_selection import RepeatedKFold
 
 import dataparser as dp
-
-# from dataparser import ResultsReader, ensure_dir
 
 # TODO: change the functions to work with pandas methods such as idxmax
 # TODO: Consider change to the folds file to be more convenient for pandas DF
@@ -35,11 +34,11 @@ parser.add_argument('-l', "--load", metavar='CV_FILE_PATH', help="load existing 
 
 
 class CrossValidation:
-    def __init__(self, k=2, rep=30, file_to_load=None, predictions_dir=None, load=True, test='pearson', ap_file=None):
+    def __init__(self, k=2, rep=30, folds_map_file=None, predictions_dir=None, load=True, test='pearson', ap_file=None):
         self.k = k
         self.rep = rep
         self.test = test
-        self.file_name = file_to_load
+        self.folds_file = folds_map_file
         assert predictions_dir is not None, 'Specify predictions dir'
         predictions_dir = os.path.abspath(os.path.normpath(os.path.expanduser(predictions_dir)))
         assert os.listdir(predictions_dir), f'{predictions_dir} is empty'
@@ -54,17 +53,17 @@ class CrossValidation:
         else:
             self.full_set = self._build_full_set(predictions_dir)
         if load:
-            assert file_to_load is not None, 'Specify k-folds file to load'
+            assert folds_map_file is not None, 'Specify k-folds file to load'
             self.__load_k_folds()
         else:
             self.index = self.full_set.index
-            self.file_name = self._generate_k_folds()
+            self.folds_file = self._generate_k_folds()
             self.__load_k_folds()
-        if ap_file:
-            self.calc_function = self.calc_corr_df
-            self.corrs_df = self.__calc_correlations()
-        else:
-            self.calc_function = self.calc_scores_df
+        self.corr_df = None
+
+    @abstractmethod
+    def calc_function(self, df: pd.DataFrame):
+        raise NotImplementedError
 
     @staticmethod
     def _build_full_set(predictions_dir, ap_file=None):
@@ -93,6 +92,7 @@ class CrossValidation:
         return full_set
 
     def _generate_k_folds(self):
+        # FIXME: Need to fix it to generate a DF with folds, without redundancy
         """ Generates a k-folds json res
         :rtype: str (returns the saved JSON filename)
         """
@@ -112,91 +112,75 @@ class CrossValidation:
         return '{}_folds_{}_repetitions.json'.format(self.k, self.rep)
 
     def __load_k_folds(self):
-        self.data_sets_map = pd.read_json(self.file_name)
+        # self.data_sets_map = pd.read_json(self.file_name).T['a'].apply(pd.Series).rename(
+        #     mapper={'train': 'fold-1', 'test': 'fold-2'}, axis='columns')
+        self.data_sets_map = pd.read_json(self.folds_file)
 
-    def __calc_correlations(self):
-        sets = self.data_sets_map.columns
+    def _calc_eval_metric_df(self):
+        sets = self.data_sets_map.index
+        folds = self.data_sets_map.columns
         corr_results = defaultdict(dict)
         for set_id in sets:
-            for subset in ['a', 'b']:
-                train_queries = np.array(self.data_sets_map[set_id][subset]['train']).astype(str)
-                test_queries = np.array(self.data_sets_map[set_id][subset]['test']).astype(str)
-                train_set = self.full_set.loc[train_queries]
-                test_set = self.full_set.loc[test_queries]
-                corr_results[set_id][subset] = {'train': self.calc_function(train_set),
-                                                'test': self.calc_function(test_set)}
-        corrs_df = pd.DataFrame(corr_results)
+            for fold in folds:
+                train_queries = set()
+                # a hack to create a set out of train queries, from multiple lists
+                _ = {train_queries.update(i) for i in self.data_sets_map.loc[set_id, folds != fold].values}
+                test_queries = set(self.data_sets_map.loc[set_id, fold])
+                train_set = self.full_set.loc[map(str, train_queries)]
+                test_set = self.full_set.loc[map(str, test_queries)]
+                corr_results[set_id][fold] = pd.DataFrame(
+                    {'train': self.calc_function(train_set), 'test': self.calc_function(test_set)})
+        corr_df = pd.DataFrame.from_dict(corr_results, orient='index')
         try:
-            corrs_df.to_json(
-                '{}/correlations_for_{}_folds_{}_repetitions_{}.json'.format(self.output_dir, self.k, self.rep,
-                                                                             self.ap_func))
+            corr_df.to_pickle(
+                '{}/correlations_for_{}_folds_{}_repetitions_{}.pkl'.format(self.output_dir, self.k, self.rep,
+                                                                            self.ap_func))
         except AttributeError:
-            corrs_df.to_json(
-                '{}/correlations_for_{}_folds_{}_repetitions_pageRank.json'.format(self.output_dir, self.k, self.rep))
-        return corrs_df
+            corr_df.to_pickle(
+                '{}/correlations_for_{}_folds_{}_repetitions_pageRank.pkl'.format(self.output_dir, self.k, self.rep))
+        return corr_df
 
     def calc_test_results(self):
-        if not hasattr(self, 'corrs_df'):
-            self.corrs_df = self.__calc_correlations()
-        sets = self.data_sets_map.columns
+        if not hasattr(self, 'corr_df'):
+            self.corr_df = self._calc_eval_metric_df()
+        sets = self.data_sets_map.index
         full_results = defaultdict(dict)
         simple_results = defaultdict()
-        test_results = []
         for set_id in sets:
-            # Contains the str of the best parameter for trainset i.e. "score_10" - will split on "_"
-            max_train_param_a = max(self.corrs_df[set_id]['a']['train'].items(), key=operator.itemgetter(1))[0]
-            test_result_a = self.corrs_df[set_id]['a']['test'][max_train_param_a]
-            max_train_param_b = max(self.corrs_df[set_id]['b']['train'].items(), key=operator.itemgetter(1))[0]
-            test_result_b = self.corrs_df[set_id]['b']['test'][max_train_param_b]
-            test_result = np.mean([test_result_a, test_result_b])
-            full_results['set {}'.format(set_id)] = {
-                'best train a': (
-                    max_train_param_a.split('_')[1], self.corrs_df[set_id]['a']['train'][max_train_param_a]),
-                'test a': (max_train_param_a.split('_')[1], self.corrs_df[set_id]['a']['test'][max_train_param_a]),
-                'best train b': (
-                    max_train_param_b.split('_')[1], self.corrs_df[set_id]['b']['train'][max_train_param_b]),
-                'test b': (max_train_param_b.split('_')[1], self.corrs_df[set_id]['b']['test'][max_train_param_b]),
-                'average test': test_result}
-            simple_results['set {}'.format(set_id)] = test_result
-            test_results.append(test_result)
-        full_results_df = pd.DataFrame(full_results)
+            _res_per_set = []
+            for fold in self.corr_df.loc[set_id].index:
+                max_train_param = self.corr_df.loc[set_id, fold].idxmax()['train']
+                train_result, test_result = self.corr_df.loc[set_id, fold].loc[max_train_param]
+                _res_per_set.append(test_result)
+                full_results[set_id, fold] = {'best_train_param': max_train_param.split('_')[1],
+                                              'best_train_val': train_result, 'test_val': test_result}
+            simple_results[f'set_{set_id}'] = np.mean(_res_per_set)
+        full_results_df = pd.DataFrame.from_dict(full_results, orient='index')
         try:
             full_results_df.to_json(
-                '{}/full_results_vector_for_{}_folds_{}_repetitions_{}_{}.json'.format(self.output_dir, self.k,
-                                                                                       self.rep, self.ap_func,
-                                                                                       self.test))
+                f'{self.output_dir}/'
+                f'full_results_vector_for_{self.k,}_folds_{self.rep}_repetitions_{self.ap_func}_{self.test}.json')
         except AttributeError:
             full_results_df.to_json(
-                '{}/full_results_vector_for_{}_folds_{}_repetitions_pageRank_{}.json'.format(self.output_dir, self.k,
-                                                                                             self.rep, self.test))
+                f'{self.output_dir}/'
+                f'full_results_vector_for_{self.k,}_folds_{self.rep}_repetitions_pageRank_{self.test}.json')
 
         simple_results_df = pd.Series(simple_results)
         try:
-            simple_results_df.to_json(('{}/simple_results_vector_for_{}_folds_{}_repetitions_{}.json'.format(
-                self.output_dir, self.k, self.rep, self.ap_func)))
+            simple_results_df.to_json(
+                f'{self.output_dir}/'
+                f'simple_results_vector_for_{self.k}_folds_{self.rep}_repetitions_{self.ap_func}.json')
         except AttributeError:
-            simple_results_df.to_json(('{}/simple_results_vector_for_{}_folds_{}_repetitions_pageRank.json'.format(
-                self.output_dir, self.k, self.rep)))
+            simple_results_df.to_json(
+                f'{self.output_dir}/'
+                f'simple_results_vector_for_{self.k}_folds_{self.rep}_repetitions_pageRank.json')
 
-        mean = np.mean(test_results)
-        # print(test_results)
-        # print('{:.3f}'.format(mean))
+        mean = simple_results_df.mean()
         return f'{mean:.3f}'
-
-    def calc_corr_df(self, df):
-        dict_ = {}
-        for col in df.columns:
-            if 'score' in col:
-                dict_[col] = df[col].corr(df['ap'], method=self.test)
-            else:
-                continue
-        return dict_
-
-    def calc_scores_df(self, df):
-        return df.mean().to_dict()
 
     @staticmethod
     def read_eval_results(results_file):
+        # FIXME: need to fix it after changing the format of the eval files
         temp_df = pd.read_json(results_file, orient='index')
 
         # Split column of lists into several columns
@@ -208,11 +192,41 @@ class CrossValidation:
         return res_df
 
 
-def char_range(a, z):
-    """Creates a generator that iterates the characters from `c1` to `c2`, inclusive."""
-    # ord returns the ASCII value, chr returns the char of ASCII value
-    for c in range(ord(a), ord(z) + 1):
-        yield chr(c)
+class InterTopicCrossValidation(CrossValidation, ABC):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        if kwargs.get('ap_file'):
+            self.calc_function = self.calc_inter_topic_corr
+            self.corr_df = self._calc_eval_metric_df()
+        else:
+            self.calc_function = self.calc_inter_topic_scores
+
+    def calc_inter_topic_corr(self, df):
+        dict_ = {}
+        for col in df.columns:
+            if col != 'ap':
+                dict_[col] = df[col].corr(df['ap'], method=self.test)
+            else:
+                continue
+        return pd.Series(dict_)
+
+    def calc_inter_topic_scores(self, df):
+        return df.mean().to_dict()
+
+
+class IntraTopicCrossValidation(CrossValidation):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def calc_intra_topic_corr(self, df):
+        # FIXME: need to fix this bad boy
+        dict_ = {}
+        for col in df.columns:
+            if 'score' in col:
+                dict_[col] = df[col].corr(df['ap'], method=self.test)
+            else:
+                continue
+        return dict_
 
 
 def main(args):
@@ -224,21 +238,27 @@ def main(args):
     generate = args.generate
     predictions_dir = args.predictions
 
+    res_dir, data_dir = dp.set_environment_paths()
+
     # Debugging
     print('\n\n\n------------!!!!!!!---------- Debugging Mode ------------!!!!!!!----------\n\n\n')
-    predictor = input('What predictor should be used for debugging?\n')
+    # predictor = input('What predictor should be used for debugging?\n')
+    predictor = 'nqc'
     corpus = 'ROBUST'
-    labeled_file = f'/home/olegzendel/QppUqvProj/Results/{corpus}/test/ref/QLmap1000-title'
-    load_file = f'/home/olegzendel/QppUqvProj/Results/{corpus}/test/2_folds_30_repetitions.json'
-    predictions_dir = f'/home/olegzendel/QppUqvProj/Results/{corpus}/uqvPredictions/referenceLists/title/all_vars/general/jac/{predictor}/predictions/'
+    # corpus = 'ClueWeb12B'
+    res_dir = os.path.join(res_dir, corpus)
+    labeled_file = f'{res_dir}/test/ref/QLmap1000-title'
+    load_file = f'{res_dir}/test/2_folds_30_repetitions.json'
+    predictions_dir = f'{res_dir}/uqvPredictions/referenceLists/title/all_vars/general/jac/{predictor}/predictions/'
 
     if generate:
-        y = CrossValidation(k=splits, rep=repeats, predictions_dir=predictions_dir, load=False,
-                            test=correlation_measure, ap_file=labeled_file)
+        y = InterTopicCrossValidation(k=splits, rep=repeats, predictions_dir=predictions_dir, load=False,
+                                      test=correlation_measure, ap_file=labeled_file)
     else:
-        y = CrossValidation(k=splits, rep=repeats, predictions_dir=predictions_dir, file_to_load=load_file, load=True,
-                            test=correlation_measure,
-                            ap_file=labeled_file)
+        y = InterTopicCrossValidation(k=splits, rep=repeats, predictions_dir=predictions_dir, folds_map_file=load_file,
+                                      load=True,
+                                      test=correlation_measure,
+                                      ap_file=labeled_file)
     y.calc_test_results()
 
 
