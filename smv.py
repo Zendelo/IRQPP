@@ -12,7 +12,7 @@ import pandas as pd
 
 import dataparser as dp
 from Timer.timer import Timer
-from crossval import CrossValidation
+from crossval import InterTopicCrossValidation
 from query_features import features_loader
 
 parser = argparse.ArgumentParser(description='SMV predictor',

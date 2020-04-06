@@ -11,7 +11,7 @@ import pandas as pd
 
 import dataparser as dp
 from Timer.timer import Timer
-from crossval import CrossValidation
+from crossval import InterTopicCrossValidation
 from query_features import features_loader
 
 LAMBDA = np.linspace(start=0, stop=1, num=11)
@@ -73,11 +73,11 @@ class QueryPredictionRef:
         else:
             self.__set_paths(corpus, predictor, qgroup, vars_quantile)
         _q2p_obj = dp.QueriesTextParser(self.queries2predict_file, 'uqv')
-        self.var_cv = CrossValidation(file_to_load=self.folds, predictions_dir=self.vars_results_dir)
+        self.var_cv = InterTopicCrossValidation(folds_map_file=self.folds, predictions_dir=self.vars_results_dir)
         _vars_results_df = self.var_cv.full_set
         # Initialize the base prediction results of the queries to be predicted
         if qgroup == 'title':
-            _base_cv = CrossValidation(file_to_load=self.folds, predictions_dir=self.base_results_dir)
+            _base_cv = InterTopicCrossValidation(folds_map_file=self.folds, predictions_dir=self.base_results_dir)
             self.base_results_df = _base_cv.full_set
         else:
             self.base_results_df = dp.convert_vid_to_qid(_vars_results_df.loc[_q2p_obj.queries_dict.keys()])

@@ -10,8 +10,8 @@ from functools import partial
 
 import pandas as pd
 
-from Timer.timer import Timer
-from crossval import CrossValidation
+from Timer import Timer
+from crossval import InterTopicCrossValidation
 import pageRank.pr_eval as pr
 
 # TODO: Add a check that all necessary files exist on startup (to avoid later crush)
@@ -312,9 +312,9 @@ class CrossVal:
             _index = list()
             for agg in AGGREGATE_FUNCTIONS + ['combsum']:
                 ap_score = ensure_file('{}/map1000-{}'.format(test_dir, agg))
-                cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_predictions_dir,
-                                         file_to_load=self.cv_map_f, load=True, test=self.corr_measure,
-                                         ap_file=ap_score)
+                cv_obj = InterTopicCrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_predictions_dir,
+                                                   folds_map_file=self.cv_map_f, load=True, test=self.corr_measure,
+                                                   ap_file=ap_score)
                 # uef_cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_uef_predictions_dir,
                 #                              file_to_load=self.cv_map_f, load=True, test=self.corr_measure,
                 #                              ap_file=ap_score)
@@ -363,9 +363,9 @@ class CrossVal:
             _index = list()
             for agg in AGGREGATE_FUNCTIONS + ['combsum']:
                 ap_score = ensure_file('{}/map1000-{}'.format(test_dir, agg))
-                cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_predictions_dir,
-                                         file_to_load=self.cv_map_f, load=True, test=self.corr_measure,
-                                         ap_file=ap_score)
+                cv_obj = InterTopicCrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_predictions_dir,
+                                                   folds_map_file=self.cv_map_f, load=True, test=self.corr_measure,
+                                                   ap_file=ap_score)
                 # uef_cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_uef_predictions_dir,
                 #                              file_to_load=self.cv_map_f, load=True, test=self.corr_measure,
                 #                              ap_file=ap_score)
@@ -414,9 +414,9 @@ class CrossVal:
             # _uef_p_res = list()
             _index = list()
             for measure in CORR_MEASURES:
-                cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_predictions_dir,
-                                         file_to_load=self.cv_map_f, load=True, test=measure,
-                                         ap_file=ap_score)
+                cv_obj = InterTopicCrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_predictions_dir,
+                                                   folds_map_file=self.cv_map_f, load=True, test=measure,
+                                                   ap_file=ap_score)
                 # uef_cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_uef_predictions_dir,
                 #                              file_to_load=self.cv_map_f, load=True, test=measure,
                 #                              ap_file=ap_score)
@@ -457,8 +457,8 @@ class CrossVal:
 
         """This part calculates and adds title queries column"""
         _base_predictions_dir = os.path.normpath('{}/{}/predictions'.format(base_pred_dir, predictor))
-        cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_base_predictions_dir,
-                                 file_to_load=self.cv_map_f, load=True, ap_file=ap_file, test=self.corr_measure)
+        cv_obj = InterTopicCrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_base_predictions_dir,
+                                           folds_map_file=self.cv_map_f, load=True, ap_file=ap_file, test=self.corr_measure)
         _mean = cv_obj.calc_test_results()
         max_list.append(_mean)
 
@@ -475,8 +475,8 @@ class CrossVal:
             for ref_func, func_name in zip(REFERENCE_FUNCTIONS, REFERENCE_TITLES):
                 _predictions_dir = os.path.normpath(f'{predictions_dir}/{ref_func}/{predictor}/predictions')
                 _uef_predictions_dir = os.path.normpath(f'{predictions_dir}/{ref_func}/uef/{predictor}/predictions')
-                cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_predictions_dir,
-                                         file_to_load=self.cv_map_f, load=True, ap_file=ap_file, test=self.corr_measure)
+                cv_obj = InterTopicCrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_predictions_dir,
+                                                   folds_map_file=self.cv_map_f, load=True, ap_file=ap_file, test=self.corr_measure)
                 mean = cv_obj.calc_test_results()
                 max_list.append(mean)
                 _quant_res.append(mean)
@@ -509,8 +509,8 @@ class CrossVal:
             for predictor in SIM_REF_PREDICTORS:
                 _predictions_dir = os.path.normpath(
                     f'{ref_dir}/{qgroup}/{quant}_vars/sim_as_pred/{predictor}/predictions')
-                cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_predictions_dir,
-                                         file_to_load=self.cv_map_f, load=True, ap_file=ap_file, test=self.corr_measure)
+                cv_obj = InterTopicCrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_predictions_dir,
+                                                   folds_map_file=self.cv_map_f, load=True, ap_file=ap_file, test=self.corr_measure)
                 mean = cv_obj.calc_test_results()
                 max_list.append(mean)
                 _quant_res.append(mean)
@@ -542,8 +542,8 @@ class CrossVal:
                     f'{ref_dir}/{qgroup}/{quant}_vars/sim_as_pred/{predictor}/predictions')
                 ap_file = os.path.normpath(f'{self.test_dir}/ref/QLmap1000-{qgroup}')
                 ensure_file(ap_file)
-                cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_predictions_dir,
-                                         file_to_load=self.cv_map_f, load=True, ap_file=ap_file, test=self.corr_measure)
+                cv_obj = InterTopicCrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_predictions_dir,
+                                                   folds_map_file=self.cv_map_f, load=True, ap_file=ap_file, test=self.corr_measure)
                 mean = cv_obj.calc_test_results()
                 _quant_res.append('${}$'.format(mean))
                 _index.append(query_group)
@@ -578,12 +578,12 @@ class CrossVal:
             # list to save uef results
             _uef_p_res = list()
             for measure in CORR_MEASURES:
-                cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_predictions_dir,
-                                         file_to_load=self.cv_map_f, load=True, test=measure,
-                                         ap_file=ap_score)
-                uef_cv_obj = CrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_uef_predictions_dir,
-                                             file_to_load=self.cv_map_f, load=True, test=measure,
-                                             ap_file=ap_score)
+                cv_obj = InterTopicCrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_predictions_dir,
+                                                   folds_map_file=self.cv_map_f, load=True, test=measure,
+                                                   ap_file=ap_score)
+                uef_cv_obj = InterTopicCrossValidation(k=SPLITS, rep=REPEATS, predictions_dir=_uef_predictions_dir,
+                                                       folds_map_file=self.cv_map_f, load=True, test=measure,
+                                                       ap_file=ap_score)
                 mean = cv_obj.calc_test_results()
                 uef_mean = uef_cv_obj.calc_test_results()
                 _p_res.append('${}$'.format(mean))

@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 from Timer.timer import Timer
-from crossval import CrossValidation
+from crossval import InterTopicCrossValidation
 from dataparser import ResultsReader, ensure_dir
 import dataparser as dp
 from features import features_loader
@@ -45,7 +45,7 @@ class LearningDataSets:
         self.__set_paths(corpus, predictor, aggregation)
         self.ap_obj = ResultsReader(self.ap_file, 'ap')
         self.working_dir = self.results_dir.replace('predictions', 'ltr')
-        self.cv = CrossValidation(file_to_load=self.folds, predictions_dir=self.results_dir, test=corr_measure)
+        self.cv = InterTopicCrossValidation(folds_map_file=self.folds, predictions_dir=self.results_dir, test=corr_measure)
         self.folds_df = self.cv.data_sets_map
         _parameters = os.path.normpath(os.path.expanduser(self.parameters))
         self.parameters_df = self.cv.read_eval_results(_parameters)

@@ -12,7 +12,7 @@ import pandas as pd
 
 import dataparser as dp
 from Timer.timer import Timer
-from crossval import CrossValidation
+from crossval import InterTopicCrossValidation
 
 # Define the Font for the plots
 plt.rcParams.update({'font.size': 45, 'font.family': 'serif'})
@@ -112,8 +112,8 @@ class GenerateResults:
 
     def _calc_cv_result(self, similarity, predictor, lambda_param):
         predictions_dir = self.results_dirs_dict.get((similarity, predictor, lambda_param))
-        cv_obj = CrossValidation(k=2, rep=30, file_to_load=self.cv_map_file, predictions_dir=predictions_dir, load=True,
-                                 ap_file=self.query_ap_file, test=self.corr_measure)
+        cv_obj = InterTopicCrossValidation(k=2, rep=30, folds_map_file=self.cv_map_file, predictions_dir=predictions_dir, load=True,
+                                           ap_file=self.query_ap_file, test=self.corr_measure)
         mean = cv_obj.calc_test_results()
         return mean
 

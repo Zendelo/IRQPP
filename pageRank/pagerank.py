@@ -19,7 +19,7 @@ except ModuleNotFoundError:
     import dataparser as dp
 
 from Timer import Timer
-from crossval import CrossValidation
+from crossval import InterTopicCrossValidation
 from pageRank.topic_graph_features import features_loader
 
 LAMBDA = np.linspace(start=0, stop=1, num=11)
@@ -36,15 +36,6 @@ parser.add_argument('-t', '--parallel', help="number of parallel process to run,
 parser.add_argument('--nocache', help="add this option to avoid loading from cache", action="store_false")
 
 
-# parser.add_argument('-g', '--group', help='group of queries to predict',
-#                     choices=['top', 'low', 'medh', 'medl', 'title'])
-# parser.add_argument('--quantile', help='quantile of query variants to use for prediction', default=None,
-#                     choices=['all', 'low', 'med', 'top'])
-# parser.add_argument('-l', '--load', default=None, type=str, help='features file to load')
-# parser.add_argument('--generate', help="generate new features file", action="store_true")
-# parser.add_argument('--predict', help="generate new predictions", action="store_true")
-
-
 class PageRank:
     def __init__(self, corpus, predictor, load=False):
         self.corpus = corpus
@@ -52,7 +43,7 @@ class PageRank:
         self.similarity_features_df = self.__initialize_features_df()
         self.norm_similarity_features_df = self.__normalize_similarity()
         self.similarity_measures = self.similarity_features_df.columns.tolist()
-        self.var_cv = CrossValidation(file_to_load=self.folds, predictions_dir=self.vars_results_dir)
+        self.var_cv = InterTopicCrossValidation(folds_map_file=self.folds, predictions_dir=self.vars_results_dir)
         # self.norm_prediction_scores = self.__normalize_predictions()
         self.raw_prediction_scores = self.__raw_predictions()
         self.prediction_scores = self.var_cv.full_set.columns.tolist()

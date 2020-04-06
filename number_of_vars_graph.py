@@ -9,7 +9,7 @@ import pandas as pd
 
 import dataparser as dp
 from Timer.timer import Timer
-from crossval import CrossValidation
+from crossval import InterTopicCrossValidation
 from qpp_ref import QueryPredictionRef
 from queries_pre_process import filter_n_top_queries, filter_n_low_queries, add_topic_to_qdf
 from query_features import QueryFeatureFactory, load_full_features_df
@@ -177,8 +177,8 @@ class GraphsFactory:
     def calc_single_query_result(self, predictor):
         print(f'\n---Generating {predictor} 0 vars results---\n')
         _predictions_dir = dp.ensure_dir(f'{self.basic_predictions_dir}/{predictor}/predictions')
-        cv_obj = CrossValidation(k=2, rep=30, file_to_load=self.cv_map_file, predictions_dir=_predictions_dir,
-                                 load=True, ap_file=self.query_ap_file, test=self.corr_measure)
+        cv_obj = InterTopicCrossValidation(k=2, rep=30, folds_map_file=self.cv_map_file, predictions_dir=_predictions_dir,
+                                           load=True, ap_file=self.query_ap_file, test=self.corr_measure)
         mean = cv_obj.calc_test_results()
         self.basic_results_dict[predictor] = mean
 
@@ -199,8 +199,8 @@ class GraphsFactory:
         _dir = f'{self.results_dir}/{direct}'
         for n in range(1, self.max_n + 1):
             _predictions_dir = dp.ensure_dir(f'{_dir}/{n}_vars/general/{sim_func}/{predictor}/predictions')
-            cv_obj = CrossValidation(k=2, rep=30, file_to_load=self.cv_map_file, predictions_dir=_predictions_dir,
-                                     load=True, ap_file=self.query_ap_file, test=self.corr_measure)
+            cv_obj = InterTopicCrossValidation(k=2, rep=30, folds_map_file=self.cv_map_file, predictions_dir=_predictions_dir,
+                                               load=True, ap_file=self.query_ap_file, test=self.corr_measure)
             mean = cv_obj.calc_test_results()
             append_to_full_results_dict(mean, n)
         _df = pd.DataFrame.from_dict(_dict)
