@@ -5,8 +5,7 @@ from collections import defaultdict
 from statistics import median_high, median_low
 
 import pandas as pd
-
-from dataparser import ResultsReader
+from qpputils.dataparser import ResultsReader
 
 parser = argparse.ArgumentParser(description='UQV single query calculations script',
                                  usage='python3.6 singleUQV.py RAW_AP_FILE RAW_PREDICTIONS_FILE function',

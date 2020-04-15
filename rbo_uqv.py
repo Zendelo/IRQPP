@@ -1,13 +1,8 @@
 #! /usr/bin/env python
 
 import argparse
-import xml.etree.ElementTree as eT
-from collections import defaultdict
-from math import sqrt
-import dataparser as dp
+from qpputils import dataparser as dp
 from RBO import rbo_dict
-
-import pandas as pd
 
 parser = argparse.ArgumentParser(description='WIG predictor',
                                  usage='Input CE(q|d) scores and queries files',

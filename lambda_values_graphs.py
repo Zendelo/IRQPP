@@ -4,14 +4,13 @@ from collections import defaultdict
 from glob import glob
 from shutil import copy2
 import multiprocessing as mp
-import os
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-import dataparser as dp
-from Timer.timer import Timer
+from qpputils import dataparser as dp
+from Timer import Timer
 from crossval import InterTopicCrossValidation
 
 # Define the Font for the plots

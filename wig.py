@@ -7,8 +7,8 @@ from math import sqrt
 
 import pandas as pd
 
-# TODO: Add a calculation in the dataparser for fused query length
-# TODO: switch the code to work with the global dataparser
+# TODO: Add a calculation in the qpputils for fused query length
+# TODO: switch the code to work with the global qpputils
 
 parser = argparse.ArgumentParser(description='WIG predictor',
                                  usage='Input CE(q|d) scores and queries files',

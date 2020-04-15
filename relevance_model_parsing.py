@@ -1,6 +1,5 @@
 import pandas as pd
-import numpy as np
-import dataparser as dp
+from qpputils import dataparser as dp
 from glob import glob
 
 

@@ -1,12 +1,11 @@
 import argparse
 from statistics import median_high, median_low
 import matplotlib.pyplot as plt
-import seaborn as sns
 
 import pandas as pd
 import numpy as np
 
-import dataparser as dt
+from qpputils import dataparser as dt
 
 # Define the Font for the plots
 # plt.rcParams.update({'font.size': 35, 'font.family': 'serif', 'font.weight': 'normal'})

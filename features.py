@@ -1,4 +1,4 @@
-from dataparser import QueriesTextParser, ResultsReader, ensure_file
+from qpputils.dataparser import QueriesTextParser, ResultsReader, ensure_file
 from itertools import combinations
 from collections import defaultdict
 from RBO import rbo_dict
@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 
 import argparse
-from Timer.timer import Timer
+from Timer import Timer
 
 parser = argparse.ArgumentParser(description='Features for UQV query variations Generator',
                                  usage='python3.6 features.py -q queries.txt -c CORPUS -r QL.res ',

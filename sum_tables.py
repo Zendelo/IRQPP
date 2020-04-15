@@ -1,15 +1,15 @@
+import argparse
 import json
 import sys
-
-import pandas as pd
-import dataparser as dp
-import numpy as np
-from scipy import stats
-from collections import Counter, defaultdict, UserDict
+from collections import Counter, defaultdict
 from glob import glob
-import argparse
+
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 from numpy.polynomial.polynomial import polyfit
+from qpputils import dataparser as dp
+from scipy import stats
 
 np.set_printoptions(threshold=sys.maxsize)
 

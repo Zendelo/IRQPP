@@ -12,8 +12,8 @@ import numpy as np
 import pandas as pd
 import scipy.stats as st
 
-import dataparser as dp
-from Timer.timer import Timer
+from qpputils import dataparser as dp
+from Timer import Timer
 
 parser = argparse.ArgumentParser(description='RSD(wig) predictor',
                                  usage='Change the paths in the code in order to predict UQV/Base queries',

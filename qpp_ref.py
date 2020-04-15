@@ -9,8 +9,8 @@ from subprocess import run
 import numpy as np
 import pandas as pd
 
-import dataparser as dp
-from Timer.timer import Timer
+from qpputils import dataparser as dp
+from Timer import Timer
 from crossval import InterTopicCrossValidation
 from query_features import features_loader
 

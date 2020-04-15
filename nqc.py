@@ -3,13 +3,12 @@
 import argparse
 import xml.etree.ElementTree as eT
 from collections import defaultdict
-from math import sqrt
-import numpy as np
 
+import numpy as np
 import pandas as pd
 
 # TODO: remove the queries file, or implement an option to add it just for testing (ensure all queries are present)
-# TODO: switch the code to work with the global dataparser
+# TODO: switch the code to work with the global qpputils
 
 parser = argparse.ArgumentParser(description='NQC predictor',
                                  usage='Input QL(q|d) scores and queries files',
@@ -69,6 +68,7 @@ class NQC:
     """This class implements the QPP method as described in:
     'Predicting Query Performance by Query-Drift Estimation'
     The predictor is implemented to work with log(QL) scores (not -CE)"""
+
     def __init__(self, queries_obj, results_df, corpus_scores_df):
         self.qdb = queries_obj
         self.res = results_df

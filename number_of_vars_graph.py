@@ -7,12 +7,12 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 import pandas as pd
 
-import dataparser as dp
-from Timer.timer import Timer
+from qpputils import dataparser as dp
+from Timer import Timer
 from crossval import InterTopicCrossValidation
 from qpp_ref import QueryPredictionRef
 from queries_pre_process import filter_n_top_queries, filter_n_low_queries, add_topic_to_qdf
-from query_features import QueryFeatureFactory, load_full_features_df
+from query_features import RefQueryFeatureFactory, load_full_features_df
 
 # Define the Font for the plots
 # plt.rcParams.update({'font.size': 45, 'font.family': 'serif', 'font.weight': 'normal'})
@@ -129,8 +129,8 @@ class GraphsFactory:
         print(f'\n---Generating Features for {n} vars---\n')
         for direct in {'asce', 'desc'}:
             _dir = dp.ensure_dir(f'{self.data_dir}/{direct}/features')
-            _feat_obj = QueryFeatureFactory(corpus=self.corpus, queries_group=self.group, vars_quantile='all',
-                                            graphs=direct, n=n)
+            _feat_obj = RefQueryFeatureFactory(corpus=self.corpus, queries_group=self.group, vars_quantile='all',
+                                               graphs=direct, n=n)
             _df = load_full_features_df(features_factory_obj=_feat_obj)
             _df.reset_index().to_json(f'{_dir}/{self.group}_query_{n}_variations_features_{self.corpus}_uqv.JSON')
 
@@ -140,8 +140,8 @@ class GraphsFactory:
         for direct in {'asce', 'desc'}:
             _dir = dp.ensure_dir(f'{self.data_dir}/{direct}')
             for n in range(1, self.max_n + 1):
-                sim_ref_pred = QueryFeatureFactory(self.corpus, queries_group=self.group, vars_quantile='all',
-                                                   rbo_top=k, top_docs_overlap=k, graphs=direct, n=n)
+                sim_ref_pred = RefQueryFeatureFactory(self.corpus, queries_group=self.group, vars_quantile='all',
+                                                      rbo_top=k, top_docs_overlap=k, graphs=direct, n=n)
                 sim_ref_pred.generate_predictions(load_pickle)
                 load_pickle = True
 

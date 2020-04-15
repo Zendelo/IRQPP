@@ -3,8 +3,7 @@
 import numpy as np
 import pandas as pd
 
-from Timer.timer import Timer
-from dataparser import ResultsReader
+from qpputils.dataparser import ResultsReader
 import argparse
 
 parser = argparse.ArgumentParser(description='Fusion script',

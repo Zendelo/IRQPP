@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 
 import argparse
-import csv
 from collections import defaultdict
 
 import numpy as np
 import pandas as pd
 
-from dataparser import ResultsReader
+from qpputils.dataparser import ResultsReader
 
 parser = argparse.ArgumentParser(description='UQV aggregated queries calculations script',
                                  usage='python3.6 aggregateUQV.py RAW_AP_FILE RAW_PREDICTIONS_FILE -f FUNCTION',

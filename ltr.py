@@ -1,19 +1,12 @@
 """This code will construct the features vectors for the learning process"""
 
-import argparse
-import glob
 import multiprocessing as mp
-import os
-from functools import partial, reduce
 import itertools as it
-from collections import defaultdict
 
-import numpy as np
 import pandas as pd
 
-import dataparser as dp
+from qpputils import dataparser as dp
 from RBO import rbo_dict
-from Timer.timer import Timer
 
 
 def jaccard_coefficient(st1: str, st2: str):

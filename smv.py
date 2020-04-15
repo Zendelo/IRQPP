@@ -1,19 +1,8 @@
 import argparse
-import glob
-import itertools
-import multiprocessing as mp
-import os
-from functools import partial
-from subprocess import run
 from collections import defaultdict
 
 import numpy as np
-import pandas as pd
-
-import dataparser as dp
-from Timer.timer import Timer
-from crossval import InterTopicCrossValidation
-from query_features import features_loader
+from qpputils import dataparser as dp
 
 parser = argparse.ArgumentParser(description='SMV predictor',
                                  usage='Input QL(q|d) scores and queries files',
