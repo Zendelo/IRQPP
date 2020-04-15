@@ -7,8 +7,8 @@ from glob import glob
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import qpputils as dp
 from numpy.polynomial.polynomial import polyfit
-from qpputils import dataparser as dp
 from scipy import stats
 
 np.set_printoptions(threshold=sys.maxsize)
