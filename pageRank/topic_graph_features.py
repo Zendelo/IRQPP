@@ -1,14 +1,13 @@
 import argparse
+import itertools
 import multiprocessing as mp
 import os
-from collections import defaultdict
 from itertools import combinations_with_replacement
-from functools import partial
 
 import numpy as np
 import pandas as pd
 
-import dataparser as dp
+from qpputils import qpputils as dp
 from RBO import rbo_dict
 from Timer import Timer
 
@@ -25,6 +24,8 @@ parser.add_argument('-c', '--corpus', default='ROBUST', type=str, help='corpus (
 #                     choices=['all', 'low', 'med', 'top'])
 parser.add_argument('-l', '--load', default=None, type=str, help='features file to load')
 parser.add_argument('--generate', help="generate new features file", action="store_true")
+
+NUMBER_OF_DOCS = (5, 10, 25, 50, 100, 250, 500)
 
 
 # parser.add_argument('--predict', help="generate new predictions", action="store_true")
@@ -100,7 +101,7 @@ class QueryFeatureFactory:
         return {qid: list(combinations_with_replacement(variations, 2)) for qid, variations in self.query_vars.items()}
 
     def _calc_features(self):
-        _dict = {'topic': [], 'src': [], 'dest': [], 'Jac_coefficient': [],
+        _dict = {'topic': [], 'src': [], 'dest': [], 'jac': [],
                  f'Top_{self.top_docs_overlap}_Docs_overlap': [], f'RBO_EXT_{self.rbo_top}': [],
                  f'RBO_FUSED_EXT_{self.rbo_top}': []}
         for topic, pairs in self.features_index.items():
@@ -131,9 +132,9 @@ class QueryFeatureFactory:
                 def _save_to_dict(q_1, q_2):
                     _dict['src'] += [q_1]
                     _dict['dest'] += [q_2]
-                    _dict['Jac_coefficient'] += [jc]
+                    _dict['jac'] += [jc]
                     _dict[f'Top_{self.top_docs_overlap}_Docs_overlap'] += [docs_overlap]
-                    _dict[f'RBO_EXT_{self.rbo_top}'] += [rbo_ext_score]
+                    _dict[f'RBO_{self.rbo_top}'] += [rbo_ext_score]
                     # The RBO-F feature in that case for edge (q1, q2) will be the RBO similarity of q2 to fused list
                     _dict[f'RBO_FUSED_EXT_{self.rbo_top}'] += [_q2_rbo_fused_ext_score]
 
@@ -184,6 +185,12 @@ def features_loader(corpus, file_to_load=None):
     return features_df
 
 
+def run_features_process(corpus, n):
+    sim_ref_pred = QueryFeatureFactory(corpus, rbo_top=n, top_docs_overlap=n)
+    df = sim_ref_pred.generate_features()
+    return df.drop('Jac_coefficient', axis=1)
+
+
 def main(args):
     corpus = args.corpus
     generate = args.generate
@@ -201,6 +208,11 @@ def main(args):
     cores = mp.cpu_count() - 1
 
     if generate:
+        # FIXME: test and fix the fueatures creation to run in parallel
+        with mp.Pool(processes=cores) as pool:
+            norm_features_list = pool.starmap(run_features_process,
+                                              itertools.product({'ROBUST', 'ClueWeb12B'}, NUMBER_OF_DOCS))
+
         testing_feat = QueryFeatureFactory(corpus)
         norm_features_df = testing_feat.generate_features()
 
