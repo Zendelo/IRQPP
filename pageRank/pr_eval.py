@@ -1,13 +1,19 @@
+import argparse
+import itertools
+import multiprocessing as mp
 import os
+from inspect import signature
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from Timer import Timer, timer
-import argparse
-from inspect import signature
+
+import qpputils as dp
 
 try:
-    import dataparser as dp
+    from crossval import InterTopicCrossValidation, IntraTopicCrossValidation
+    from queries_pre_process import add_topic_to_qdf
 except ModuleNotFoundError:
     import sys
     from pathlib import Path
@@ -15,11 +21,11 @@ except ModuleNotFoundError:
     script_dir = sys.path[0]
     # Adding the parent directory to the path
     sys.path.append(str(Path(script_dir).parent))
-    import dataparser as dp
-from crossval import InterTopicCrossValidation
-from queries_pre_process import add_topic_to_qdf
+    from crossval import InterTopicCrossValidation, IntraTopicCrossValidation
+    from queries_pre_process import add_topic_to_qdf
 
 PREDICTORS = ['clarity', 'wig', 'nqc', 'smv', 'rsd', 'qf', 'uef/clarity', 'uef/wig', 'uef/nqc', 'uef/smv', 'uef/qf']
+# PREDICTORS = ['clarity', 'wig', 'nqc', 'uef/clarity', 'uef/wig', 'uef/nqc']
 SIMILARITY_MEASURES = ['Jac_coefficient', 'RBO_EXT_100', 'Top_10_Docs_overlap', 'RBO_FUSED_EXT_100']
 
 parser = argparse.ArgumentParser(description='PageRank UQV Evaluation', usage='python3.7 pr_eval.py -c CORPUS')
@@ -132,6 +138,20 @@ def minmax_ap_metric(corpus, similarity, predictor, minmax):
     return calc_s(cv_obj, full_ap_df) if minmax == 'max' else -calc_s(cv_obj, -full_ap_df)
 
 
+def run_intra_topic_eval(corpus, similarity, predictor):
+    spam_time = Timer(f'working on {corpus, similarity, predictor}')
+    pth_dict = set_basic_paths(corpus)
+    # {'res_dir': res_dir, 'data_dir': data_dir, 'pkl_dir': pkl_dir, 'cv_folds': cv_folds, 'ap_file': ap_file}
+    predictions_dir = dp.ensure_dir(os.path.join(pth_dict['res_dir'],
+                                                 f'{corpus}/uqvPredictions/referenceLists/'
+                                                 f'pageRank/raw/{similarity}/{predictor}/predictions'))
+    cv_obj = IntraTopicCrossValidation(predictions_dir=predictions_dir, folds_map_file=pth_dict['cv_folds'],
+                                       ap_file=pth_dict['ap_file'], save_calculations=True, test='kendall')
+    result = cv_obj.calc_test_results()
+    spam_time.stop()
+    return {(corpus, similarity, predictor): result}
+
+
 def interactive_parameters():
     # TODO: cover all options for the interactive choice with retries instead of fixed values
     corpus = input('What corpus should be used for evaluation?\n')
@@ -150,17 +170,44 @@ def interactive_parameters():
     return corpus, similarity, predictor
 
 
-def run_all(metric_func, args):
-    # TODO: change it to parallel runs
-    results = []
-    for corpus in {'ROBUST', 'ClueWeb12B'}:
-        for similarity in SIMILARITY_MEASURES:
-            for predictor in PREDICTORS:
-                results.append(metric_func(corpus, similarity, predictor, *args))
-    return results
+def run_all(metric_func):
+    with mp.Pool(processes=40) as pool:
+        results = pool.starmap(metric_func,
+                               itertools.product({'ROBUST', 'ClueWeb12B'}, SIMILARITY_MEASURES, PREDICTORS))
+    df = pd.DataFrame(results).T
+    df.index = pd.MultiIndex.from_tuples(df.index, names=['corpus', 'similarity', 'predictor'])
+    return df
 
 
-def main(args, load_results=True, interact=True):
+def load_single_per_topic_df(corpus, similarity, predictor):
+    pth_dict = set_basic_paths(corpus)
+    predictions_dir = dp.ensure_dir(os.path.join(pth_dict['res_dir'],
+                                                 f'{corpus}/uqvPredictions/referenceLists/'
+                                                 f'pageRank/raw/{similarity}/{predictor}/predictions'))
+    cv_obj = IntraTopicCrossValidation(predictions_dir=predictions_dir, folds_map_file=pth_dict['cv_folds'],
+                                       ap_file=pth_dict['ap_file'], save_calculations=True)
+    df = cv_obj.load_per_topic_df()
+    mean_val_per_topic = df.loc[:, df.columns != 'weight'].mean(1)
+    return mean_val_per_topic, df.weight
+
+
+def load_full_per_topic_df(corpus):
+    _list = []
+    # weight = None
+    for similarity in SIMILARITY_MEASURES:
+        for predictor in PREDICTORS:
+            _sr, weight = load_single_per_topic_df(corpus, similarity, predictor)
+            _sr.name = similarity + ' ' + predictor
+            _list.append(_sr)
+    # weight.name = 'weight'
+    # df = pd.concat(_list + [weight / weight.max()], axis=1)
+    df = pd.concat(_list, axis=1)
+    df.to_pickle(f'{corpus}_full_results_df.pkl')
+    # df.boxplot(rot=45)
+    # plt.show()
+
+
+def main(args, load_results=False, interact=False):
     corpus = args.corpus
     pths_dict = set_basic_paths(corpus)
     if interact:
@@ -180,8 +227,16 @@ def main(args, load_results=True, interact=True):
         print(
             res_df.to_latex(header=True, multirow=True, multicolumn=False, index=True, escape=False, index_names=True))
     else:
-        results_df = fun(corpus)
-        results_df.to_pickle(os.path.join(pths_dict['pkl_dir'], f'{corpus}_PageRank_results_table.pkl'))
+        results_df = run_all(run_intra_topic_eval)
+        print("\multicolumn{3}{c}{ROBUST} \\")
+        print(results_df.astype(float).sum(1).loc['ROBUST'].to_latex(header=True, multirow=True, multicolumn=False,
+                                                                     index=True, escape=False,
+                                                                     index_names=True).replace('_', '-'))
+        print("\multicolumn{3}{c}{ClueWeb12B} \\")
+        print(results_df.astype(float).sum(1).loc['ClueWeb12B'].to_latex(header=True, multirow=True, multicolumn=False,
+                                                                         index=True, escape=False,
+                                                                         index_names=True).replace('_', '-'))
+        results_df.to_pickle(os.path.join(pths_dict['pkl_dir'], f'AvgKendall_PageRank_results_table.pkl'))
 
 
 def fun(corpus):
@@ -215,8 +270,21 @@ def fun(corpus):
     return df
 
 
+def local_load_df(corpus):
+    df = pd.read_pickle(f'{corpus}_full_results_df.pkl')
+    df.columns = pd.MultiIndex.from_tuples(tuple(df.columns.str.split()), names=['similarity', 'predictor'])
+    df.boxplot()
+    plt.show()
+
+
 if __name__ == '__main__':
     args = parser.parse_args()
     timer = Timer('Total time')
-    main(args)
+    # pths_dict = set_basic_paths('ROBUST')
+    # pths_dict = set_basic_paths('ClueWeb12B')
+    # load_full_per_topic_df('ClueWeb12B')
+    # load_full_per_topic_df('ROBUST')
+    local_load_df('ClueWeb12B')
+    local_load_df('ROBUST')
+    # main(args)
     timer.stop()
