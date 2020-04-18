@@ -3,7 +3,7 @@ from glob import glob
 
 import pandas as pd
 
-import dataparser as dp
+from qpputils import qpputils as dp
 from Timer import Timer
 
 PREDICTORS = ['clarity', 'nqc', 'wig', 'qf', 'uef/clarity', 'uef/nqc', 'uef/wig', 'uef/qf']

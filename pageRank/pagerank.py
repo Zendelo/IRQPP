@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 try:
-    import dataparser as dp
+    from qpputils import qpputils as dp
 except ModuleNotFoundError:
     import sys
     from pathlib import Path
@@ -16,7 +16,7 @@ except ModuleNotFoundError:
     script_dir = sys.path[0]
     # Adding the parent directory to the path
     sys.path.append(str(Path(script_dir).parent))
-    import dataparser as dp
+    import qpputils as dp
 
 from Timer import Timer
 from crossval import InterTopicCrossValidation
@@ -24,6 +24,8 @@ from pageRank.topic_graph_features import features_loader
 
 LAMBDA = np.linspace(start=0, stop=1, num=11)
 PREDICTORS = ['clarity', 'wig', 'nqc', 'smv', 'rsd', 'qf', 'uef/clarity', 'uef/wig', 'uef/nqc', 'uef/smv', 'uef/qf']
+SIMILARITY_DICT = {'Jac_coefficient': 'jac', 'RBO_EXT_100': 'rbo', 'Top_10_Docs_overlap': 'sim',
+                   'RBO_FUSED_EXT_100': 'rbo-f'}
 
 parser = argparse.ArgumentParser(description='PageRank UQV Generator',
                                  usage='python3.7 pagerank.py -c CORPUS')
@@ -184,6 +186,7 @@ class PageRank:
             stime.stop()
 
     def _write_results(self, res_df: pd.Series, sim_func, pred_score, lambda_param):
+        sim_func = SIMILARITY_DICT.get(sim_func, sim_func)
         dir_path = dp.ensure_dir(f'{self.output_dir}/raw/{sim_func}/{self.predictor}/predictions/')
         file_name = f'predictions-{pred_score}+lambda+{lambda_param}'
         res_df.to_csv(path_or_buf=f'{dir_path}/{file_name}', index=True, sep=' ', float_format='%f', header=False)
