@@ -1,0 +1,6 @@
+title = "Global configurations"
+[environment]
+index_dir = "/research/local/olz/ROBUST04/dump/"
+queries_file = "/research/local/olz/data/robust04.qry"
+[defaults]
+mu = 2500

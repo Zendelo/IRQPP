@@ -14,7 +14,7 @@ def ensure_file(file):
     return file_path
 
 
-def ensure_dir(file_path):
+def ensure_dir(file_path, create_if_not=True):
     """The function ensures the dir exists, if it doesn't it creates it and returns the path"""
     # tilde expansion
     file_path = os.path.normpath(os.path.expanduser(file_path))
@@ -23,10 +23,13 @@ def ensure_dir(file_path):
     else:
         directory = file_path
     if not os.path.exists(directory):
-        try:
-            os.makedirs(directory)
-        except FileExistsError:
-            pass
+        if create_if_not:
+            try:
+                os.makedirs(directory)
+            except FileExistsError:
+                pass
+        else:
+            raise FileNotFoundError(f"The directory {directory} doesnt exist, create it or pass create_if_not=True")
     return directory
 
 
