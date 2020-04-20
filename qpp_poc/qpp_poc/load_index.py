@@ -59,6 +59,10 @@ def read_dict_file(file_path):
 
 
 class Index:
+    @classmethod
+    def oov(cls, term):
+        return f"{term} 0 0"  # Out of vocabulary terms
+
     # TODO: Possibly can be optimised by a new implementation of linecache
     def __init__(self, text_inverted, terms_dict, index_global, **kwargs):
         """
@@ -82,8 +86,16 @@ class Index:
         return read_line(self.inverted_file, n)
 
     def _get_raw_posting_list(self, term):
-        term_id, df_t, cf_t = self.terms_df.loc[term]
-        return self._read_index_line(term_id)
+        if not hasattr(self, 'terms_dict'):
+            self.terms_dict = self._generate_terms_dict()
+        term_id = self.terms_dict.get(term)
+        if term_id:
+            return self._read_index_line(term_id)
+        else:
+            return Index.oov(term)
+
+    def _generate_terms_dict(self):
+        return self.terms_df['term_id'].to_dict()
 
     def get_posting_list(self, term):
         posting_lists = self._get_raw_posting_list(term)
