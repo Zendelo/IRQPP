@@ -6,7 +6,8 @@ import setuptools
 setuptools.setup(
     name="qpp_poc",  # Replace with your own username
     version="0.0.1",
-    scripts=['qpp_poc/load_index.py', 'qpp_poc/utility_functions.py'],
+    scripts=['qpp_poc/load_index.py', 'qpp_poc/utility_functions.py', 'qpp_poc/local_manager.py',
+             'qpp_poc/global_manager.py', 'qpp_poc/parse_queries.py'],
     author="Oleg Zendel",
     author_email="oleg.zendel@rmit.edu.au",
     description="POC of QPP framework package",

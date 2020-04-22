@@ -1,6 +1,8 @@
 import pandas as pd
 from Timer import timer
-from collections import Counter, namedtuple
+
+# from qpp_poc import Config
+from qpp_poc.qpp_poc import Config
 
 
 def transform_list_to_counts_dict(_list):
@@ -23,21 +25,21 @@ class QueryParser:
     def _weight_queries(self):
         return self.raw_queries_sr.apply(transform_list_to_counts_dict)
 
-    def get_query(self, qid):
+    def get_query(self, qid: str) -> dict:
         return self.queries_sr.loc[qid]
 
-    def get_query_ids(self):
+    def get_query_ids(self) -> list:
         return self.queries_sr.index.tolist()
 
 
 @timer
 def test():
     for _ in range(100):
-        _ = QueryParser(QUERIES_FILE)
+        _ = QueryParser(Config.QUERIES_FILE)
 
 
 if __name__ == '__main__':
-    qp = QueryParser(QUERIES_FILE)
+    qp = QueryParser(Config.QUERIES_FILE)
     print(qp.get_query_ids())
     print(qp.get_query(qp.get_query_ids()[0]))
     # test()

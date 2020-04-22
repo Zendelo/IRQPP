@@ -1,6 +1,12 @@
 title = "Global configurations"
+
 [environment]
 index_dir = "/research/local/olz/ROBUST04/dump/"
-queries_file = "/research/local/olz/data/robust04.qry"
+queries_file = "/research/local/olz/data/robust04.stemmed.qry"
+
 [defaults]
 mu = 2500
+max_result_size = 1000
+
+#[logging]
+#output=

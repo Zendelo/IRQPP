@@ -4,4 +4,5 @@ from .load_index import *
 from .parse_queries import *
 from .local_manager import *
 
-__all__ = ['Config', 'get_file_len', 'read_line', 'parse_posting_lists', 'Index', 'QueryParser', 'LocalManager']
+__all__ = ['Config', 'Posting', 'TermPosting', 'TermRecord', 'TermFrequency', 'ResultPair', 'get_file_len', 'read_line',
+           'parse_posting_list', 'binary_search', 'Index', 'QueryParser', 'LocalManager']

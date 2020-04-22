@@ -415,7 +415,7 @@ def main(args):
     # quantiles_dict = {'low': [0, 0.33], 'med': [0.33, 0.66], 'top': [0.66, 1]}
     quantiles_dict = {'low': [0, 0.5], 'high': [0.5, 1]}
 
-    # Uncomment for Debugging !!!!!
+    # # Uncomment for Debugging !!!!!
     # print('\n\n\n----------!!!!!!!!!!!!--------- Debugging Mode ----------!!!!!!!!!!!!---------\n\n\n')
     # # quant_variants = 'low'
     # corpus = 'ClueWeb12B'

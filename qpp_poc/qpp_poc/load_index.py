@@ -1,10 +1,8 @@
-from Timer import timer
-from collections import namedtuple
 import pandas as pd
-import qpputils as qu
-import os
+from Timer import timer
 
-from qpp_poc.qpp_poc import Config, read_line, get_file_len
+# from qpp_poc import Config, read_line, get_file_len, TermPosting, Posting, TermRecord
+from qpp_poc.qpp_poc import Config, read_line, get_file_len, TermPosting, Posting, TermRecord
 
 """
 The expected files in the index dump dir:
@@ -20,42 +18,41 @@ global.txt: total_docs  total_terms
 """
 
 
-def parse_posting_lists(posting_lists):
-    # TODO: test what's better, generator vs list vs tuple
-    result = []
-    if posting_lists:
-        if not isinstance(posting_lists, list):
-            if isinstance(posting_lists, str):
-                posting_lists = [posting_lists]
-            else:
-                raise TypeError(f'parse_posting_lists is expecting list of strings, or str\n'
-                                f'{type(posting_lists)} was passed')
-    else:
-        return []
-    posting = namedtuple('posting', ['doc_id', 'tf'])
-    term_record = namedtuple('TermRecord', ['term', 'cf', 'df', 'posting_list'])
-    for post in posting_lists:
-        row = post.split()
-        term, cf_t, df_t, posting_list = row[0], row[1], row[2], row[3:]
-        result.append(term_record(term, cf_t, df_t, (posting(*map(int, p.split(':'))) for p in posting_list)))
-    return result
+def parse_posting_list(posting_list: str) -> TermPosting:
+    if posting_list:
+        if not isinstance(posting_list, str):
+            raise TypeError(f'parse_posting_lists is expecting a str {type(posting_list)} was passed')
+    row = posting_list.split()
+    term, cf_t, df_t, posting_list = row[0], int(row[1]), int(row[2]), row[3:]
+    return TermPosting(term, cf_t, df_t, tuple(Posting(*map(int, p.split(':'))) for p in posting_list))
 
 
 def create_dict_from_index(file_path):
     """This function used to create a dictionary from an inverted index file"""
     result = []
-    term_record = namedtuple('TermRecord', ['term', 'term_id', 'cf', 'df'])
     with open(file_path, 'r') as fp:
         for i, post in enumerate(fp):
             row = post.split()
             term, cf_t, df_t, _ = row[0], row[1], row[2], row[3:]
-            result.append(term_record(term, i + 1, cf_t, df_t))
-    return pd.DataFrame.from_records(result, columns=term_record._fields)
+            result.append(TermRecord(term, i + 1, cf_t, df_t))
+    return pd.DataFrame.from_records(result, columns=TermRecord._fields)
 
 
 def read_dict_file(file_path):
     return pd.read_table(file_path, names=['term', 'term_id', 'df_t', 'cf_t'], index_col='term', delim_whitespace=True,
                          keep_default_na=False)
+
+
+def read_doc_lens_file(file_path):
+    with open(file_path, 'r') as fp:
+        result = {(k + 1): int(v) for k, v in enumerate(fp.readlines())}
+    return result
+
+
+def read_doc_names_file(file_path):
+    with open(file_path, 'r') as fp:
+        result = {(k + 1): str(v.strip('\n')) for k, v in enumerate(fp.readlines())}
+    return result
 
 
 class Index:
@@ -64,7 +61,7 @@ class Index:
         return f"{term} 0 0"  # Out of vocabulary terms
 
     # TODO: Possibly can be optimised by a new implementation of linecache
-    def __init__(self, text_inverted, terms_dict, index_global, **kwargs):
+    def __init__(self, text_inverted, terms_dict, index_global, document_lengths, document_names, **kwargs):
         """
         Tess
         :param text_inverted: inverted index text file
@@ -80,6 +77,8 @@ class Index:
         self.vocab_size = len(self.terms_df)
         assert self.vocab_size == self.inv_index_size, f"The vocabulary and index sizes differ" \
                                                        f"\nVocab: {self.vocab_size} vs Index: {self.inv_index_size}"
+        self.document_length_dict = read_doc_lens_file(document_lengths)
+        self.document_names_dict = read_doc_names_file(document_names)
 
     def _read_index_line(self, n):
         assert 0 < n <= self.inv_index_size, f"Row {n} is out of the index range 1 - {self.inv_index_size}"
@@ -97,12 +96,21 @@ class Index:
     def _generate_terms_dict(self):
         return self.terms_df['term_id'].to_dict()
 
-    def get_posting_list(self, term):
+    def get_posting_list(self, term: str) -> TermPosting:
         posting_lists = self._get_raw_posting_list(term)
-        return parse_posting_lists(posting_lists)
+        return parse_posting_list(posting_lists)
 
-    def get_term_cf(self, term):
-        return self.terms_df.loc[term, 'cf_t']
+    def get_term_cf(self, term: str) -> int:
+        if self.terms_dict.get(term):
+            return self.terms_df.loc[term, 'cf_t']
+        else:
+            return 0
+
+    def get_doc_len(self, doc_id):
+        return self.document_length_dict.get(doc_id)
+
+    def get_doc_name(self, doc_id):
+        return self.document_names_dict.get(doc_id)
 
 
 @timer
@@ -112,9 +120,8 @@ def main():
     idx_obj = Index(text_inv, dict_txt, index_globals)
     postings = []
     for q_term in ['international', 'organized', 'crime']:
-        postings.append(idx_obj._get_raw_posting_list(q_term))
-    x = parse_posting_lists(postings)
-    df = pd.DataFrame(x).set_index('term')
+        postings.append(idx_obj.get_posting_list(q_term))
+    df = pd.DataFrame(postings).set_index('term')
     i = 0
     for doc in df.loc['organized'].posting_list:
         print(doc)
