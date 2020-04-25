@@ -115,23 +115,13 @@ class Index:
 
 @timer
 def main():
-    config = Config()
-    text_inv, dict_txt, index_globals = config.TEXT_INV, config.DICT_TXT, config.INDEX_GLOBALS
-    idx_obj = Index(text_inv, dict_txt, index_globals)
-    postings = []
-    for q_term in ['international', 'organized', 'crime']:
-        postings.append(idx_obj.get_posting_list(q_term))
-    df = pd.DataFrame(postings).set_index('term')
-    i = 0
-    for doc in df.loc['organized'].posting_list:
-        print(doc)
-        i += 1
-        if i > 5:
-            break
-    print(df.to_latex())
-    # df = create_dict_from_index(text_inv)
-    # df.to_csv(dict_txt, sep='\t', header=False, index=False)
+    index = Index(text_inverted=text_inv, terms_dict=dict_txt, index_global=index_globals, document_lengths=doc_lens,
+                  document_names=doc_names)
+    x = index.get_posting_list('ingathering')
+    print(len(x.posting_list))
 
 
 if __name__ == '__main__':
+    config = Config()
+    text_inv, dict_txt, index_globals, doc_lens, doc_names = config.TEXT_INV, config.DICT_TXT, config.INDEX_GLOBALS, config.DOC_LENS, config.DOC_NAMES
     main()

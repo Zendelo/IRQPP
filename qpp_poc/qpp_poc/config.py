@@ -40,7 +40,7 @@ class Config:
 
 # Special project types
 
-# TODO: add a parser tp the types that can receive a str object and parse it to the relevant fields
+# TODO: add a parser to the types that can receive a str object and parse it to the relevant fields
 class Posting(NamedTuple):
     doc_id: int
     tf: int
@@ -69,3 +69,9 @@ class TermFrequency(NamedTuple):
 class ResultPair(NamedTuple):
     doc_id: str
     score: float
+
+
+class DocRecord(NamedTuple):
+    doc_id: int
+    collection_doc_id: str
+    doc_len: int
